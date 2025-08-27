@@ -12,11 +12,38 @@
 .swiftpm/
 migrate_working_dir/
 
+# Build results
+/bin/
+/obj/
+/out/
+/*.exe
+/*.dll
+/*.lib
+/*.so
+/*.dylib
+/*.o
+
 # IntelliJ related
 *.iml
 *.ipr
 *.iws
 .idea/
+
+# VS Code settings
+.vscode/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.user
+*.suo
+*.pdb
+*.cache
+*.log
+*.dbmdl
+*.stamp
+*.stamp.depend
+*.tlog
+*.list
 
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
@@ -31,7 +58,13 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+**/build/
+.packages
+.rule
+
+# Flutter auto-generated plugin registrant
+**/GeneratedPluginRegistrant.*
+**/generated_plugin_registrant.*
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +76,4 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+frontend/macos/Flutter/GeneratedPluginRegistrant.swift
