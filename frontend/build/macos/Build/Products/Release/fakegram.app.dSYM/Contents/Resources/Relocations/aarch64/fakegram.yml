@@ -1,0 +1,21 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Products/Release/fakegram.app/Contents/MacOS/fakegram'
+relocations:
+  - { offset: 0xCD2C5, size: 0x8, addend: 0x0, symName: '_$s8fakegram17MainFlutterWindowC12awakeFromNibyyF', symObjAddr: 0x0, symBinAddr: 0x100001430, symSize: 0x1B8 }
+  - { offset: 0xCD423, size: 0x8, addend: 0x0, symName: '_$s8fakegram17MainFlutterWindowCMa', symObjAddr: 0x29C, symBinAddr: 0x1000016CC, symSize: 0x20 }
+  - { offset: 0xCD474, size: 0x8, addend: 0x0, symName: '_$s8fakegram17MainFlutterWindowC12awakeFromNibyyF', symObjAddr: 0x0, symBinAddr: 0x100001430, symSize: 0x1B8 }
+  - { offset: 0xCD53A, size: 0x8, addend: 0x0, symName: '_$s8fakegram17MainFlutterWindowC12awakeFromNibyyFTo', symObjAddr: 0x1B8, symBinAddr: 0x1000015E8, symSize: 0x28 }
+  - { offset: 0xCD638, size: 0x8, addend: 0x0, symName: '_$s8fakegram17MainFlutterWindowC11contentRect9styleMask7backing5deferACSo6CGRectV_So013NSWindowStyleH0VSo18NSBackingStoreTypeVSbtcfcTo', symObjAddr: 0x1E0, symBinAddr: 0x100001610, symSize: 0x8C }
+  - { offset: 0xCD685, size: 0x8, addend: 0x0, symName: '_$s8fakegram17MainFlutterWindowCfD', symObjAddr: 0x26C, symBinAddr: 0x10000169C, symSize: 0x30 }
+  - { offset: 0xCD7FE, size: 0x8, addend: 0x0, symName: '_$s8fakegram11AppDelegateC47applicationShouldTerminateAfterLastWindowClosedySbSo13NSApplicationCFTo', symObjAddr: 0x0, symBinAddr: 0x1000016EC, symSize: 0x8 }
+  - { offset: 0xCD8C4, size: 0x8, addend: 0x0, symName: '_$s8fakegram11AppDelegateCMa', symObjAddr: 0xA4, symBinAddr: 0x100001790, symSize: 0x20 }
+  - { offset: 0xCD912, size: 0x8, addend: 0x0, symName: '_$s8fakegram11AppDelegateC47applicationShouldTerminateAfterLastWindowClosedySbSo13NSApplicationCFTo', symObjAddr: 0x0, symBinAddr: 0x1000016EC, symSize: 0x8 }
+  - { offset: 0xCD926, size: 0x8, addend: 0x0, symName: '_$s8fakegram11AppDelegateC40applicationSupportsSecureRestorableStateySbSo13NSApplicationCFTo', symObjAddr: 0x8, symBinAddr: 0x1000016F4, symSize: 0x8 }
+  - { offset: 0xCD953, size: 0x8, addend: 0x0, symName: '_$s8fakegram11AppDelegateCACycfcTo', symObjAddr: 0x10, symBinAddr: 0x1000016FC, symSize: 0x3C }
+  - { offset: 0xCD98F, size: 0x8, addend: 0x0, symName: '_$s8fakegram11AppDelegateCfD', symObjAddr: 0x4C, symBinAddr: 0x100001738, symSize: 0x30 }
+  - { offset: 0xCD9F9, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x7C, symBinAddr: 0x100001768, symSize: 0x28 }
+  - { offset: 0xCDB71, size: 0x8, addend: 0x0, symName: '_$s8fakegram19ResourceBundleClass33_3ACE9C638F8936DD99F30E598F5CF43ELLCfD', symObjAddr: 0x0, symBinAddr: 0x1000017B0, symSize: 0x10 }
+  - { offset: 0xCDBB3, size: 0x8, addend: 0x0, symName: '_$s8fakegram19ResourceBundleClass33_3ACE9C638F8936DD99F30E598F5CF43ELLCMa', symObjAddr: 0x10, symBinAddr: 0x1000017C0, symSize: 0x20 }
+  - { offset: 0xCDBCF, size: 0x8, addend: 0x0, symName: '_$s8fakegram19ResourceBundleClass33_3ACE9C638F8936DD99F30E598F5CF43ELLCfD', symObjAddr: 0x0, symBinAddr: 0x1000017B0, symSize: 0x10 }
+...

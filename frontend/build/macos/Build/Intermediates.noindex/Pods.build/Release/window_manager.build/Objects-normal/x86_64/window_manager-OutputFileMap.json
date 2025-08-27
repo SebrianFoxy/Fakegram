@@ -1,0 +1,20 @@
+{
+  "" : {
+    "const-values" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/window_manager-master.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/window_manager-master.d",
+    "diagnostics" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/window_manager-master.dia",
+    "emit-module-dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/window_manager-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/window_manager-master-emit-module.dia",
+    "swift-dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/window_manager-master.swiftdeps"
+  },
+  "/Users/bogdan/.pub-cache/hosted/pub.dev/window_manager-0.5.1/macos/window_manager/Sources/window_manager/WindowManager.swift" : {
+    "index-unit-output-path" : "/Pods.build/Release/window_manager.build/Objects-normal/x86_64/WindowManager.o",
+    "llvm-bc" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/WindowManager.bc",
+    "object" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/WindowManager.o"
+  },
+  "/Users/bogdan/.pub-cache/hosted/pub.dev/window_manager-0.5.1/macos/window_manager/Sources/window_manager/WindowManagerPlugin.swift" : {
+    "index-unit-output-path" : "/Pods.build/Release/window_manager.build/Objects-normal/x86_64/WindowManagerPlugin.o",
+    "llvm-bc" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/WindowManagerPlugin.bc",
+    "object" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Release/window_manager.build/Objects-normal/x86_64/WindowManagerPlugin.o"
+  }
+}

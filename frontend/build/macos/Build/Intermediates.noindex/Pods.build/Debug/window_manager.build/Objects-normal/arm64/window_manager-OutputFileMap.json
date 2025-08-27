@@ -1,0 +1,28 @@
+{
+  "" : {
+    "diagnostics" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/window_manager-master.dia",
+    "emit-module-dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/window_manager-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/window_manager-master-emit-module.dia",
+    "swift-dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/window_manager-master.swiftdeps"
+  },
+  "/Users/bogdan/.pub-cache/hosted/pub.dev/window_manager-0.5.1/macos/window_manager/Sources/window_manager/WindowManager.swift" : {
+    "const-values" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.d",
+    "diagnostics" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.o",
+    "llvm-bc" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.bc",
+    "object" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.o",
+    "swift-dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager.swiftdeps",
+    "swiftmodule" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManager~partial.swiftmodule"
+  },
+  "/Users/bogdan/.pub-cache/hosted/pub.dev/window_manager-0.5.1/macos/window_manager/Sources/window_manager/WindowManagerPlugin.swift" : {
+    "const-values" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.swiftconstvalues",
+    "dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.d",
+    "diagnostics" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.o",
+    "llvm-bc" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.bc",
+    "object" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.o",
+    "swift-dependencies" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin.swiftdeps",
+    "swiftmodule" : "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Pods.build/Debug/window_manager.build/Objects-normal/arm64/WindowManagerPlugin~partial.swiftmodule"
+  }
+}

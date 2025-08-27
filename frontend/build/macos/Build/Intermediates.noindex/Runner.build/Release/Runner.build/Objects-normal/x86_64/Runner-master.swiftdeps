@@ -1,0 +1,10 @@
+version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
+options: "4a27364e2624855deb6e40c18936d4af6f3dfeead08758cb1908725035049fa5"
+build_start_time: [1756133016, 365438000]
+build_end_time: [1756133023, 293064000]
+inputs:
+  ? "/Users/bogdan/StudioProjects/fakegram/frontend/build/macos/Build/Intermediates.noindex/Runner.build/Release/Runner.build/DerivedSources/GeneratedAssetSymbols.swift"
+  : [1756133016, 319091082]
+  "/Users/bogdan/StudioProjects/fakegram/frontend/macos/Flutter/GeneratedPluginRegistrant.swift": [1756132984, 475265907]
+  "/Users/bogdan/StudioProjects/fakegram/frontend/macos/Runner/AppDelegate.swift": [1738177789, 838425673]
+  "/Users/bogdan/StudioProjects/fakegram/frontend/macos/Runner/MainFlutterWindow.swift": [1702453904, 0]
