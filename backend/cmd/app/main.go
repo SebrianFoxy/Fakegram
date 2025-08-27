@@ -3,13 +3,14 @@ package main
 import (
 	"log"
 
+	_ "fakegram-api/docs"
+	"fakegram-api/internal/config"
+	"fakegram-api/internal/database"
+	"fakegram-api/internal/handlers"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
-	"fakegram-api/internal/handlers"
-	"fakegram-api/internal/database"
-	"fakegram-api/internal/config"
-	_ "fakegram-api/docs"
 )
 
 // @title fakegram API
