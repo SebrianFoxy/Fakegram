@@ -50,7 +50,7 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 func CreateTableUsers(db *sql.DB) error {
     query := `
     CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
 		password VARCHAR(255) NOT NULL,
@@ -64,6 +64,6 @@ func CreateTableUsers(db *sql.DB) error {
         return err
     }
 
-    log.Println("Tables created successfully!")
+    log.Println("Users table created successfully!")
     return nil
 }
