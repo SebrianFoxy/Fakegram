@@ -50,6 +50,10 @@ func main() {
 		log.Fatalf("Failed to create users table: %v", err)
 	}
 	
+	err = database.CreateTableMessages(db)
+	if err != nil {
+		log.Fatalf("Failed to create messages table: %v", err)
+	}
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

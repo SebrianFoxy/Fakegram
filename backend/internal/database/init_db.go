@@ -67,3 +67,22 @@ func CreateTableUsers(db *sql.DB) error {
     log.Println("Users table created successfully!")
     return nil
 }
+
+func CreateTableMessages(db *sql.DB) error {
+    query := `
+    CREATE TABLE IF NOT EXISTS messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sender_id UUID REFERENCES users(id),
+        receiver_id UUID REFERENCES users(id),
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        is_deleted BOOLEAN DEFAULT FALSE
+    )`
+    _, err := db.Exec(query)
+    if err != nil {
+        return err
+    }
+
+    log.Println("Messages table created successfully!")
+    return nil
+}
