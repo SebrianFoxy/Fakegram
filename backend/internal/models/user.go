@@ -1,11 +1,11 @@
 package models
 
 import (
-    "time"
+	"time"
 )
 
 type User struct {
-    ID        int       `json:"id"`
+    ID        string    `json:"id"`
     Name      string    `json:"name" validate:"required"`
     Email     string    `json:"email" validate:"required,email"`
     Password  string    `json:"password" validate:"required"`
