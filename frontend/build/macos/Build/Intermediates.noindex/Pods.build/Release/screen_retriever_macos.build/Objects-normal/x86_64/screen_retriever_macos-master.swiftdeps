@@ -1,6 +1,0 @@
-version: "Apple Swift version 6.1.2 (swiftlang-6.1.2.1.2 clang-1700.0.13.5)"
-options: "d8f3fcc1852db404b51770f57675870c2c3a268b07d4afac1960867ea0ded1b8"
-build_start_time: [1756132990, 253738000]
-build_end_time: [1756132997, 628517000]
-inputs:
-  "/Users/bogdan/.pub-cache/hosted/pub.dev/screen_retriever_macos-0.2.0/macos/Classes/ScreenRetrieverMacosPlugin.swift": [1756044681, 418533118]
