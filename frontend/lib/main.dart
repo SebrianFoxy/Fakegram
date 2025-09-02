@@ -1,12 +1,10 @@
-import 'dart:io';
+import 'package:fakegram/presenter/messages/page/profile.dart';
 
 import 'presenter/messages/page/messages.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
-
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +21,9 @@ Future<void> main() async {
     await windowManager.focus();
   });
 
-  runApp(ProviderScope(child: Fakegram(),));
+  runApp(ProviderScope(
+    child: Fakegram(),
+  ));
 }
 
 enum AppRoute {
@@ -39,6 +39,20 @@ final GoRouter _router = GoRouter(
       pageBuilder: (context, state) => CustomTransitionPage<void>(
         key: state.pageKey,
         child: const MessagesPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    ),
+    GoRoute(
+      path: '/profile',
+      name: 'profile',
+      pageBuilder: (context, state) => CustomTransitionPage<void>(
+        key: state.pageKey,
+        child: const ProfilePage(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: animation,
@@ -66,4 +80,3 @@ class _FakegramState extends State<Fakegram> {
     );
   }
 }
-
