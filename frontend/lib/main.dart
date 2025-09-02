@@ -1,5 +1,4 @@
-import 'package:fakegram/presenter/messages/page/profile.dart';
-
+import 'package:fakegram/presenter/profile/page/profile.dart';
 import 'presenter/messages/page/messages.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
