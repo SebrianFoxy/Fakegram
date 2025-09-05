@@ -5,8 +5,8 @@ import (
 
 	"fakegram-api/internal/config"
 	"fakegram-api/internal/database"
-	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/handlers"
+	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/routes"
 
 	"github.com/labstack/echo/v4"
@@ -60,8 +60,9 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 
 	userHandler := handlers.NewUserHandler(userRepo)
+	authHandler := handlers.NewAuthHandler(userRepo)
 
-	appRoutes := routes.NewRoutes(userHandler)
+	appRoutes := routes.NewRoutes(userHandler, authHandler)
 	appRoutes.Setup(e)
 
 	log.Println("Registered routes:")

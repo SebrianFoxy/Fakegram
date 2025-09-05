@@ -9,11 +9,12 @@ import (
 
 type Routes struct {
     userHandler *handlers.UserHandler
+	authHandler *handlers.AuthHandler
 }
 
-func NewRoutes(userHandler *handlers.UserHandler) *Routes {
+func NewRoutes(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler) *Routes {
     return &Routes{
-        userHandler: userHandler,
+        userHandler: userHandler, authHandler: authHandler,
     }
 }
 
@@ -21,6 +22,7 @@ func (r *Routes) Setup(e *echo.Echo) {
 	v1 := e.Group("/api/v1")
 	
 	r.setupUserRoutes(v1)
+	r.setupAuthRoutes(v1)
 }
 
 
@@ -30,4 +32,10 @@ func (r *Routes) setupUserRoutes(api *echo.Group) {
     users.GET("", r.userHandler.GetAllUsers)
 	users.POST("", r.userHandler.CreateUser)
 
+}
+
+func (r *Routes) setupAuthRoutes(api *echo.Group){
+	auth := api.Group("/auth")
+
+	auth.POST("/login", r.authHandler.LoginUser)
 }
