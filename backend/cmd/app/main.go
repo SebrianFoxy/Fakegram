@@ -3,14 +3,17 @@ package main
 import (
 	"log"
 
-	_ "fakegram-api/docs"
 	"fakegram-api/internal/config"
 	"fakegram-api/internal/database"
+	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/handlers"
+	"fakegram-api/internal/routes"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
+
+	_ "fakegram-api/docs"
 )
 
 // @title fakegram API
@@ -34,7 +37,6 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	e.GET("/", handlers.Home)
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	
 	cnf := config.LoadConfig()
@@ -55,5 +57,23 @@ func main() {
 		log.Fatalf("Failed to create messages table: %v", err)
 	}
 
-	e.Logger.Fatal(e.Start(":8080"))
+	userRepo := repositories.NewUserRepository(db)
+
+	userHandler := handlers.NewUserHandler(userRepo)
+
+	appRoutes := routes.NewRoutes(userHandler)
+	appRoutes.Setup(e)
+
+	log.Println("Registered routes:")
+	for _, route := range e.Routes() {
+		log.Printf("%s %s", route.Method, route.Path)
+	}
+
+	port := ":" + cnf.ServerPort
+	log.Printf("Server starting on http://localhost%s", port)
+	log.Printf("Swagger UI: http://localhost%s/swagger/index.html", port)
+	
+	if err := e.Start(port); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }

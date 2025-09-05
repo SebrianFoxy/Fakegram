@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({super.key});
@@ -44,6 +45,28 @@ class _MessagesPageState extends State<MessagesPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Чат'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: CircleAvatar(
+              backgroundImage: AssetImage('assets/default-avatar.png'),
+            ),
+            onSelected: (value) {
+              if (value == 'profile') {
+                context.push('/profile');
+              } else if (value == 'logout') {}
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'profile',
+                child: Text('Профиль'),
+              ),
+              PopupMenuItem(
+                value: 'logout',
+                child: Text('Выйти'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -74,7 +97,8 @@ class _MessagesPageState extends State<MessagesPage> {
                       ),
                       filled: true,
                       fillColor: Colors.grey.shade200,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                     ),
                     onSubmitted: (_) => _sendMessage(),
                     textInputAction: TextInputAction.send,
@@ -93,4 +117,3 @@ class _MessagesPageState extends State<MessagesPage> {
     );
   }
 }
-
