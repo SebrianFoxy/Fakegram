@@ -91,3 +91,28 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
 
     return users, totalCount, nil
 }
+
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error){
+    query := `
+        SELECT id, name, email, password, created_at, updated_at
+        FROM users
+        WHERE email = $1
+    `
+
+    var user models.User
+    err := r.DB.QueryRowContext(ctx, query, email).Scan(
+        &user.ID,
+        &user.Name,
+        &user.Email,
+        &user.Password,
+        &user.CreatedAt,
+        &user.UpdatedAt,
+    )
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, ErrNotFound
+        }
+        return nil, fmt.Errorf("failed to get user by email: %w", err)
+    }
+    return &user, nil
+}

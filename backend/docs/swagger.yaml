@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  models.CreateUserRequest:
+  fakegram-api_internal_models.CreateUserRequest:
     properties:
       email:
         type: string
@@ -14,7 +14,14 @@ definitions:
     - name
     - password
     type: object
-  models.UserResponse:
+  fakegram-api_internal_models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  fakegram-api_internal_models.UserResponse:
     properties:
       created_at:
         type: string
@@ -39,6 +46,48 @@ info:
   title: fakegram API
   version: "1.0"
 paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Проверяет email и пароль
+      parameters:
+      - description: Данные для авторизации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/fakegram-api_internal_models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешная авторизация
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный формат запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неверный email или пароль
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Авторизация пользователя
+      tags:
+      - auth
   /api/v1/users:
     get:
       consumes:
@@ -85,14 +134,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.CreateUserRequest'
+          $ref: '#/definitions/fakegram-api_internal_models.CreateUserRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Пользователь создан
           schema:
-            $ref: '#/definitions/models.UserResponse'
+            $ref: '#/definitions/fakegram-api_internal_models.UserResponse'
         "400":
           description: Неверный формат данных
           schema:
