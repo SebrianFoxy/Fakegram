@@ -9,6 +9,8 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var db *sql.DB
+
 func InitDB(cfg *config.Config) (*sql.DB, error) {
     adminConn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=disable",
         cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword)
@@ -44,6 +46,10 @@ func InitDB(cfg *config.Config) (*sql.DB, error) {
 
     log.Println("Successfully connected to PostgreSQL!")
     return db, nil
+}
+
+func GetDB() *sql.DB{
+    return db
 }
 
 
