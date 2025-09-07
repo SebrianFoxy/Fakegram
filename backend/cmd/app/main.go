@@ -57,10 +57,16 @@ func main() {
 		log.Fatalf("Failed to create messages table: %v", err)
 	}
 
+	err = database.CreateTableTokens(db)
+	if err != nil {
+		log.Fatalf("Failed to create tokens table: %v", err)
+	}
+
 	userRepo := repositories.NewUserRepository(db)
+	tokenRepo := repositories.NewTokenRepository(db)
 
 	userHandler := handlers.NewUserHandler(userRepo)
-	authHandler := handlers.NewAuthHandler(userRepo)
+	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, []byte(cnf.JWTSecret))
 
 	appRoutes := routes.NewRoutes(userHandler, authHandler)
 	appRoutes.Setup(e)

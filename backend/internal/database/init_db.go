@@ -92,3 +92,24 @@ func CreateTableMessages(db *sql.DB) error {
     log.Println("Messages table created successfully!")
     return nil
 }
+
+func CreateTableTokens(db *sql.DB) error {
+    query := `
+    CREATE TABLE IF NOT EXISTS login_tokens (
+        id UUID PRIMARY KEY,
+        token TEXT NOT NULL,
+        refresh_token TEXT NOT NULL,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMP NOT NULL,
+        expired_at TIMESTAMP NOT NULL,
+        refresh_token_expired_at TIMESTAMP NOT NULL
+    )`
+
+    _, err := db.Exec(query)
+    if err != nil {
+        return err
+    }
+
+    log.Println("Tokens table created successfully!")
+    return nil
+}
