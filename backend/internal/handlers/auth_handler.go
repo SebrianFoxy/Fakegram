@@ -3,17 +3,27 @@ package handlers
 import (
 	"fakegram-api/internal/models"
 	"fakegram-api/internal/repositories"
+	"log"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
 	userRepo *repositories.UserRepository
+	tokenRepo *repositories.TokenRepository
+	jwtKey []byte
 }
 
-func NewAuthHandler(userRepo *repositories.UserRepository) *AuthHandler {
-	return &AuthHandler{userRepo: userRepo}
+func NewAuthHandler(userRepo *repositories.UserRepository, tokenRepo *repositories.TokenRepository, jwtKey []byte) *AuthHandler {
+	return &AuthHandler{
+		userRepo:	 userRepo,
+		tokenRepo:	 tokenRepo,
+		jwtKey:		 jwtKey,
+	}
 }
 
 // LoginUser проверяет email и пароль
@@ -44,5 +54,35 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"message": "Login successful"})
+	expiration := time.Now().Add(15 * time.Minute)
+	claims := jwt.MapClaims{
+		"user_id": 	user.ID,
+		"exp":		expiration.Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims);
+	jwtToken, err := token.SignedString(h.jwtKey)
+	if err != nil {
+		log.Println("JWT generation error:", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
+	}
+
+	refreshToken := uuid.New().String()
+	refreshExpiration := time.Now().Add(7 * 24 * time.Hour)
+
+	loginToken := &models.LoginToken{
+		ID:						uuid.New().String(),
+		Token:					jwtToken,
+		RefreshToken:			refreshToken,
+		UserID:					user.ID,
+		CreatedAt: 				time.Now(),
+		ExpiredAt:				expiration,
+		RefreshTokenExpiredAt: 	refreshExpiration,
+	}
+
+	if err := h.tokenRepo.CreateToken(ctx, loginToken); err != nil {
+		log.Println("JWT save error:", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save token"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"token": jwtToken, "refresh_token": refreshToken})
 }

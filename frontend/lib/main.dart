@@ -1,8 +1,11 @@
+import 'dart:developer';
+
+import 'package:fakegram/presenter/auth/page/auth.dart';
+import 'package:fakegram/presenter/messages/page/messages.dart';
 import 'package:fakegram/presenter/profile/page/profile.dart';
-import 'presenter/messages/page/messages.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:window_manager/window_manager.dart';
 
 Future<void> main() async {
@@ -29,53 +32,36 @@ enum AppRoute {
   messages,
 }
 
-final GoRouter _router = GoRouter(
-  initialLocation: '/messages',
-  routes: <RouteBase>[
-    GoRoute(
-      path: '/messages',
-      name: AppRoute.messages.name,
-      pageBuilder: (context, state) => CustomTransitionPage<void>(
-        key: state.pageKey,
-        child: const MessagesPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-      ),
-    ),
-    GoRoute(
-      path: '/profile',
-      name: 'profile',
-      pageBuilder: (context, state) => CustomTransitionPage<void>(
-        key: state.pageKey,
-        child: const ProfilePage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-      ),
-    ),
-  ],
-);
-
-class Fakegram extends StatefulWidget {
+class Fakegram extends ConsumerWidget {
   const Fakegram({super.key});
 
   @override
-  State<Fakegram> createState() => _FakegramState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final token = ref.watch(authProvider);
 
-class _FakegramState extends State<Fakegram> {
-  @override
-  Widget build(BuildContext context) {
+    final router = GoRouter(
+      initialLocation: '/messages',
+      redirect: (context, state) {
+        final loggingIn = state.uri.path == '/auth';
+        log('[redirect] token=$token, loggingIn=$loggingIn, location=${state.uri.path}');
+
+        if (token == null && !loggingIn) return '/auth';
+        if (token != null && loggingIn) return '/messages';
+        return null;
+      },
+      routes: [
+        GoRoute(path: '/auth', builder: (context, state) => const AuthPage()),
+        GoRoute(
+            path: '/messages',
+            builder: (context, state) => const MessagesPage()),
+        GoRoute(
+            path: '/profile', builder: (context, state) => const ProfilePage()),
+      ],
+    );
+
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      routerConfig: _router,
+      routerConfig: router,
     );
   }
 }

@@ -1,10 +1,10 @@
 package config
 
 import (
-    "os"
-    "log"
+	"log"
+	"os"
 
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -14,6 +14,7 @@ type Config struct {
     DBPassword string
     DBName     string
     ServerPort string
+    JWTSecret  string
 }
 
 func LoadConfig() *Config {
@@ -31,6 +32,7 @@ func LoadConfig() *Config {
         DBPassword: getEnv("DB_PASSWORD", "password"),
         DBName:     getEnv("DB_NAME", "mydb"),
         ServerPort: getEnv("SERVER_PORT", "8080"),
+        JWTSecret:  getEnv("JWT_SECRET", "dev_secret_1234567890abcdef1234567890"),
     }
 
     log.Printf("Config loaded: DB_HOST=%s, DB_NAME=%s, DB_USER=%s", 
