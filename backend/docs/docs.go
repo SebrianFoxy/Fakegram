@@ -9,15 +9,7 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
-        },
-        "license": {
-            "name": "Apache 2.0",
-            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -43,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/fakegram-api_internal_models.LoginRequest"
+                            "$ref": "#/definitions/models.LoginRequest"
                         }
                     }
                 ],
@@ -87,8 +79,188 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth/refresh": {
+            "post": {
+                "description": "Обновляет access токен или оба токена с помощью refresh токена",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Обновление токенов",
+                "parameters": [
+                    {
+                        "description": "Данные для обновления токенов",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.RefreshRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное обновление токенов",
+                        "schema": {
+                            "$ref": "#/definitions/models.TokenResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Невалидный или просроченный refresh token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает информацию о пользователе на основе JWT токена",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Получить текущего пользователя",
+                "responses": {
+                    "200": {
+                        "description": "Информация о пользователе",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Регистрирует нового пользователя в системе",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Создать пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Пользователь создан",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат данных",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Email уже существует",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/all_users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает список пользователей с поддержкой пагинации",
                 "consumes": [
                     "application/json"
@@ -137,70 +309,11 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "Регистрирует нового пользователя в системе",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Создать пользователя",
-                "parameters": [
-                    {
-                        "description": "Данные пользователя",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/fakegram-api_internal_models.CreateUserRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Пользователь создан",
-                        "schema": {
-                            "$ref": "#/definitions/fakegram-api_internal_models.UserResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат данных",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Email уже существует",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
             }
         }
     },
     "definitions": {
-        "fakegram-api_internal_models.CreateUserRequest": {
+        "models.CreateUserRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -220,7 +333,7 @@ const docTemplate = `{
                 }
             }
         },
-        "fakegram-api_internal_models.LoginRequest": {
+        "models.LoginRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -231,7 +344,38 @@ const docTemplate = `{
                 }
             }
         },
-        "fakegram-api_internal_models.UserResponse": {
+        "models.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_rotate": {
+                    "type": "boolean"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.TokenResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -251,17 +395,25 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "fakegram API",
-	Description:      "",
+	Title:            "Fakegram API",
+	Description:      "API с JWT авторизацией",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

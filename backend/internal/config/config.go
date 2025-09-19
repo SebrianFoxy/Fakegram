@@ -4,7 +4,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
+    echojwt "github.com/labstack/echo-jwt/v4" 
 )
 
 type Config struct {
@@ -26,13 +29,13 @@ func LoadConfig() *Config {
     }
 
     config := &Config{
-        DBHost:     getEnv("DB_HOST", "localhost"),
-        DBPort:     getEnv("DB_PORT", "5432"),
-        DBUser:     getEnv("DB_USER", "postgres"),
-        DBPassword: getEnv("DB_PASSWORD", "password"),
-        DBName:     getEnv("DB_NAME", "mydb"),
+        DBHost:     getEnv("DB_HOST", ""),
+        DBPort:     getEnv("DB_PORT", ""),
+        DBUser:     getEnv("DB_USER", ""),
+        DBPassword: getEnv("DB_PASSWORD", ""),
+        DBName:     getEnv("DB_NAME", ""),
         ServerPort: getEnv("SERVER_PORT", "8080"),
-        JWTSecret:  getEnv("JWT_SECRET", "dev_secret_1234567890abcdef1234567890"),
+        JWTSecret:  getEnv("JWT_SECRET", ""),
     }
 
     log.Printf("Config loaded: DB_HOST=%s, DB_NAME=%s, DB_USER=%s", 
@@ -46,4 +49,28 @@ func getEnv(key, defaultValue string) string {
         return value
     }
     return defaultValue
+}
+
+func (c *Config) GetJWTConfig() echojwt.Config {
+    return echojwt.Config{
+        SigningKey: []byte(c.JWTSecret),
+        TokenLookup: "header:Authorization:Bearer ",
+        NewClaimsFunc: func(c echo.Context) jwt.Claims {
+            return &jwt.RegisteredClaims{}
+        },
+        SuccessHandler: func(c echo.Context) {
+            token := c.Get("user").(*jwt.Token)
+            claims := token.Claims.(*jwt.RegisteredClaims)
+            c.Set("userID", claims.Subject)
+        },
+        ErrorHandler: func(c echo.Context, err error) error {
+            return c.JSON(401, map[string]string{
+                "error": "Invalid or expired token",
+            })
+        },
+    }
+}
+
+func (c *Config) CreateJWTMiddleware() echo.MiddlewareFunc {
+    return echojwt.WithConfig(c.GetJWTConfig())
 }

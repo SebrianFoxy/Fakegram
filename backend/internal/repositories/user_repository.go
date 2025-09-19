@@ -116,3 +116,19 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
     }
     return &user, nil
 }
+
+func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+    var user models.User
+    err := r.DB.QueryRowContext(ctx, 
+        "SELECT id, name, email, created_at, updated_at FROM users WHERE id = $1", id).
+        Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+    
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, ErrNotFound
+        }
+        return nil, err
+    }
+    
+    return &user, nil
+}

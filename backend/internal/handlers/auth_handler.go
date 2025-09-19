@@ -3,26 +3,29 @@ package handlers
 import (
 	"fakegram-api/internal/models"
 	"fakegram-api/internal/repositories"
+	"fakegram-api/internal/services"
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthHandler struct {
 	userRepo *repositories.UserRepository
 	tokenRepo *repositories.TokenRepository
-	jwtKey []byte
+	tokenService *services.TokenService
 }
 
-func NewAuthHandler(userRepo *repositories.UserRepository, tokenRepo *repositories.TokenRepository, jwtKey []byte) *AuthHandler {
+func NewAuthHandler(
+	userRepo *repositories.UserRepository, 
+	tokenRepo *repositories.TokenRepository, 
+	tokenService *services.TokenService,
+	) *AuthHandler {
 	return &AuthHandler{
 		userRepo:	 userRepo,
 		tokenRepo:	 tokenRepo,
-		jwtKey:		 jwtKey,
+		tokenService: tokenService,
 	}
 }
 
@@ -54,35 +57,86 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 	}
 
-	expiration := time.Now().Add(15 * time.Minute)
-	claims := jwt.MapClaims{
-		"user_id": 	user.ID,
-		"exp":		expiration.Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims);
-	jwtToken, err := token.SignedString(h.jwtKey)
+	loginToken, err := h.tokenService.GenerateTokens(user.ID)
 	if err != nil {
-		log.Println("JWT generation error:", err)
+		log.Println("Token generation error:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
-	}
-
-	refreshToken := uuid.New().String()
-	refreshExpiration := time.Now().Add(7 * 24 * time.Hour)
-
-	loginToken := &models.LoginToken{
-		ID:						uuid.New().String(),
-		Token:					jwtToken,
-		RefreshToken:			refreshToken,
-		UserID:					user.ID,
-		CreatedAt: 				time.Now(),
-		ExpiredAt:				expiration,
-		RefreshTokenExpiredAt: 	refreshExpiration,
 	}
 
 	if err := h.tokenRepo.CreateToken(ctx, loginToken); err != nil {
 		log.Println("JWT save error:", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to save token"})
+		return c.JSON(http.StatusInternalServerError, 
+			map[string]string{"error": "Failed to save token"})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"token": jwtToken, "refresh_token": refreshToken})
+	return c.JSON(http.StatusOK, h.tokenService.GetTokenResponse(loginToken))
+}
+
+// RefreshToken обновляет access токен с помощью refresh токена
+// @Summary		Обновление токенов
+// @Description	Обновляет access токен или оба токена с помощью refresh токена
+// @Tags		auth
+// @Accept		json
+// @Produce		json
+// @Param		request body models.RefreshRequest true "Данные для обновления токенов"
+// @Success		200 {object} models.TokenResponse "Успешное обновление токенов"
+// @Failure		400 {object} map[string]string "Неверный формат запроса"
+// @Failure		401 {object} map[string]string "Невалидный или просроченный refresh token"
+// @Failure 	500 {object} map[string]string "Ошибка сервера"
+// @Router		/api/v1/auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c echo.Context) error {
+	var req models.RefreshRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
+	}
+
+	ctx := c.Request().Context()
+
+	loginToken, err := h.tokenRepo.GetByRefreshToken(ctx, req.RefreshToken)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid refresh token"})
+	}
+
+	if time.Now().After(loginToken.RefreshTokenExpiredAt) {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Refresh token expired"})
+	}
+	
+	_, err = h.userRepo.GetUserByID(ctx, loginToken.UserID)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User not found"})
+	}
+
+	var updatedToken *models.LoginToken
+
+	if req.RefreshRotate {
+		updatedToken, err = h.tokenService.GenerateTokens(loginToken.UserID)
+		if err != nil {
+			log.Println("Token generation error:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate tokens"})
+		}
+	} else {
+		updatedToken, err = h.tokenService.RefreshTokens(loginToken, req.RefreshRotate)
+		if err != nil {
+			log.Println("Token generation error:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
+		}
+	}
+
+	if req.RefreshRotate {
+		if err := h.tokenRepo.CreateToken(ctx, updatedToken); err != nil {
+			log.Println("Token create error:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create token"})
+		}
+		
+		// if err := h.tokenRepo.DeleteByID(ctx, loginToken.ID); err != nil {
+		// 	log.Println("Warning: failed to delete old token:", err)
+		// }
+	} else {
+		if err := h.tokenRepo.UpdateToken(ctx, updatedToken); err != nil {
+			log.Println("Token update error:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update token"})
+		}
+	}
+
+	return c.JSON(http.StatusOK, h.tokenService.GetTokenResponse(updatedToken))
 }
