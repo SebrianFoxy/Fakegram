@@ -10,11 +10,18 @@ import (
 type Routes struct {
     userHandler *handlers.UserHandler
 	authHandler *handlers.AuthHandler
+	jwtMiddleware echo.MiddlewareFunc
 }
 
-func NewRoutes(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler) *Routes {
+func NewRoutes(
+	userHandler *handlers.UserHandler, 
+	authHandler *handlers.AuthHandler,
+	jwtMiddleware echo.MiddlewareFunc,
+	) *Routes {
     return &Routes{
-        userHandler: userHandler, authHandler: authHandler,
+        userHandler: userHandler, 
+		authHandler: authHandler,
+		jwtMiddleware: jwtMiddleware,
     }
 }
 
@@ -29,8 +36,10 @@ func (r *Routes) Setup(e *echo.Echo) {
 func (r *Routes) setupUserRoutes(api *echo.Group) {
     users := api.Group("/users")
     
-    users.GET("", r.userHandler.GetAllUsers)
 	users.POST("", r.userHandler.CreateUser)
+
+    users.GET("/all_users", r.userHandler.GetAllUsers, r.jwtMiddleware)
+	users.GET("", r.userHandler.GetUser, r.jwtMiddleware)
 
 }
 
@@ -38,4 +47,5 @@ func (r *Routes) setupAuthRoutes(api *echo.Group){
 	auth := api.Group("/auth")
 
 	auth.POST("/login", r.authHandler.LoginUser)
+	auth.POST("/refresh", r.authHandler.RefreshToken)
 }

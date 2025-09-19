@@ -21,7 +21,7 @@ type CreateUserRequest struct {
 }
 
 type UserResponse struct {
-    ID        string       `json:"id"`
+    ID        string    `json:"id"`
     Name      string    `json:"name"`
     Email     string    `json:"email"`
     CreatedAt time.Time `json:"created_at"`
@@ -45,6 +45,7 @@ type UserService interface {
     GetAllUsers() ([]*User, error)
     UpdateUser(id string, user *User) error
     DeleteUser(id string) error
+    // GetUserByID(id string) (*User, error)
 }
 
 func (u *User) HashPassword() error {

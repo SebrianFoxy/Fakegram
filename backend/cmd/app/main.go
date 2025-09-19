@@ -8,6 +8,7 @@ import (
 	"fakegram-api/internal/handlers"
 	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/routes"
+	"fakegram-api/internal/services"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -16,19 +17,13 @@ import (
 	_ "fakegram-api/docs"
 )
 
-// @title fakegram API
+// @title Fakegram API
 // @version 1.0
-// @description
-
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
-
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host      localhost:8080
-// @BasePath  /
+// @description API с JWT авторизацией
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
 	e := echo.New()
@@ -65,16 +60,15 @@ func main() {
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(db)
 
+	jwtMiddleware := cnf.CreateJWTMiddleware()
+
+	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
+
 	userHandler := handlers.NewUserHandler(userRepo)
-	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, []byte(cnf.JWTSecret))
+	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService)
 
-	appRoutes := routes.NewRoutes(userHandler, authHandler)
+	appRoutes := routes.NewRoutes(userHandler, authHandler, jwtMiddleware)
 	appRoutes.Setup(e)
-
-	log.Println("Registered routes:")
-	for _, route := range e.Routes() {
-		log.Printf("%s %s", route.Method, route.Path)
-	}
 
 	port := ":" + cnf.ServerPort
 	log.Printf("Server starting on http://localhost%s", port)
