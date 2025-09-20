@@ -318,7 +318,8 @@ const docTemplate = `{
             "required": [
                 "email",
                 "name",
-                "password"
+                "password",
+                "surname"
             ],
             "properties": {
                 "email": {
@@ -330,6 +331,9 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 6
+                },
+                "surname": {
+                    "type": "string"
                 }
             }
         },
@@ -378,6 +382,9 @@ const docTemplate = `{
         "models.UserResponse": {
             "type": "object",
             "properties": {
+                "approved": {
+                    "type": "boolean"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -388,6 +395,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "surname": {
                     "type": "string"
                 },
                 "updated_at": {

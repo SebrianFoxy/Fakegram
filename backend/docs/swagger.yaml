@@ -8,10 +8,13 @@ definitions:
       password:
         minLength: 6
         type: string
+      surname:
+        type: string
     required:
     - email
     - name
     - password
+    - surname
     type: object
   models.LoginRequest:
     properties:
@@ -42,6 +45,8 @@ definitions:
     type: object
   models.UserResponse:
     properties:
+      approved:
+        type: boolean
       created_at:
         type: string
       email:
@@ -49,6 +54,8 @@ definitions:
       id:
         type: string
       name:
+        type: string
+      surname:
         type: string
       updated_at:
         type: string
