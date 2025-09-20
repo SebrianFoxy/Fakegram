@@ -310,7 +310,8 @@
             "required": [
                 "email",
                 "name",
-                "password"
+                "password",
+                "surname"
             ],
             "properties": {
                 "email": {
@@ -322,6 +323,9 @@
                 "password": {
                     "type": "string",
                     "minLength": 6
+                },
+                "surname": {
+                    "type": "string"
                 }
             }
         },
@@ -370,6 +374,9 @@
         "models.UserResponse": {
             "type": "object",
             "properties": {
+                "approved": {
+                    "type": "boolean"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -380,6 +387,9 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "surname": {
                     "type": "string"
                 },
                 "updated_at": {

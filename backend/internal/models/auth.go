@@ -37,3 +37,10 @@ type Claims struct {
 	UserID string `json:"user_id"`
 	jwt.RegisteredClaims
 }
+
+type RegistrationRequest struct {
+	Email		string `json:"email"`
+	Name		string `json:"name"`
+	Surname		string `json:"surname"`	
+	Password	string `json:"password"`
+}

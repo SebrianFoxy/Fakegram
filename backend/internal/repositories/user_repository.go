@@ -28,11 +28,18 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (h *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
     query := `
-        INSERT INTO users (name, email, password) 
-        VALUES ($1, $2, $3) 
+        INSERT INTO users (name, surname, email, password, approved) 
+        VALUES ($1, $2, $3, $4, $5) 
         RETURNING id, created_at, updated_at
     `
-    err := h.DB.QueryRowContext(ctx, query, user.Name, user.Email, user.Password).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+    err := h.DB.QueryRowContext(
+        ctx, query, 
+        user.Name, 
+        user.Surname,
+        user.Email, 
+        user.Password,
+        user.Approved,
+        ).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
     
     if err != nil {
         if pqErr, ok := err.(*pq.Error); ok {
@@ -57,7 +64,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
     offset := (page - 1) * limit
 
     query := `
-        SELECT id, name, email, created_at, updated_at 
+        SELECT id, name, surname, email, created_at, updated_at 
         FROM users 
         ORDER BY created_at DESC 
         LIMIT $1 OFFSET $2
@@ -74,7 +81,8 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
         var user models.User
         err := rows.Scan(
             &user.ID,
-            &user.Name, 
+            &user.Name,
+            &user.Surname,
             &user.Email,
             &user.CreatedAt,
             &user.UpdatedAt,
@@ -94,7 +102,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error){
     query := `
-        SELECT id, name, email, password, created_at, updated_at
+        SELECT id, name, surname, email, password, created_at, updated_at
         FROM users
         WHERE email = $1
     `
@@ -103,6 +111,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
     err := r.DB.QueryRowContext(ctx, query, email).Scan(
         &user.ID,
         &user.Name,
+        &user.Surname,
         &user.Email,
         &user.Password,
         &user.CreatedAt,

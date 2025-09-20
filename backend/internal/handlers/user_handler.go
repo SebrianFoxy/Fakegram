@@ -38,18 +38,14 @@ func (h *UserHandler) CreateUser(c echo.Context) error {
         return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
     }
 
-    user := models.User{
-        Name:     req.Name,
-        Email:    req.Email,
-        Password: req.Password,
-    }
+    user := models.NewUserFromRequest(&req)
 
     if err := user.HashPassword(); err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to process password"})
     }
 
     ctx := c.Request().Context()
-    if err := h.userRepo.CreateUser(ctx, &user); err != nil {
+    if err := h.userRepo.CreateUser(ctx, user); err != nil {
         if err == repositories.ErrEmailExists {
             return c.JSON(http.StatusConflict, map[string]string{"error": "Email already exists"})
         }
