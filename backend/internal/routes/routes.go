@@ -35,8 +35,6 @@ func (r *Routes) Setup(e *echo.Echo) {
 
 func (r *Routes) setupUserRoutes(api *echo.Group) {
     users := api.Group("/users")
-    
-	users.POST("", r.userHandler.CreateUser)
 
     users.GET("/all_users", r.userHandler.GetAllUsers, r.jwtMiddleware)
 	users.GET("", r.userHandler.GetUser, r.jwtMiddleware)
@@ -47,5 +45,7 @@ func (r *Routes) setupAuthRoutes(api *echo.Group){
 	auth := api.Group("/auth")
 
 	auth.POST("/login", r.authHandler.LoginUser)
+	auth.POST("/registration", r.authHandler.RegistrationUser)
 	auth.POST("/refresh", r.authHandler.RefreshToken)
+	auth.GET("/verify-email", r.authHandler.VerifyEmail)
 }

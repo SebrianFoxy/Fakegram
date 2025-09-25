@@ -102,7 +102,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error){
     query := `
-        SELECT id, name, surname, email, password, created_at, updated_at
+        SELECT id, name, surname, email, password, approved, created_at, updated_at
         FROM users
         WHERE email = $1
     `
@@ -114,6 +114,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
         &user.Surname,
         &user.Email,
         &user.Password,
+        &user.Approved,
         &user.CreatedAt,
         &user.UpdatedAt,
     )
@@ -129,8 +130,15 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
     var user models.User
     err := r.DB.QueryRowContext(ctx, 
-        "SELECT id, name, email, created_at, updated_at FROM users WHERE id = $1", id).
-        Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+        "SELECT id, name, email, approdev, created_at, updated_at FROM users WHERE id = $1", id).
+        Scan(
+            &user.ID, 
+            &user.Name, 
+            &user.Email, 
+            &user.Approved,
+            &user.CreatedAt, 
+            &user.UpdatedAt,
+        )
     
     if err != nil {
         if err == sql.ErrNoRows {
@@ -140,4 +148,24 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
     }
     
     return &user, nil
+}
+
+func (r *UserRepository) MarkEmailAsVerified(ctx context.Context, userID string) error {
+    query := `UPDATE users SET approved = true, updated_at = NOW() WHERE id = $1`
+    
+    result, err := r.DB.ExecContext(ctx, query, userID)
+    if err != nil {
+        return fmt.Errorf("failed to mark email as verified: %w", err)
+    }
+    
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("failed to get rows affected: %w", err)
+    }
+    
+    if rowsAffected == 0 {
+        return fmt.Errorf("user not found with id: %s", userID)
+    }
+    
+    return nil
 }
