@@ -11,13 +11,19 @@ import (
 )
 
 type Config struct {
-    DBHost     string
-    DBPort     string
-    DBUser     string
-    DBPassword string
-    DBName     string
-    ServerPort string
-    JWTSecret  string
+    DBHost        string
+    DBPort        string
+    DBUser        string
+    DBPassword    string
+    DBName        string
+    ServerPort    string
+    SMTPHost      string
+    SMTPPort      string
+    SMTPUsername  string
+    SMTPPassword  string
+    SMTPFromEmail string
+    JWTSecret     string
+    DomainHost    string
 }
 
 func LoadConfig() *Config {
@@ -29,13 +35,19 @@ func LoadConfig() *Config {
     }
 
     config := &Config{
-        DBHost:     getEnv("DB_HOST", ""),
-        DBPort:     getEnv("DB_PORT", ""),
-        DBUser:     getEnv("DB_USER", ""),
-        DBPassword: getEnv("DB_PASSWORD", ""),
-        DBName:     getEnv("DB_NAME", ""),
-        ServerPort: getEnv("SERVER_PORT", "8080"),
-        JWTSecret:  getEnv("JWT_SECRET", ""),
+        DBHost:        getEnv("DB_HOST", ""),
+        DBPort:        getEnv("DB_PORT", ""),
+        DBUser:        getEnv("DB_USER", ""),
+        DBPassword:    getEnv("DB_PASSWORD", ""),
+        DBName:        getEnv("DB_NAME", ""),
+        ServerPort:    getEnv("SERVER_PORT", "8080"),
+        JWTSecret:     getEnv("JWT_SECRET", ""),
+        SMTPHost:      getEnv("SMTP_HOST", "smtp.gmail.com"),
+        SMTPPort:      getEnv("SMTP_PORT", "587"),
+        SMTPUsername:  getEnv("SMTP_USERNAME", ""),
+        SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
+        SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
+        DomainHost:    getEnv("DOMAIN_HOST", "localhost:8080"),
     }
 
     log.Printf("Config loaded: DB_HOST=%s, DB_NAME=%s, DB_USER=%s", 

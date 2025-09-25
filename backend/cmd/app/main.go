@@ -63,9 +63,19 @@ func main() {
 	jwtMiddleware := cnf.CreateJWTMiddleware()
 
 	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
+	emailVerificationService := services.NewEmailVerificationService(
+		cnf.SMTPHost,
+		cnf.SMTPPort,
+		cnf.SMTPUsername,
+		cnf.SMTPPassword,
+		cnf.SMTPFromEmail,
+		cnf.DomainHost,
+		[]byte(cnf.JWTSecret),
+	)
+
 
 	userHandler := handlers.NewUserHandler(userRepo)
-	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService)
+	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService, emailVerificationService)
 
 	appRoutes := routes.NewRoutes(userHandler, authHandler, jwtMiddleware)
 	appRoutes.Setup(e)
