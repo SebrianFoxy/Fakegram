@@ -55,7 +55,8 @@ class Fakegram extends ConsumerWidget {
             path: '/messages',
             builder: (context, state) => const MessagesPage()),
         GoRoute(
-            path: '/profile', builder: (context, state) => const ProfilePage()),
+            path: '/profile',
+            builder: (context, state) => const ProfilePage()),
       ],
     );
 

@@ -1,6 +1,11 @@
 import 'dart:developer';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'auth_notifier.freezed.dart';
+part 'auth_notifier.g.dart';
+part 'auth_state.dart';
 
 class AuthNotifier extends StateNotifier<String?> {
   AuthNotifier() : super(null);
@@ -10,8 +15,4 @@ class AuthNotifier extends StateNotifier<String?> {
     state = token;
   }
 
-  void clearToken() {
-    log('[AuthNotifier] clearToken is called');
-    state = null;
-  }
 }
