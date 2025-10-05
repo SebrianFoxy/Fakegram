@@ -46,6 +46,13 @@ dependencies:
   riverpod_annotation: ^2.2.0
   freezed_annotation: ^3.1.0
   http: ^1.1.1
+  dio: ^5.9.0
+  retrofit: ^4.6.0
+  json_annotation: ^4.9.0
+  retrofit_generator: ^9.6.0
+  flutter_secure_storage: ^4.2.1
+  flutter_hot_toast: ^0.0.3
+  animated_snack_bar: ^0.4.0
 
 dev_dependencies:
   flutter_test:
