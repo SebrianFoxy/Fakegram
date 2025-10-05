@@ -60,6 +60,16 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 	}
 
+	if !user.Approved {
+		if err := h.emailVerificationService.SendVerificationEmail(user.Email, user.ID); err != nil {
+			log.Printf("Failed to resend verification email to %s: %v", user.Email, err)
+		}
+		
+		return c.JSON(http.StatusForbidden, map[string]string{
+			"error": "Account not confirmed. Confirmation email has been resent.",
+		})
+	}
+
 	loginToken, err := h.tokenService.GenerateTokens(user.ID)
 	if err != nil {
 		log.Println("Token generation error:", err)
@@ -72,7 +82,12 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 			map[string]string{"error": "Failed to save token"})
 	}
 
-	return c.JSON(http.StatusOK, h.tokenService.GetTokenResponse(loginToken))
+	response := map[string]interface{}{
+		"token":   h.tokenService.GetTokenResponse(loginToken),
+		"user": user.ToResponse(),
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 // RegistrationUser Регистрация нового пользователя

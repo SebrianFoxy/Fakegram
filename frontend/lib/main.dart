@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'presenter/auth/page/login_page.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -28,29 +30,25 @@ Future<void> main() async {
   ));
 }
 
-enum AppRoute {
-  messages,
-}
-
 class Fakegram extends ConsumerWidget {
   const Fakegram({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final token = ref.watch(authProvider);
+    final token = null;
 
     final router = GoRouter(
-      initialLocation: '/messages',
+      initialLocation: '/login',
       redirect: (context, state) {
-        final loggingIn = state.uri.path == '/auth';
+        final loggingIn = state.uri.path == '/login';
         log('[redirect] token=$token, loggingIn=$loggingIn, location=${state.uri.path}');
 
-        if (token == null && !loggingIn) return '/auth';
+        if (token == null && !loggingIn) return '/login';
         if (token != null && loggingIn) return '/messages';
         return null;
       },
       routes: [
-        GoRoute(path: '/auth', builder: (context, state) => const AuthPage()),
+        GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
         GoRoute(
             path: '/messages',
             builder: (context, state) => const MessagesPage()),
