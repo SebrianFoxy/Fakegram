@@ -45,6 +45,7 @@ type Claims struct {
 type RegistrationRequest struct {
     Name     string `json:"name" validate:"required"`
     Surname  string `json:"surname" validate:"required"`
+	Nickname string `json:"nickname" validate:"required"`
     Email    string `json:"email" validate:"required,email"`
     Password string `json:"password" validate:"required,min=6"`
 }
@@ -53,6 +54,7 @@ func NewUserFromRequest(req *RegistrationRequest) *User {
     user := &User{
 		Name:      strings.TrimSpace(req.Name),
 		Surname:   strings.TrimSpace(req.Surname),
+		Nickname:  strings.TrimSpace(req.Nickname),
 		Email:     req.Email,
 		Password:  req.Password,
 		Approved:  false,
@@ -91,4 +93,14 @@ func (u *User) IsEmailValid() bool {
 	
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	return emailRegex.MatchString(email)
+}
+
+func NormalizeNickname(nickname string) string {
+    return strings.ToLower(strings.TrimSpace(nickname))
+}
+
+func (u *User) CheckNickname(nickname string) bool {
+	print("\nNICKNAME ", nickname,)
+	print("\nU.NICKNAME ", u.Nickname, "\n")
+    return NormalizeNickname(nickname) == NormalizeNickname(u.Nickname)
 }

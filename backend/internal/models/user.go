@@ -8,6 +8,7 @@ type User struct {
     ID        string    `json:"id"`
     Name      string    `json:"name" validate:"required"`
     Surname   string    `json:"surname" validate:"required"`
+    Nickname  string    `json:"nickname" validate:"required"`
     Email     string    `json:"email" validate:"required,email"`
     Password  string    `json:"password,omitempty" validate:"required"`
     Approved  bool      `json:"approved"`
@@ -19,6 +20,7 @@ type UserResponse struct {
     ID        string    `json:"id"`
     Name      string    `json:"name"`
     Surname   string    `json:"surname"`
+    Nickname  string    `json:"nickname"`
     Email     string    `json:"email"`
     Approved  bool      `json:"approved"`
     CreatedAt time.Time `json:"created_at"`
@@ -39,6 +41,7 @@ func (u *User) ToResponse() UserResponse {
         ID:        u.ID,
         Name:      u.Name,
         Surname:   u.Surname,
+        Nickname:  u.Nickname,
         Email:     u.Email,
         Approved:  u.Approved,
         CreatedAt: u.CreatedAt,

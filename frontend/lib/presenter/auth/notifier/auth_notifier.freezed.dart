@@ -38,12 +38,76 @@ class $AuthStateCopyWith<$Res> {
 /// @nodoc
 
 class AuthStateInitial extends AuthState {
-  const AuthStateInitial() : super._();
+  const AuthStateInitial({this.error}) : super._();
+
+  final String? error;
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $AuthStateInitialCopyWith<AuthStateInitial> get copyWith =>
+      _$AuthStateInitialCopyWithImpl<AuthStateInitial>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is AuthStateInitial);
+        (other.runtimeType == runtimeType &&
+            other is AuthStateInitial &&
+            (identical(other.error, error) || other.error == error));
+  }
+
+  @override
+  int get hashCode => Object.hash(runtimeType, error);
+
+  @override
+  String toString() {
+    return 'AuthState.initial(error: $error)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $AuthStateInitialCopyWith<$Res>
+    implements $AuthStateCopyWith<$Res> {
+  factory $AuthStateInitialCopyWith(
+          AuthStateInitial value, $Res Function(AuthStateInitial) _then) =
+      _$AuthStateInitialCopyWithImpl;
+  @useResult
+  $Res call({String? error});
+}
+
+/// @nodoc
+class _$AuthStateInitialCopyWithImpl<$Res>
+    implements $AuthStateInitialCopyWith<$Res> {
+  _$AuthStateInitialCopyWithImpl(this._self, this._then);
+
+  final AuthStateInitial _self;
+  final $Res Function(AuthStateInitial) _then;
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? error = freezed,
+  }) {
+    return _then(AuthStateInitial(
+      error: freezed == error
+          ? _self.error
+          : error // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+
+class AuthStateAuthenticated extends AuthState {
+  const AuthStateAuthenticated() : super._();
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is AuthStateAuthenticated);
   }
 
   @override
@@ -51,88 +115,28 @@ class AuthStateInitial extends AuthState {
 
   @override
   String toString() {
-    return 'AuthState.initial()';
+    return 'AuthState.authenticated()';
   }
 }
 
 /// @nodoc
 
-class AuthStateAuthenticated extends AuthState {
-  const AuthStateAuthenticated({this.user}) : super._();
-
-  final UserDTO? user;
-
-  /// Create a copy of AuthState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @pragma('vm:prefer-inline')
-  $AuthStateAuthenticatedCopyWith<AuthStateAuthenticated> get copyWith =>
-      _$AuthStateAuthenticatedCopyWithImpl<AuthStateAuthenticated>(
-          this, _$identity);
+class AuthStateRegistrationSuccess extends AuthState {
+  const AuthStateRegistrationSuccess() : super._();
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is AuthStateAuthenticated &&
-            (identical(other.user, user) || other.user == user));
+            other is AuthStateRegistrationSuccess);
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, user);
+  int get hashCode => runtimeType.hashCode;
 
   @override
   String toString() {
-    return 'AuthState.authenticated(user: $user)';
-  }
-}
-
-/// @nodoc
-abstract mixin class $AuthStateAuthenticatedCopyWith<$Res>
-    implements $AuthStateCopyWith<$Res> {
-  factory $AuthStateAuthenticatedCopyWith(AuthStateAuthenticated value,
-          $Res Function(AuthStateAuthenticated) _then) =
-      _$AuthStateAuthenticatedCopyWithImpl;
-  @useResult
-  $Res call({UserDTO? user});
-
-  $UserDTOCopyWith<$Res>? get user;
-}
-
-/// @nodoc
-class _$AuthStateAuthenticatedCopyWithImpl<$Res>
-    implements $AuthStateAuthenticatedCopyWith<$Res> {
-  _$AuthStateAuthenticatedCopyWithImpl(this._self, this._then);
-
-  final AuthStateAuthenticated _self;
-  final $Res Function(AuthStateAuthenticated) _then;
-
-  /// Create a copy of AuthState
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  $Res call({
-    Object? user = freezed,
-  }) {
-    return _then(AuthStateAuthenticated(
-      user: freezed == user
-          ? _self.user
-          : user // ignore: cast_nullable_to_non_nullable
-              as UserDTO?,
-    ));
-  }
-
-  /// Create a copy of AuthState
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $UserDTOCopyWith<$Res>? get user {
-    if (_self.user == null) {
-      return null;
-    }
-
-    return $UserDTOCopyWith<$Res>(_self.user!, (value) {
-      return _then(_self.copyWith(user: value));
-    });
+    return 'AuthState.registrationSuccess()';
   }
 }
 

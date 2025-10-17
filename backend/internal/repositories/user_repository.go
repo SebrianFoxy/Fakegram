@@ -28,14 +28,15 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (h *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
     query := `
-        INSERT INTO users (name, surname, email, password, approved) 
-        VALUES ($1, $2, $3, $4, $5) 
+        INSERT INTO users (name, surname, nickname, email, password, approved) 
+        VALUES ($1, $2, $3, $4, $5, $6) 
         RETURNING id, created_at, updated_at
     `
     err := h.DB.QueryRowContext(
         ctx, query, 
         user.Name, 
         user.Surname,
+        user.Nickname,
         user.Email, 
         user.Password,
         user.Approved,
@@ -64,7 +65,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
     offset := (page - 1) * limit
 
     query := `
-        SELECT id, name, surname, email, created_at, updated_at 
+        SELECT id, name, surname, nickname, email, created_at, updated_at 
         FROM users 
         ORDER BY created_at DESC 
         LIMIT $1 OFFSET $2
@@ -83,6 +84,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
             &user.ID,
             &user.Name,
             &user.Surname,
+            &user.Nickname,
             &user.Email,
             &user.CreatedAt,
             &user.UpdatedAt,
@@ -102,7 +104,7 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error){
     query := `
-        SELECT id, name, surname, email, password, approved, created_at, updated_at
+        SELECT id, name, surname, nickname, email, password, approved, created_at, updated_at
         FROM users
         WHERE email = $1
     `
@@ -112,6 +114,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
         &user.ID,
         &user.Name,
         &user.Surname,
+        &user.Nickname,
         &user.Email,
         &user.Password,
         &user.Approved,
@@ -130,10 +133,12 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
     var user models.User
     err := r.DB.QueryRowContext(ctx, 
-        "SELECT id, name, email, approdev, created_at, updated_at FROM users WHERE id = $1", id).
+        "SELECT id, name, surname, email, nickname, approved, created_at, updated_at FROM users WHERE id = $1", id).
         Scan(
             &user.ID, 
             &user.Name, 
+            &user.Surname,
+            &user.Nickname,
             &user.Email, 
             &user.Approved,
             &user.CreatedAt, 
@@ -147,6 +152,34 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
         return nil, err
     }
     
+    return &user, nil
+}
+
+func (r *UserRepository) GetByNickname(ctx context.Context, nickname string) (*models.User, error) {
+    query := `
+        SELECT id, name, surname, nickname, email, password, approved, created_at, updated_at
+        FROM users
+        WHERE LOWER(nickname) = LOWER($1)
+    `
+
+    var user models.User
+    err := r.DB.QueryRowContext(ctx, query, nickname).Scan(
+        &user.ID,
+        &user.Name,
+        &user.Surname,
+        &user.Nickname,
+        &user.Email,
+        &user.Password,
+        &user.Approved,
+        &user.CreatedAt,
+        &user.UpdatedAt,
+    )
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, ErrNotFound
+        }
+        return nil, fmt.Errorf("failed to get user by nickname: %w", err)
+    }
     return &user, nil
 }
 

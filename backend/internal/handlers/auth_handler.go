@@ -111,7 +111,6 @@ func (h *AuthHandler) RegistrationUser(c echo.Context) error {
 
     user := models.NewUserFromRequest(&req)
 
-	user.NormalizeEmail()
 	if !user.IsEmailValid() {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid email format"})
 	}
@@ -120,7 +119,17 @@ func (h *AuthHandler) RegistrationUser(c echo.Context) error {
         return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to process password"})
     }
 
-    ctx := c.Request().Context()
+	ctx := c.Request().Context()
+
+	existingUserByNickname, err := h.userRepo.GetByNickname(ctx, user.Nickname)
+    if err != nil && err != repositories.ErrNotFound {
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to check nickname availability"})
+    }
+
+    if existingUserByNickname != nil {
+		return c.JSON(http.StatusConflict, map[string]string{"error": "Nickname already exists"})
+	}
+
     if err := h.userRepo.CreateUser(ctx, user); err != nil {
         if err == repositories.ErrEmailExists {
             existingUser, err := h.userRepo.GetByEmail(ctx, user.Email)
@@ -222,7 +231,11 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 		}
 	}
 
-	return c.JSON(http.StatusOK, h.tokenService.GetTokenResponse(updatedToken))
+	response := map[string]interface{}{
+		"token":   h.tokenService.GetTokenResponse(updatedToken),
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *AuthHandler) VerifyEmail(c echo.Context) error {

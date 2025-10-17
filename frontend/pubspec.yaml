@@ -50,8 +50,7 @@ dependencies:
   retrofit: ^4.6.0
   json_annotation: ^4.9.0
   retrofit_generator: ^9.6.0
-  flutter_secure_storage: ^4.2.1
-  flutter_hot_toast: ^0.0.3
+  flutter_secure_storage: ^9.2.4
   animated_snack_bar: ^0.4.0
 
 dev_dependencies:

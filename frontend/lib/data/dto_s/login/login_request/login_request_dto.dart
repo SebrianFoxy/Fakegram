@@ -11,6 +11,7 @@ abstract class LoginRequestDTO with _$LoginRequestDTO {
 
     @JsonKey(name: "password")
     required String password,
+
   }) = _LoginRequestDTO;
 
   factory LoginRequestDTO.fromJson(Map<String, dynamic> json) =>
