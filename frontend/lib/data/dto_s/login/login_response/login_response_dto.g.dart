@@ -18,25 +18,12 @@ Map<String, dynamic> _$LoginResponseDTOToJson(_LoginResponseDTO instance) =>
       'user': instance.user,
     };
 
-_TokenDTO _$TokenDTOFromJson(Map<String, dynamic> json) => _TokenDTO(
-      accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String,
-      tokenType: json['token_type'] as String,
-      expiresIn: (json['expires_in'] as num).toInt(),
-    );
-
-Map<String, dynamic> _$TokenDTOToJson(_TokenDTO instance) => <String, dynamic>{
-      'access_token': instance.accessToken,
-      'refresh_token': instance.refreshToken,
-      'token_type': instance.tokenType,
-      'expires_in': instance.expiresIn,
-    };
-
 _UserDTO _$UserDTOFromJson(Map<String, dynamic> json) => _UserDTO(
       id: json['id'] as String,
       email: json['email'] as String,
       name: json['name'] as String,
       surname: json['surname'] as String,
+      nickname: json['nickname'] as String,
       approved: json['approved'] as bool? ?? false,
     );
 
@@ -45,5 +32,6 @@ Map<String, dynamic> _$UserDTOToJson(_UserDTO instance) => <String, dynamic>{
       'email': instance.email,
       'name': instance.name,
       'surname': instance.surname,
+      'nickname': instance.nickname,
       'approved': instance.approved,
     };

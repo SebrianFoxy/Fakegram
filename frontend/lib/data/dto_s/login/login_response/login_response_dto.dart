@@ -1,5 +1,6 @@
-// login_response_dto.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../../token/token_response/token_response_dto.dart';
+
 part 'login_response_dto.freezed.dart';
 part 'login_response_dto.g.dart';
 
@@ -15,25 +16,13 @@ abstract class LoginResponseDTO with _$LoginResponseDTO {
 }
 
 @freezed
-abstract class TokenDTO with _$TokenDTO {
-  const factory TokenDTO({
-    @JsonKey(name: "access_token") required String accessToken,
-    @JsonKey(name: "refresh_token") required String refreshToken,
-    @JsonKey(name: "token_type") required String tokenType,
-    @JsonKey(name: "expires_in") required int expiresIn,
-  }) = _TokenDTO;
-
-  factory TokenDTO.fromJson(Map<String, dynamic> json) =>
-      _$TokenDTOFromJson(json);
-}
-
-@freezed
 abstract class UserDTO with _$UserDTO {
   const factory UserDTO({
     required String id,
     required String email,
     required String name,
     required String surname,
+    required String nickname,
     @Default(false) bool approved,
   }) = _UserDTO;
 

@@ -231,225 +231,12 @@ class __$LoginResponseDTOCopyWithImpl<$Res>
 }
 
 /// @nodoc
-mixin _$TokenDTO {
-  @JsonKey(name: "access_token")
-  String get accessToken;
-  @JsonKey(name: "refresh_token")
-  String get refreshToken;
-  @JsonKey(name: "token_type")
-  String get tokenType;
-  @JsonKey(name: "expires_in")
-  int get expiresIn;
-
-  /// Create a copy of TokenDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @pragma('vm:prefer-inline')
-  $TokenDTOCopyWith<TokenDTO> get copyWith =>
-      _$TokenDTOCopyWithImpl<TokenDTO>(this as TokenDTO, _$identity);
-
-  /// Serializes this TokenDTO to a JSON map.
-  Map<String, dynamic> toJson();
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is TokenDTO &&
-            (identical(other.accessToken, accessToken) ||
-                other.accessToken == accessToken) &&
-            (identical(other.refreshToken, refreshToken) ||
-                other.refreshToken == refreshToken) &&
-            (identical(other.tokenType, tokenType) ||
-                other.tokenType == tokenType) &&
-            (identical(other.expiresIn, expiresIn) ||
-                other.expiresIn == expiresIn));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, accessToken, refreshToken, tokenType, expiresIn);
-
-  @override
-  String toString() {
-    return 'TokenDTO(accessToken: $accessToken, refreshToken: $refreshToken, tokenType: $tokenType, expiresIn: $expiresIn)';
-  }
-}
-
-/// @nodoc
-abstract mixin class $TokenDTOCopyWith<$Res> {
-  factory $TokenDTOCopyWith(TokenDTO value, $Res Function(TokenDTO) _then) =
-      _$TokenDTOCopyWithImpl;
-  @useResult
-  $Res call(
-      {@JsonKey(name: "access_token") String accessToken,
-      @JsonKey(name: "refresh_token") String refreshToken,
-      @JsonKey(name: "token_type") String tokenType,
-      @JsonKey(name: "expires_in") int expiresIn});
-}
-
-/// @nodoc
-class _$TokenDTOCopyWithImpl<$Res> implements $TokenDTOCopyWith<$Res> {
-  _$TokenDTOCopyWithImpl(this._self, this._then);
-
-  final TokenDTO _self;
-  final $Res Function(TokenDTO) _then;
-
-  /// Create a copy of TokenDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? accessToken = null,
-    Object? refreshToken = null,
-    Object? tokenType = null,
-    Object? expiresIn = null,
-  }) {
-    return _then(_self.copyWith(
-      accessToken: null == accessToken
-          ? _self.accessToken
-          : accessToken // ignore: cast_nullable_to_non_nullable
-              as String,
-      refreshToken: null == refreshToken
-          ? _self.refreshToken
-          : refreshToken // ignore: cast_nullable_to_non_nullable
-              as String,
-      tokenType: null == tokenType
-          ? _self.tokenType
-          : tokenType // ignore: cast_nullable_to_non_nullable
-              as String,
-      expiresIn: null == expiresIn
-          ? _self.expiresIn
-          : expiresIn // ignore: cast_nullable_to_non_nullable
-              as int,
-    ));
-  }
-}
-
-/// @nodoc
-@JsonSerializable()
-class _TokenDTO implements TokenDTO {
-  const _TokenDTO(
-      {@JsonKey(name: "access_token") required this.accessToken,
-      @JsonKey(name: "refresh_token") required this.refreshToken,
-      @JsonKey(name: "token_type") required this.tokenType,
-      @JsonKey(name: "expires_in") required this.expiresIn});
-  factory _TokenDTO.fromJson(Map<String, dynamic> json) =>
-      _$TokenDTOFromJson(json);
-
-  @override
-  @JsonKey(name: "access_token")
-  final String accessToken;
-  @override
-  @JsonKey(name: "refresh_token")
-  final String refreshToken;
-  @override
-  @JsonKey(name: "token_type")
-  final String tokenType;
-  @override
-  @JsonKey(name: "expires_in")
-  final int expiresIn;
-
-  /// Create a copy of TokenDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @pragma('vm:prefer-inline')
-  _$TokenDTOCopyWith<_TokenDTO> get copyWith =>
-      __$TokenDTOCopyWithImpl<_TokenDTO>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$TokenDTOToJson(
-      this,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _TokenDTO &&
-            (identical(other.accessToken, accessToken) ||
-                other.accessToken == accessToken) &&
-            (identical(other.refreshToken, refreshToken) ||
-                other.refreshToken == refreshToken) &&
-            (identical(other.tokenType, tokenType) ||
-                other.tokenType == tokenType) &&
-            (identical(other.expiresIn, expiresIn) ||
-                other.expiresIn == expiresIn));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, accessToken, refreshToken, tokenType, expiresIn);
-
-  @override
-  String toString() {
-    return 'TokenDTO(accessToken: $accessToken, refreshToken: $refreshToken, tokenType: $tokenType, expiresIn: $expiresIn)';
-  }
-}
-
-/// @nodoc
-abstract mixin class _$TokenDTOCopyWith<$Res>
-    implements $TokenDTOCopyWith<$Res> {
-  factory _$TokenDTOCopyWith(_TokenDTO value, $Res Function(_TokenDTO) _then) =
-      __$TokenDTOCopyWithImpl;
-  @override
-  @useResult
-  $Res call(
-      {@JsonKey(name: "access_token") String accessToken,
-      @JsonKey(name: "refresh_token") String refreshToken,
-      @JsonKey(name: "token_type") String tokenType,
-      @JsonKey(name: "expires_in") int expiresIn});
-}
-
-/// @nodoc
-class __$TokenDTOCopyWithImpl<$Res> implements _$TokenDTOCopyWith<$Res> {
-  __$TokenDTOCopyWithImpl(this._self, this._then);
-
-  final _TokenDTO _self;
-  final $Res Function(_TokenDTO) _then;
-
-  /// Create a copy of TokenDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $Res call({
-    Object? accessToken = null,
-    Object? refreshToken = null,
-    Object? tokenType = null,
-    Object? expiresIn = null,
-  }) {
-    return _then(_TokenDTO(
-      accessToken: null == accessToken
-          ? _self.accessToken
-          : accessToken // ignore: cast_nullable_to_non_nullable
-              as String,
-      refreshToken: null == refreshToken
-          ? _self.refreshToken
-          : refreshToken // ignore: cast_nullable_to_non_nullable
-              as String,
-      tokenType: null == tokenType
-          ? _self.tokenType
-          : tokenType // ignore: cast_nullable_to_non_nullable
-              as String,
-      expiresIn: null == expiresIn
-          ? _self.expiresIn
-          : expiresIn // ignore: cast_nullable_to_non_nullable
-              as int,
-    ));
-  }
-}
-
-/// @nodoc
 mixin _$UserDTO {
   String get id;
   String get email;
   String get name;
   String get surname;
+  String get nickname;
   bool get approved;
 
   /// Create a copy of UserDTO
@@ -471,6 +258,8 @@ mixin _$UserDTO {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.surname, surname) || other.surname == surname) &&
+            (identical(other.nickname, nickname) ||
+                other.nickname == nickname) &&
             (identical(other.approved, approved) ||
                 other.approved == approved));
   }
@@ -478,11 +267,11 @@ mixin _$UserDTO {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, email, name, surname, approved);
+      Object.hash(runtimeType, id, email, name, surname, nickname, approved);
 
   @override
   String toString() {
-    return 'UserDTO(id: $id, email: $email, name: $name, surname: $surname, approved: $approved)';
+    return 'UserDTO(id: $id, email: $email, name: $name, surname: $surname, nickname: $nickname, approved: $approved)';
   }
 }
 
@@ -492,7 +281,12 @@ abstract mixin class $UserDTOCopyWith<$Res> {
       _$UserDTOCopyWithImpl;
   @useResult
   $Res call(
-      {String id, String email, String name, String surname, bool approved});
+      {String id,
+      String email,
+      String name,
+      String surname,
+      String nickname,
+      bool approved});
 }
 
 /// @nodoc
@@ -511,6 +305,7 @@ class _$UserDTOCopyWithImpl<$Res> implements $UserDTOCopyWith<$Res> {
     Object? email = null,
     Object? name = null,
     Object? surname = null,
+    Object? nickname = null,
     Object? approved = null,
   }) {
     return _then(_self.copyWith(
@@ -530,6 +325,10 @@ class _$UserDTOCopyWithImpl<$Res> implements $UserDTOCopyWith<$Res> {
           ? _self.surname
           : surname // ignore: cast_nullable_to_non_nullable
               as String,
+      nickname: null == nickname
+          ? _self.nickname
+          : nickname // ignore: cast_nullable_to_non_nullable
+              as String,
       approved: null == approved
           ? _self.approved
           : approved // ignore: cast_nullable_to_non_nullable
@@ -546,6 +345,7 @@ class _UserDTO implements UserDTO {
       required this.email,
       required this.name,
       required this.surname,
+      required this.nickname,
       this.approved = false});
   factory _UserDTO.fromJson(Map<String, dynamic> json) =>
       _$UserDTOFromJson(json);
@@ -558,6 +358,8 @@ class _UserDTO implements UserDTO {
   final String name;
   @override
   final String surname;
+  @override
+  final String nickname;
   @override
   @JsonKey()
   final bool approved;
@@ -586,6 +388,8 @@ class _UserDTO implements UserDTO {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.surname, surname) || other.surname == surname) &&
+            (identical(other.nickname, nickname) ||
+                other.nickname == nickname) &&
             (identical(other.approved, approved) ||
                 other.approved == approved));
   }
@@ -593,11 +397,11 @@ class _UserDTO implements UserDTO {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, email, name, surname, approved);
+      Object.hash(runtimeType, id, email, name, surname, nickname, approved);
 
   @override
   String toString() {
-    return 'UserDTO(id: $id, email: $email, name: $name, surname: $surname, approved: $approved)';
+    return 'UserDTO(id: $id, email: $email, name: $name, surname: $surname, nickname: $nickname, approved: $approved)';
   }
 }
 
@@ -608,7 +412,12 @@ abstract mixin class _$UserDTOCopyWith<$Res> implements $UserDTOCopyWith<$Res> {
   @override
   @useResult
   $Res call(
-      {String id, String email, String name, String surname, bool approved});
+      {String id,
+      String email,
+      String name,
+      String surname,
+      String nickname,
+      bool approved});
 }
 
 /// @nodoc
@@ -627,6 +436,7 @@ class __$UserDTOCopyWithImpl<$Res> implements _$UserDTOCopyWith<$Res> {
     Object? email = null,
     Object? name = null,
     Object? surname = null,
+    Object? nickname = null,
     Object? approved = null,
   }) {
     return _then(_UserDTO(
@@ -645,6 +455,10 @@ class __$UserDTOCopyWithImpl<$Res> implements _$UserDTOCopyWith<$Res> {
       surname: null == surname
           ? _self.surname
           : surname // ignore: cast_nullable_to_non_nullable
+              as String,
+      nickname: null == nickname
+          ? _self.nickname
+          : nickname // ignore: cast_nullable_to_non_nullable
               as String,
       approved: null == approved
           ? _self.approved

@@ -345,6 +345,7 @@ const docTemplate = `{
             "required": [
                 "email",
                 "name",
+                "nickname",
                 "password",
                 "surname"
             ],
@@ -353,6 +354,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "nickname": {
                     "type": "string"
                 },
                 "password": {
@@ -397,6 +401,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "nickname": {
                     "type": "string"
                 },
                 "surname": {

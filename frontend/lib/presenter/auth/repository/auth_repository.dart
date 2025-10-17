@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:fakegram/data/datasource/auth/auth_datasource.dart';
-import 'package:fakegram/data/dto_s/login/login_request/login_request_dto.dart';
 import 'package:fakegram/data/dto_s/login/login_response/login_response_dto.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../data/dto_s/token/token_response/token_response_dto.dart';
 
 part 'auth_repository.g.dart';
 
@@ -34,11 +34,28 @@ class AuthRepository {
 
   AuthRepository(this._datasource);
 
-  Future<UserDTO> login(dynamic request) async {
+  Future<LoginResponseDTO> login(dynamic request) async {
     try {
-      final response = await _datasource.login(request);
-      return response.user;
+      return await _datasource.login(request);
     } on DioException catch(error) {
+      debugPrint('AuthRepositoryERROR: $error');
+      rethrow;
+    }
+  }
+
+  Future<void> registration(dynamic request) async {
+    try{
+      await _datasource.registration(request);
+    } on DioException catch(error) {
+      debugPrint('AuthRepositoryERROR: $error');
+      rethrow;
+    }
+  }
+
+  Future<TokenResponseDTO> tokenUpdate(dynamic request) async {
+    try {
+      return await _datasource.refreshToken(request);
+    } on DioException catch (error) {
       debugPrint('AuthRepositoryERROR: $error');
       rethrow;
     }

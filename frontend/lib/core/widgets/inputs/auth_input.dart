@@ -4,6 +4,7 @@ class AuthInput extends StatelessWidget {
   final TextEditingController controller;
   final String hintText;
   final IconData prefixIcon;
+  final Widget? suffixIcon;
   final bool obscureText;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
@@ -15,6 +16,7 @@ class AuthInput extends StatelessWidget {
     required this.hintText,
     required this.prefixIcon,
     this.obscureText = false,
+    this.suffixIcon,
     this.validator,
     this.keyboardType,
     this.onChanged,
@@ -32,6 +34,7 @@ class AuthInput extends StatelessWidget {
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.grey.shade500),
         prefixIcon: Icon(prefixIcon, color: Colors.grey.shade500),
+        suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

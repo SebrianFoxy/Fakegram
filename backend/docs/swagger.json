@@ -337,6 +337,7 @@
             "required": [
                 "email",
                 "name",
+                "nickname",
                 "password",
                 "surname"
             ],
@@ -345,6 +346,9 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "nickname": {
                     "type": "string"
                 },
                 "password": {
@@ -389,6 +393,9 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "nickname": {
                     "type": "string"
                 },
                 "surname": {

@@ -3,6 +3,7 @@ import 'package:fakegram/core/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fakegram/presenter/auth/notifier/auth_notifier.dart';
+import 'package:fakegram/core/routes/app_router.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -28,6 +29,66 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+      switch (next) {
+        case AuthStateInitial(:final error):
+          if (error != null && error.isNotEmpty) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              AnimatedSnackBar.material(
+                error,
+                type: AnimatedSnackBarType.error,
+                desktopSnackBarPosition: DesktopSnackBarPosition.bottomRight,
+              ).show(context);
+            });
+          }
+        case _:
+          break;
+      }
+    });
+
+    final authState = ref.watch(authNotifierProvider);
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.grey.shade900,
+              Colors.black,
+              Colors.grey.shade800,
+            ],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: switch (authState) {
+            AuthStateInitial() => _buildLoginForm(),
+            AuthStateLoading() => Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
+              ),
+            ),
+            _ => Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
+              ),
+            ),
+          },
+        ),
+      ),
+    );
   }
 
   Widget _buildLoginForm() {
@@ -279,7 +340,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-
+                                    AppRouter.goToRegistration(context);
                                   },
                                   child: Text(
                                     'Sign up',
@@ -305,57 +366,4 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
-      switch (next) {
-        case AuthStateError(:final error):
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            AnimatedSnackBar.material(
-              error.toString(),
-              type: AnimatedSnackBarType.error,
-              desktopSnackBarPosition: DesktopSnackBarPosition.bottomRight,
-            ).show(context);
-          });
-        case _:
-          break;
-      }
-    });
-
-    final authState = ref.watch(authNotifierProvider);
-
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.grey.shade900,
-              Colors.black,
-              Colors.grey.shade800,
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: switch (authState) {
-            AuthStateInitial() => _buildLoginForm(),
-            AuthStateLoading() => Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
-              ),
-            ),
-            AuthStateAuthenticated() => const Text('GOOD'),
-            _ => Center(
-              child: Text(
-                'Unknown state',
-                style: TextStyle(color: Colors.grey.shade300),
-              ),
-            ),
-          },
-        ),
-      ),
-    );
-  }
 }

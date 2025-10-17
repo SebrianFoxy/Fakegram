@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class MessagesPage extends StatefulWidget {
+import '../../auth/notifier/auth_notifier.dart';
+
+class MessagesPage extends ConsumerStatefulWidget {
   const MessagesPage({super.key});
 
   @override
-  State<MessagesPage> createState() => _MessagesPageState();
+  ConsumerState<MessagesPage> createState() => _MessagesPageState();
 }
 
-class _MessagesPageState extends State<MessagesPage> {
+class _MessagesPageState extends ConsumerState<MessagesPage> {
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final List<String> _messages = [];
@@ -53,7 +56,10 @@ class _MessagesPageState extends State<MessagesPage> {
             onSelected: (value) {
               if (value == 'profile') {
                 context.push('/profile');
-              } else if (value == 'logout') {}
+              }
+              else if (value == 'logout') {
+                ref.read(authNotifierProvider.notifier).logout();
+              }
             },
             itemBuilder: (context) => [
               PopupMenuItem(
