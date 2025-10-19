@@ -1,4 +1,5 @@
 import 'package:fakegram/core/routes/app_router.dart';
+import 'package:fakegram/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
@@ -32,6 +33,7 @@ class Fakegram extends ConsumerWidget {
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
+      theme: AppThemes.darkTheme,
       routerConfig: router,
     );
   }

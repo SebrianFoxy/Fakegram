@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fakegram/presenter/auth/notifier/auth_notifier.dart';
 import 'package:fakegram/core/routes/app_router.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -61,29 +63,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.grey.shade900,
-              Colors.black,
-              Colors.grey.shade800,
-            ],
-          ),
+          gradient: AppThemes.mainGradient,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: switch (authState) {
-            AuthStateInitial() => _buildLoginForm(),
-            AuthStateLoading() => Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
-              ),
+            AuthStateInitial() => _buildLoginForm(context),
+            AuthStateLoading() => const Center(
+              child: CircularProgressIndicator(),
             ),
-            _ => Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
-              ),
+            _ => const Center(
+              child: CircularProgressIndicator(),
             ),
           },
         ),
@@ -91,7 +81,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Widget _buildLoginForm() {
+  Widget _buildLoginForm(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Stack(
       children: [
         Positioned.fill(
@@ -119,28 +111,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 400),
                     padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.black.withOpacity(0.3),
-                      border: Border.all(
-                        color: Colors.grey.shade800.withOpacity(0.5),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 25,
-                          spreadRadius: 3,
-                          offset: const Offset(0, 10),
-                        ),
-                        BoxShadow(
-                          color: Colors.grey.shade900.withOpacity(0.3),
-                          blurRadius: 10,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                    decoration: AppThemes.glassMorphismDecoration,
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -157,32 +128,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     color: Colors.grey.shade900.withOpacity(0.4),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.blue.shade400.withOpacity(0.5),
+                                      color: theme.colorScheme.primary.withOpacity(0.5),
                                       width: 1.5,
                                     ),
                                   ),
                                   child: Icon(
                                     Icons.lock_outlined,
-                                    color: Colors.blue.shade300,
+                                    color: theme.colorScheme.primaryContainer,
                                     size: 30,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Welcome Back',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade100,
-                                  ),
+                                  style: theme.textTheme.headlineSmall,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Please sign in to your account',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade400,
-                                  ),
+                                  style: theme.textTheme.bodyMedium,
                                 ),
                               ],
                             ),
@@ -192,107 +156,62 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                           Text(
                             'Email Address',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.4),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: AuthInput(
-                                controller: _emailController,
-                                hintText: 'Enter your email',
-                                prefixIcon: Icons.email,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your email';
-                                  }
-                                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                                    return 'Please enter a valid email';
-                                  }
-                                  return null;
-                                },
-                              )
+                            decoration: AppThemes.inputShadowDecoration,
+                            child: AuthInput(
+                              controller: _emailController,
+                              hintText: 'Enter your email',
+                              prefixIcon: Icons.email,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
 
                           const SizedBox(height: 20),
 
                           Text(
                             'Password',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.4),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: AuthInput(
-                                controller: _passwordController,
-                                hintText: 'Enter your password',
-                                prefixIcon: Icons.lock_outlined,
-                                obscureText: true,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter your password';
-                                  }
-                                  if (value.length < 6) {
-                                    return 'Password must be at least 6 characters';
-                                  }
-                                  return null;
-                                },
-                              )
+                            decoration: AppThemes.inputShadowDecoration,
+                            child: AuthInput(
+                              controller: _passwordController,
+                              hintText: 'Enter your password',
+                              prefixIcon: Icons.lock_outlined,
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your password';
+                                }
+                                if (value.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
 
                           const SizedBox(height: 24),
 
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.shade800.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.buttonShadowDecoration,
                             child: SizedBox(
                               width: double.infinity,
                               height: 50,
                               child: ElevatedButton(
                                 onPressed: _login,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade700,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
                                 child: const Text(
                                   'Sign In',
                                   style: TextStyle(
@@ -309,19 +228,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: Divider(color: Colors.grey.shade800),
+                                child: Divider(color: theme.dividerTheme.color),
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Text(
                                   'or',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                  ),
+                                  style: theme.textTheme.bodySmall,
                                 ),
                               ),
                               Expanded(
-                                child: Divider(color: Colors.grey.shade800),
+                                child: Divider(color: theme.dividerTheme.color),
                               ),
                             ],
                           ),
@@ -334,9 +251,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               children: [
                                 Text(
                                   "Don't have an account?",
-                                  style: TextStyle(
-                                    color: Colors.grey.shade400,
-                                  ),
+                                  style: theme.textTheme.bodyMedium,
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -345,7 +260,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   child: Text(
                                     'Sign up',
                                     style: TextStyle(
-                                      color: Colors.blue.shade300,
+                                      color: theme.colorScheme.primaryContainer,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -365,5 +280,4 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ],
     );
   }
-
 }
