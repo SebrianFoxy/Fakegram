@@ -88,8 +88,7 @@ class AuthNotifier extends _$AuthNotifier {
       debugPrint('RegistrationError: $error');
       final errorMessage = ErrorHandler.handleDioError(error);
 
-      state = AuthState.error(error: errorMessage);
-      state = AuthState.initial();
+      state = AuthState.initial(error: errorMessage);
     }
   }
 

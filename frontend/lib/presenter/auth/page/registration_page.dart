@@ -3,9 +3,9 @@ import 'package:fakegram/core/routes/app_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/widgets.dart';
 import '../notifier/auth_notifier.dart';
-
 
 class RegistrationPage extends ConsumerStatefulWidget {
   const RegistrationPage({super.key});
@@ -80,24 +80,16 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.grey.shade900,
-              Colors.black,
-              Colors.grey.shade800,
-            ],
-          ),
+          gradient: AppThemes.mainGradient,
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: switch (authState) {
-            AuthStateInitial() => _buildRegistrationForm(),
-            AuthStateLoading() => Center(
+            AuthStateInitial() => _buildRegistrationForm(context),
+            AuthStateLoading() => const Center(
               child: CircularProgressIndicator(),
             ),
-            _ => Center(
+            _ => const Center(
               child: CircularProgressIndicator(),
             ),
           },
@@ -106,7 +98,9 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
     );
   }
 
-  Widget _buildRegistrationForm() {
+  Widget _buildRegistrationForm(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Stack(
       children: [
         Positioned.fill(
@@ -133,28 +127,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 400),
                     padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.black.withOpacity(0.3),
-                      border: Border.all(
-                        color: Colors.grey.shade800.withOpacity(0.5),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 25,
-                          spreadRadius: 3,
-                          offset: const Offset(0, 10),
-                        ),
-                        BoxShadow(
-                          color: Colors.grey.shade900.withOpacity(0.3),
-                          blurRadius: 10,
-                          spreadRadius: 1,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                    decoration: AppThemes.glassMorphismDecoration,
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -171,32 +144,25 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                                     color: Colors.grey.shade900.withOpacity(0.4),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: Colors.blue.shade400.withOpacity(0.5),
+                                      color: theme.colorScheme.primary.withOpacity(0.5),
                                       width: 1.5,
                                     ),
                                   ),
                                   child: Icon(
                                     Icons.person_add_outlined,
-                                    color: Colors.blue.shade300,
+                                    color: theme.colorScheme.primaryContainer,
                                     size: 30,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Create Account',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey.shade100,
-                                  ),
+                                  style: theme.textTheme.headlineSmall,
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
                                   'Please fill in your details',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade400,
-                                  ),
+                                  style: theme.textTheme.bodyMedium,
                                 ),
                               ],
                             ),
@@ -206,24 +172,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           Text(
                             'First Name',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.inputShadowDecoration,
                             child: AuthInput(
                               controller: _firstNameController,
                               hintText: 'Enter your first name',
@@ -244,24 +197,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           Text(
                             'Last Name',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.inputShadowDecoration,
                             child: AuthInput(
                               controller: _secondNameController,
                               hintText: 'Enter your last name',
@@ -282,24 +222,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           Text(
                             'Nickname',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.inputShadowDecoration,
                             child: AuthInput(
                               controller: _nicknameController,
                               hintText: 'Enter your nickname',
@@ -320,24 +247,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           Text(
                             'Email Address',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.inputShadowDecoration,
                             child: AuthInput(
                               controller: _emailController,
                               hintText: 'Enter your email',
@@ -358,24 +272,11 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           Text(
                             'Password',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.inputShadowDecoration,
                             child: AuthInput(
                               controller: _firstPasswordController,
                               hintText: 'Enter your password',
@@ -384,7 +285,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscureFirstPassword ? Icons.visibility : Icons.visibility_off,
-                                  color: Colors.grey.shade400,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -406,27 +307,13 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           const SizedBox(height: 20),
 
-                          // Confirm Password
                           Text(
                             'Confirm Password',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey.shade200,
-                              fontSize: 14,
-                            ),
+                            style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.inputShadowDecoration,
                             child: AuthInput(
                               controller: _secondPasswordController,
                               hintText: 'Confirm your password',
@@ -435,7 +322,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscureSecondPassword ? Icons.visibility : Icons.visibility_off,
-                                  color: Colors.grey.shade400,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
                                 ),
                                 onPressed: () {
                                   setState(() {
@@ -457,33 +344,13 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
                           const SizedBox(height: 24),
 
-                          // Register Button
                           Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.shade800.withOpacity(0.4),
-                                  blurRadius: 15,
-                                  spreadRadius: 2,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
+                            decoration: AppThemes.buttonShadowDecoration,
                             child: SizedBox(
                               width: double.infinity,
                               height: 50,
                               child: ElevatedButton(
                                 onPressed: _register,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade700,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
                                 child: const Text(
                                   'Sign up',
                                   style: TextStyle(
@@ -500,19 +367,17 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: Divider(color: Colors.grey.shade800),
+                                child: Divider(color: theme.dividerTheme.color),
                               ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16),
                                 child: Text(
                                   'or',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                  ),
+                                  style: theme.textTheme.bodySmall,
                                 ),
                               ),
                               Expanded(
-                                child: Divider(color: Colors.grey.shade800),
+                                child: Divider(color: theme.dividerTheme.color),
                               ),
                             ],
                           ),
@@ -525,9 +390,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                               children: [
                                 Text(
                                   "Already have an account?",
-                                  style: TextStyle(
-                                    color: Colors.grey.shade400,
-                                  ),
+                                  style: theme.textTheme.bodyMedium,
                                 ),
                                 TextButton(
                                   onPressed: () {
@@ -536,7 +399,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
                                   child: Text(
                                     'Sign in',
                                     style: TextStyle(
-                                      color: Colors.blue.shade300,
+                                      color: theme.colorScheme.primaryContainer,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -556,5 +419,4 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       ],
     );
   }
-
 }
