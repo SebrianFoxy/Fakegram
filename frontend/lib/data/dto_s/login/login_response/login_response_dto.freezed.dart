@@ -16,9 +16,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$LoginResponseDTO {
   @JsonKey(name: "token")
-  TokenDTO get token;
+  TokenModel get token;
   @JsonKey(name: "user")
-  UserDTO get user;
+  UserModel get user;
 
   /// Create a copy of LoginResponseDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -57,11 +57,11 @@ abstract mixin class $LoginResponseDTOCopyWith<$Res> {
       _$LoginResponseDTOCopyWithImpl;
   @useResult
   $Res call(
-      {@JsonKey(name: "token") TokenDTO token,
-      @JsonKey(name: "user") UserDTO user});
+      {@JsonKey(name: "token") TokenModel token,
+      @JsonKey(name: "user") UserModel user});
 
-  $TokenDTOCopyWith<$Res> get token;
-  $UserDTOCopyWith<$Res> get user;
+  $TokenModelCopyWith<$Res> get token;
+  $UserModelCopyWith<$Res> get user;
 }
 
 /// @nodoc
@@ -84,11 +84,11 @@ class _$LoginResponseDTOCopyWithImpl<$Res>
       token: null == token
           ? _self.token
           : token // ignore: cast_nullable_to_non_nullable
-              as TokenDTO,
+              as TokenModel,
       user: null == user
           ? _self.user
           : user // ignore: cast_nullable_to_non_nullable
-              as UserDTO,
+              as UserModel,
     ));
   }
 
@@ -96,8 +96,8 @@ class _$LoginResponseDTOCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $TokenDTOCopyWith<$Res> get token {
-    return $TokenDTOCopyWith<$Res>(_self.token, (value) {
+  $TokenModelCopyWith<$Res> get token {
+    return $TokenModelCopyWith<$Res>(_self.token, (value) {
       return _then(_self.copyWith(token: value));
     });
   }
@@ -106,8 +106,8 @@ class _$LoginResponseDTOCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $UserDTOCopyWith<$Res> get user {
-    return $UserDTOCopyWith<$Res>(_self.user, (value) {
+  $UserModelCopyWith<$Res> get user {
+    return $UserModelCopyWith<$Res>(_self.user, (value) {
       return _then(_self.copyWith(user: value));
     });
   }
@@ -124,10 +124,10 @@ class _LoginResponseDTO implements LoginResponseDTO {
 
   @override
   @JsonKey(name: "token")
-  final TokenDTO token;
+  final TokenModel token;
   @override
   @JsonKey(name: "user")
-  final UserDTO user;
+  final UserModel user;
 
   /// Create a copy of LoginResponseDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -172,13 +172,13 @@ abstract mixin class _$LoginResponseDTOCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {@JsonKey(name: "token") TokenDTO token,
-      @JsonKey(name: "user") UserDTO user});
+      {@JsonKey(name: "token") TokenModel token,
+      @JsonKey(name: "user") UserModel user});
 
   @override
-  $TokenDTOCopyWith<$Res> get token;
+  $TokenModelCopyWith<$Res> get token;
   @override
-  $UserDTOCopyWith<$Res> get user;
+  $UserModelCopyWith<$Res> get user;
 }
 
 /// @nodoc
@@ -201,11 +201,11 @@ class __$LoginResponseDTOCopyWithImpl<$Res>
       token: null == token
           ? _self.token
           : token // ignore: cast_nullable_to_non_nullable
-              as TokenDTO,
+              as TokenModel,
       user: null == user
           ? _self.user
           : user // ignore: cast_nullable_to_non_nullable
-              as UserDTO,
+              as UserModel,
     ));
   }
 
@@ -213,8 +213,8 @@ class __$LoginResponseDTOCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $TokenDTOCopyWith<$Res> get token {
-    return $TokenDTOCopyWith<$Res>(_self.token, (value) {
+  $TokenModelCopyWith<$Res> get token {
+    return $TokenModelCopyWith<$Res>(_self.token, (value) {
       return _then(_self.copyWith(token: value));
     });
   }
@@ -223,248 +223,10 @@ class __$LoginResponseDTOCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $UserDTOCopyWith<$Res> get user {
-    return $UserDTOCopyWith<$Res>(_self.user, (value) {
+  $UserModelCopyWith<$Res> get user {
+    return $UserModelCopyWith<$Res>(_self.user, (value) {
       return _then(_self.copyWith(user: value));
     });
-  }
-}
-
-/// @nodoc
-mixin _$UserDTO {
-  String get id;
-  String get email;
-  String get name;
-  String get surname;
-  String get nickname;
-  bool get approved;
-
-  /// Create a copy of UserDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @pragma('vm:prefer-inline')
-  $UserDTOCopyWith<UserDTO> get copyWith =>
-      _$UserDTOCopyWithImpl<UserDTO>(this as UserDTO, _$identity);
-
-  /// Serializes this UserDTO to a JSON map.
-  Map<String, dynamic> toJson();
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is UserDTO &&
-            (identical(other.id, id) || other.id == id) &&
-            (identical(other.email, email) || other.email == email) &&
-            (identical(other.name, name) || other.name == name) &&
-            (identical(other.surname, surname) || other.surname == surname) &&
-            (identical(other.nickname, nickname) ||
-                other.nickname == nickname) &&
-            (identical(other.approved, approved) ||
-                other.approved == approved));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, email, name, surname, nickname, approved);
-
-  @override
-  String toString() {
-    return 'UserDTO(id: $id, email: $email, name: $name, surname: $surname, nickname: $nickname, approved: $approved)';
-  }
-}
-
-/// @nodoc
-abstract mixin class $UserDTOCopyWith<$Res> {
-  factory $UserDTOCopyWith(UserDTO value, $Res Function(UserDTO) _then) =
-      _$UserDTOCopyWithImpl;
-  @useResult
-  $Res call(
-      {String id,
-      String email,
-      String name,
-      String surname,
-      String nickname,
-      bool approved});
-}
-
-/// @nodoc
-class _$UserDTOCopyWithImpl<$Res> implements $UserDTOCopyWith<$Res> {
-  _$UserDTOCopyWithImpl(this._self, this._then);
-
-  final UserDTO _self;
-  final $Res Function(UserDTO) _then;
-
-  /// Create a copy of UserDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  @override
-  $Res call({
-    Object? id = null,
-    Object? email = null,
-    Object? name = null,
-    Object? surname = null,
-    Object? nickname = null,
-    Object? approved = null,
-  }) {
-    return _then(_self.copyWith(
-      id: null == id
-          ? _self.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      email: null == email
-          ? _self.email
-          : email // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _self.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      surname: null == surname
-          ? _self.surname
-          : surname // ignore: cast_nullable_to_non_nullable
-              as String,
-      nickname: null == nickname
-          ? _self.nickname
-          : nickname // ignore: cast_nullable_to_non_nullable
-              as String,
-      approved: null == approved
-          ? _self.approved
-          : approved // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
-  }
-}
-
-/// @nodoc
-@JsonSerializable()
-class _UserDTO implements UserDTO {
-  const _UserDTO(
-      {required this.id,
-      required this.email,
-      required this.name,
-      required this.surname,
-      required this.nickname,
-      this.approved = false});
-  factory _UserDTO.fromJson(Map<String, dynamic> json) =>
-      _$UserDTOFromJson(json);
-
-  @override
-  final String id;
-  @override
-  final String email;
-  @override
-  final String name;
-  @override
-  final String surname;
-  @override
-  final String nickname;
-  @override
-  @JsonKey()
-  final bool approved;
-
-  /// Create a copy of UserDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @pragma('vm:prefer-inline')
-  _$UserDTOCopyWith<_UserDTO> get copyWith =>
-      __$UserDTOCopyWithImpl<_UserDTO>(this, _$identity);
-
-  @override
-  Map<String, dynamic> toJson() {
-    return _$UserDTOToJson(
-      this,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is _UserDTO &&
-            (identical(other.id, id) || other.id == id) &&
-            (identical(other.email, email) || other.email == email) &&
-            (identical(other.name, name) || other.name == name) &&
-            (identical(other.surname, surname) || other.surname == surname) &&
-            (identical(other.nickname, nickname) ||
-                other.nickname == nickname) &&
-            (identical(other.approved, approved) ||
-                other.approved == approved));
-  }
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, email, name, surname, nickname, approved);
-
-  @override
-  String toString() {
-    return 'UserDTO(id: $id, email: $email, name: $name, surname: $surname, nickname: $nickname, approved: $approved)';
-  }
-}
-
-/// @nodoc
-abstract mixin class _$UserDTOCopyWith<$Res> implements $UserDTOCopyWith<$Res> {
-  factory _$UserDTOCopyWith(_UserDTO value, $Res Function(_UserDTO) _then) =
-      __$UserDTOCopyWithImpl;
-  @override
-  @useResult
-  $Res call(
-      {String id,
-      String email,
-      String name,
-      String surname,
-      String nickname,
-      bool approved});
-}
-
-/// @nodoc
-class __$UserDTOCopyWithImpl<$Res> implements _$UserDTOCopyWith<$Res> {
-  __$UserDTOCopyWithImpl(this._self, this._then);
-
-  final _UserDTO _self;
-  final $Res Function(_UserDTO) _then;
-
-  /// Create a copy of UserDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $Res call({
-    Object? id = null,
-    Object? email = null,
-    Object? name = null,
-    Object? surname = null,
-    Object? nickname = null,
-    Object? approved = null,
-  }) {
-    return _then(_UserDTO(
-      id: null == id
-          ? _self.id
-          : id // ignore: cast_nullable_to_non_nullable
-              as String,
-      email: null == email
-          ? _self.email
-          : email // ignore: cast_nullable_to_non_nullable
-              as String,
-      name: null == name
-          ? _self.name
-          : name // ignore: cast_nullable_to_non_nullable
-              as String,
-      surname: null == surname
-          ? _self.surname
-          : surname // ignore: cast_nullable_to_non_nullable
-              as String,
-      nickname: null == nickname
-          ? _self.nickname
-          : nickname // ignore: cast_nullable_to_non_nullable
-              as String,
-      approved: null == approved
-          ? _self.approved
-          : approved // ignore: cast_nullable_to_non_nullable
-              as bool,
-    ));
   }
 }
 
