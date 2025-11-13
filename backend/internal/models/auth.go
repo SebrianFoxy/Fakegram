@@ -100,7 +100,5 @@ func NormalizeNickname(nickname string) string {
 }
 
 func (u *User) CheckNickname(nickname string) bool {
-	print("\nNICKNAME ", nickname,)
-	print("\nU.NICKNAME ", u.Nickname, "\n")
     return NormalizeNickname(nickname) == NormalizeNickname(u.Nickname)
 }

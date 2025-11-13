@@ -3,6 +3,7 @@ package handlers
 import (
 	"fakegram-api/internal/models"
 	"fakegram-api/internal/repositories"
+	"fmt"
 
 	// "fmt"
 	"net/http"
@@ -21,8 +22,6 @@ func NewUserHandler(userRepo *repositories.UserRepository) *UserHandler {
         userRepo: userRepo,
     }
 }
-
-
 
 // GetAllUsers возвращает список пользователей с пагинацией
 // @Summary      Получить пользователей
@@ -52,7 +51,7 @@ func (h *UserHandler) GetAllUsers(c echo.Context) error {
     users, totalCount, err := h.userRepo.GetAllUsers(ctx, page, limit)
     if err != nil {
         return c.JSON(http.StatusInternalServerError, map[string]string{
-            "error": "Failed to get users",
+            "error": fmt.Sprintf("Failed to get users: %v", err),
         })
     }
 

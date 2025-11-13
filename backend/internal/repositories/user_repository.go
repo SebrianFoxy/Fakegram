@@ -65,7 +65,9 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
     offset := (page - 1) * limit
 
     query := `
-        SELECT id, name, surname, nickname, email, created_at, updated_at 
+        SELECT 
+            id, name, surname, nickname, email, approved, bio, 
+            avatar_url, is_online, last_seen, created_at, updated_at 
         FROM users 
         ORDER BY created_at DESC 
         LIMIT $1 OFFSET $2
@@ -86,6 +88,11 @@ func (r *UserRepository) GetAllUsers(ctx context.Context, page, limit int) ([]*m
             &user.Surname,
             &user.Nickname,
             &user.Email,
+            &user.Approved,
+            &user.Bio,
+            &user.AvatarURL,
+            &user.IsOnline,
+            &user.LastSeen,
             &user.CreatedAt,
             &user.UpdatedAt,
         )
