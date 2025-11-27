@@ -6,7 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../presenter/auth/page/login_page.dart';
 import '../../presenter/auth/page/registration_page.dart';
-import '../../presenter/messages/page/messages.dart';
+import '../../presenter/chat/page/messages.dart';
 import '../../presenter/profile/page/profile.dart';
 
 part 'app_router.g.dart';
@@ -29,7 +29,7 @@ GoRouter goRouter(Ref ref) {
       _logger.fine('[redirect] authState=$authState, path=$currentPath');
 
       if (authState.isAuthenticated && isPublicRoute) {
-        return '/messages';
+        return '/chat';
       }
 
       if (!authState.isAuthenticated && !isPublicRoute) {
@@ -50,8 +50,8 @@ GoRouter goRouter(Ref ref) {
         builder: (context, state) => const RegistrationPage(),
       ),
       GoRoute(
-        path: '/messages',
-        name: 'messages',
+        path: '/chat',
+        name: 'chat',
         builder: (context, state) => const MessagesPage(),
       ),
       GoRoute(
@@ -96,7 +96,7 @@ class AppRouter {
   }
 
   static void goToMessages(BuildContext context) {
-    context.go('/messages');
+    context.go('/chat');
   }
 
   static void goToProfile(BuildContext context) {

@@ -10,7 +10,12 @@ const (
     EventUserOnline     = "user_online"
     EventUserOffline    = "user_offline"
     EventMessageRead    = "message_read"   
-    EventError          = "error"
+    EventMessageError   = "message_error"
+)
+
+const (
+    EventChatListUpdate   = "chat_list_update"
+    EventNewChatCreated   = "new_chat_created"  
 )
 
 type Message struct {

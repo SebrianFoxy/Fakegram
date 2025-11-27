@@ -13,6 +13,7 @@ abstract class DirectMessageModel with _$DirectMessageModel {
     required DateTime createdAt,
     @Default(false) bool isRead,
     @Default(false) bool isDelivered,
+    @Default(false) bool isDeleted,
   }) = _DirectMessageModel;
 
   factory DirectMessageModel.fromJson(Map<String, dynamic> json) => _$DirectMessageModelFromJson(json);

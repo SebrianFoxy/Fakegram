@@ -34,9 +34,11 @@ class ChatListItem extends ConsumerWidget {
       children: [
         CircleAvatar(
           radius: 24,
-          backgroundImage: AssetImage(chat.otherUserAvatar),
+          backgroundImage: chat.otherUser.avatarUrl != null
+              ? NetworkImage(chat.otherUser.avatarUrl!)
+              : const AssetImage('assets/default-avatar.png') as ImageProvider,
         ),
-        if (chat.isOnline) _buildOnlineIndicator(theme),
+        if (chat.otherUser.isOnline) _buildOnlineIndicator(theme),
       ],
     );
   }
@@ -58,8 +60,13 @@ class ChatListItem extends ConsumerWidget {
   }
 
   Widget _buildTitle(ThemeData theme) {
+    final maxLength = 15;
+    final displayText = chat.title.length > maxLength
+        ? '${chat.title.substring(0, maxLength)}...'
+        : chat.title;
+
     return Text(
-      chat.otherUserName,
+      displayText,
       style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.bold,
         color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
@@ -69,7 +76,7 @@ class ChatListItem extends ConsumerWidget {
 
   Widget _buildSubtitle(ThemeData theme) {
     return Text(
-      chat.lastMessage,
+      chat.lastMessage.messageText.toString(),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: theme.textTheme.bodySmall?.copyWith(
@@ -93,7 +100,7 @@ class ChatListItem extends ConsumerWidget {
 
   Widget _buildTime(ThemeData theme) {
     return Text(
-      chat.lastMessageTime.toString(),
+      DateFormat.Hm().format(chat.lastMessage.createdAt),
       style: theme.textTheme.labelSmall?.copyWith(
         color: theme.colorScheme.onSurface.withOpacity(0.5),
       ),

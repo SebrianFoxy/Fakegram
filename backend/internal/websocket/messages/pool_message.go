@@ -1,9 +1,10 @@
 package messages
 
 import (
-    "log"
-    "sync"
-    "time"
+	"fakegram-api/internal/models"
+	"log"
+	"sync"
+	"time"
 )
 
 type Pool struct {
@@ -120,6 +121,32 @@ func (pool *Pool) SendToUser(userID string, message *Message) error {
 
     log.Printf("Message sent to user %s", userID)
     return nil
+}
+
+func (pool *Pool) NotifyChatListUpdate(userID string, chat *models.ChatListItem) {
+    log.Printf("🟢 Preparing to send chat update to user %s", userID)
+    log.Printf("🟢 Chat data: ID=%s, LastMessage=%v", chat.ID, chat.LastMessage)
+
+    event := WSEvent{
+        Event: EventChatListUpdate,
+        Data: map[string]interface{}{
+            "chat":      chat,
+            "timestamp": time.Now().Format(time.RFC3339),
+        },
+    }
+
+    message := &Message{
+        Type:    "event",
+        Payload: mustMarshal(event),
+    }
+
+    log.Printf("🟢 Sending message to user %s: %s", userID, string(mustMarshal(event)))
+
+    if err := pool.SendToUser(userID, message); err != nil {
+        log.Printf("Failed to send chat list update to user %s: %v", userID, err)
+    } else {
+        log.Printf("Chat list update sent to user %s", userID)
+    }
 }
 
 type UserNotConnectedError struct {

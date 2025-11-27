@@ -22,6 +22,7 @@ mixin _$DirectMessageModel {
   DateTime get createdAt;
   bool get isRead;
   bool get isDelivered;
+  bool get isDeleted;
 
   /// Create a copy of DirectMessageModel
   /// with the given fields replaced by the non-null parameter values.
@@ -49,17 +50,19 @@ mixin _$DirectMessageModel {
                 other.createdAt == createdAt) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.isDelivered, isDelivered) ||
-                other.isDelivered == isDelivered));
+                other.isDelivered == isDelivered) &&
+            (identical(other.isDeleted, isDeleted) ||
+                other.isDeleted == isDeleted));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, senderId, receiverId, text,
-      createdAt, isRead, isDelivered);
+      createdAt, isRead, isDelivered, isDeleted);
 
   @override
   String toString() {
-    return 'DirectMessageModel(id: $id, senderId: $senderId, receiverId: $receiverId, text: $text, createdAt: $createdAt, isRead: $isRead, isDelivered: $isDelivered)';
+    return 'DirectMessageModel(id: $id, senderId: $senderId, receiverId: $receiverId, text: $text, createdAt: $createdAt, isRead: $isRead, isDelivered: $isDelivered, isDeleted: $isDeleted)';
   }
 }
 
@@ -76,7 +79,8 @@ abstract mixin class $DirectMessageModelCopyWith<$Res> {
       String text,
       DateTime createdAt,
       bool isRead,
-      bool isDelivered});
+      bool isDelivered,
+      bool isDeleted});
 }
 
 /// @nodoc
@@ -99,6 +103,7 @@ class _$DirectMessageModelCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? isRead = null,
     Object? isDelivered = null,
+    Object? isDeleted = null,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -129,6 +134,10 @@ class _$DirectMessageModelCopyWithImpl<$Res>
           ? _self.isDelivered
           : isDelivered // ignore: cast_nullable_to_non_nullable
               as bool,
+      isDeleted: null == isDeleted
+          ? _self.isDeleted
+          : isDeleted // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -143,7 +152,8 @@ class _DirectMessageModel implements DirectMessageModel {
       required this.text,
       required this.createdAt,
       this.isRead = false,
-      this.isDelivered = false});
+      this.isDelivered = false,
+      this.isDeleted = false});
   factory _DirectMessageModel.fromJson(Map<String, dynamic> json) =>
       _$DirectMessageModelFromJson(json);
 
@@ -163,6 +173,9 @@ class _DirectMessageModel implements DirectMessageModel {
   @override
   @JsonKey()
   final bool isDelivered;
+  @override
+  @JsonKey()
+  final bool isDeleted;
 
   /// Create a copy of DirectMessageModel
   /// with the given fields replaced by the non-null parameter values.
@@ -194,17 +207,19 @@ class _DirectMessageModel implements DirectMessageModel {
                 other.createdAt == createdAt) &&
             (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.isDelivered, isDelivered) ||
-                other.isDelivered == isDelivered));
+                other.isDelivered == isDelivered) &&
+            (identical(other.isDeleted, isDeleted) ||
+                other.isDeleted == isDeleted));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, senderId, receiverId, text,
-      createdAt, isRead, isDelivered);
+      createdAt, isRead, isDelivered, isDeleted);
 
   @override
   String toString() {
-    return 'DirectMessageModel(id: $id, senderId: $senderId, receiverId: $receiverId, text: $text, createdAt: $createdAt, isRead: $isRead, isDelivered: $isDelivered)';
+    return 'DirectMessageModel(id: $id, senderId: $senderId, receiverId: $receiverId, text: $text, createdAt: $createdAt, isRead: $isRead, isDelivered: $isDelivered, isDeleted: $isDeleted)';
   }
 }
 
@@ -223,7 +238,8 @@ abstract mixin class _$DirectMessageModelCopyWith<$Res>
       String text,
       DateTime createdAt,
       bool isRead,
-      bool isDelivered});
+      bool isDelivered,
+      bool isDeleted});
 }
 
 /// @nodoc
@@ -246,6 +262,7 @@ class __$DirectMessageModelCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? isRead = null,
     Object? isDelivered = null,
+    Object? isDeleted = null,
   }) {
     return _then(_DirectMessageModel(
       id: null == id
@@ -275,6 +292,10 @@ class __$DirectMessageModelCopyWithImpl<$Res>
       isDelivered: null == isDelivered
           ? _self.isDelivered
           : isDelivered // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isDeleted: null == isDeleted
+          ? _self.isDeleted
+          : isDeleted // ignore: cast_nullable_to_non_nullable
               as bool,
     ));
   }

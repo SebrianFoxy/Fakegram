@@ -31,10 +31,12 @@ class ChatHeader extends ConsumerWidget {
     return Stack(
       children: [
         CircleAvatar(
-          radius: 20,
-          backgroundImage: AssetImage(chat.otherUserAvatar),
+          radius: 24,
+          backgroundImage: chat.otherUser.avatarUrl != null
+              ? NetworkImage(chat.otherUser.avatarUrl!)
+              : const AssetImage('assets/default-avatar.png') as ImageProvider,
         ),
-        if (chat.isOnline) _buildOnlineIndicator(theme),
+        if (chat.otherUser.isOnline) _buildOnlineIndicator(theme),
       ],
     );
   }
@@ -61,11 +63,15 @@ class ChatHeader extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            chat.otherUserName,
+            chat.title.length > 15
+                ? '${chat.title.substring(0, 15)}...'
+                : chat.title,
             style: theme.textTheme.titleLarge,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           Text(
-            chat.isOnline ? 'в сети' : 'был(а) недавно',
+            chat.otherUser.isOnline ? 'в сети' : 'был(а) недавно',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),

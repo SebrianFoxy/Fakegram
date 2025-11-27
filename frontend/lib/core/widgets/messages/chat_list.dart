@@ -5,8 +5,9 @@ class ChatList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chats = ref.watch(chatListProvider);
+    final chatState = ref.watch(chatNotifierProvider);
     final selectedChat = ref.watch(selectedChatProvider);
+    final isWebSocketConnected = ref.watch(webSocketNotifierProvider);
 
     return Container(
       width: 300,
@@ -16,18 +17,31 @@ class ChatList extends ConsumerWidget {
       child: Column(
         children: [
           const ChatListHeader(),
-          Expanded(
-            child: ListView.builder(
-              itemCount: chats.length,
-              itemBuilder: (context, index) {
-                final chat = chats[index];
-                return ChatListItem(
-                  chat: chat,
-                  isSelected: selectedChat?.id == chat.id,
-                  onTap: () => ref.read(selectedChatProvider.notifier).state = chat,
-                );
-              },
+          const SizedBox(width: 8),
+          Text(
+            isWebSocketConnected ? 'Online' : 'Offline',
+            style: TextStyle(
+              color: isWebSocketConnected ? Colors.green : Colors.red,
             ),
+          ),
+          Expanded(
+            child: switch (chatState) {
+              ChatStateSuccessLoading(:final chats) => ListView.builder(
+                itemCount: chats.chats.length,
+                itemBuilder: (context, index) {
+                  final chat = chats.chats[index];
+                  return ChatListItem(
+                    chat: chat,
+                    isSelected: selectedChat?.id == chat.id,
+                    onTap: () => ref.read(selectedChatProvider.notifier).state = chat,
+                  );
+                },
+              ),
+              ChatStateInitial() => Text("У вас нет чатов!"),
+              _ => const Center(
+                child: CircularProgressIndicator(),
+              )
+            },
           ),
           const UserPanel(),
         ],

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fakegram-api/internal/models"
 	"fmt"
+	"log"
 )
 
 type ChatRepository struct {
@@ -112,6 +113,8 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
 }
 
 func (r *ChatRepository) getChatUserInfo(ctx context.Context, userID string) (*models.User, error) {
+    log.Printf("🔍 getChatUserInfo called for user: %s", userID)
+    
 	query := `
 		SELECT id, name, surname, nickname, avatar_url, is_online
 		FROM users 

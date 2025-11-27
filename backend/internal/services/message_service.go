@@ -77,6 +77,8 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
     }
     
     s.broadcastNewMessage(message)
+
+    s.notifyChatParticipantsAboutNewMessage(chatID, message, senderID)
     
     log.Printf("Message sent by user %s in chat %s", senderID, chatID)
     return message, nil
@@ -128,4 +130,50 @@ func mustMarshal(v interface{}) []byte {
         return []byte(`{"error": "marshal_failed"}`)
     }
     return data
+}
+
+func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, message *models.Message, excludeUserID string) {
+    if s.wsPool == nil {
+        return
+    }
+
+    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+    if err != nil {
+        log.Printf("Error extracting users from chat ID: %v", err)
+        return
+    }
+
+    participants := []string{user1, user2}
+
+    log.Printf("🟢 Notifying participants about new message: %v, exclude: %s", participants, excludeUserID)
+
+    for _, participantID := range participants {
+        if participantID == excludeUserID {
+            log.Printf("🟡 Skipping WebSocket notification for message sender: %s", participantID)
+            continue
+        }
+
+        log.Printf("🟢 Sending WebSocket update to receiver: %s", participantID)
+
+        chats, err := s.chatRepo.GetUserChats(context.Background(), participantID)
+        if err != nil {
+            log.Printf("Error getting user chats for notification: %v", err)
+            continue
+        }
+
+        var updatedChat *models.ChatListItem
+        for _, chat := range chats {
+            if chat.ID == chatID {
+                updatedChat = chat
+                break
+            }
+        }
+
+        if updatedChat != nil {
+            log.Printf("🟢 Sending chat update to user %s for chat %s", participantID, chatID)
+            s.wsPool.NotifyChatListUpdate(participantID, updatedChat)
+        } else {
+            log.Printf("❌ Chat not found for user %s", participantID)
+        }
+    }
 }
