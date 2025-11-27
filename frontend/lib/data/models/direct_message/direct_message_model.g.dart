@@ -15,6 +15,7 @@ _DirectMessageModel _$DirectMessageModelFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['createdAt'] as String),
       isRead: json['isRead'] as bool? ?? false,
       isDelivered: json['isDelivered'] as bool? ?? false,
+      isDeleted: json['isDeleted'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$DirectMessageModelToJson(_DirectMessageModel instance) =>
@@ -26,4 +27,5 @@ Map<String, dynamic> _$DirectMessageModelToJson(_DirectMessageModel instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'isRead': instance.isRead,
       'isDelivered': instance.isDelivered,
+      'isDeleted': instance.isDeleted,
     };

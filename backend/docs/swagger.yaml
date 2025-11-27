@@ -1,4 +1,47 @@
 definitions:
+  models.CreateMessageRequest:
+    properties:
+      chat_id:
+        type: string
+      message_text:
+        type: string
+      message_type:
+        allOf:
+        - $ref: '#/definitions/models.MessageType'
+        enum:
+        - text
+        - image
+        - file
+        - video
+        - audio
+      receiver_id:
+        type: string
+      reply_to_message_id:
+        type: string
+    required:
+    - chat_id
+    - message_text
+    - message_type
+    type: object
+  models.GetMessagesResponse:
+    properties:
+      count:
+        type: integer
+      has_next:
+        type: boolean
+      has_prev:
+        type: boolean
+      limit:
+        type: integer
+      messages:
+        items:
+          $ref: '#/definitions/models.MessageDetail'
+        type: array
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
   models.LoginRequest:
     properties:
       email:
@@ -6,6 +49,47 @@ definitions:
       password:
         type: string
     type: object
+  models.MessageDetail:
+    properties:
+      chat_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      is_edited:
+        type: boolean
+      is_read:
+        type: boolean
+      message_text:
+        type: string
+      message_type:
+        $ref: '#/definitions/models.MessageType'
+      reply_to_message_id:
+        type: string
+      sender_avatar_url:
+        type: string
+      sender_id:
+        type: string
+      sender_name:
+        type: string
+      sender_nickname:
+        type: string
+      sender_surname:
+        type: string
+    type: object
+  models.MessageType:
+    enum:
+    - text
+    - image
+    - file
+    type: string
+    x-enum-varnames:
+    - MessageTypeText
+    - MessageTypeImage
+    - MessageTypeFile
   models.RefreshRequest:
     properties:
       refresh_rotate:
@@ -50,11 +134,19 @@ definitions:
     properties:
       approved:
         type: boolean
+      avatar_url:
+        type: string
+      bio:
+        type: string
       created_at:
         type: string
       email:
         type: string
       id:
+        type: string
+      is_online:
+        type: boolean
+      last_seen:
         type: string
       name:
         type: string
@@ -193,6 +285,141 @@ paths:
       summary: Регистрация
       tags:
       - auth
+  /api/v1/chats:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех чатов (приватных и групповых) пользователя
+        на основе JWT токена. Для приватных чатов автоматически устанавливается название
+        в формате "Имя Фамилия" собеседника.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'chats": "Список объектов ChatListItem", "count": "Количество
+            чатов'
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Неавторизован - невалидный токен или claims
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить чаты пользователя
+      tags:
+      - chats
+  /api/v1/messages:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет сообщение. Для существующих диалогов используйте chat_id,
+        для новых - receiver_id
+      parameters:
+      - description: Данные для отправки сообщения
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Сообщение отправлено
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверные данные запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Отправить сообщение
+      tags:
+      - messages
+  /api/v1/messages/private-chat/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает сообщения из приватного чата между двумя пользователями
+        с автоматической отметкой о прочтении
+      parameters:
+      - description: ID второго пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Количество сообщений на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список сообщений
+          schema:
+            $ref: '#/definitions/models.GetMessagesResponse'
+        "400":
+          description: Неверные параметры
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить сообщения чата
+      tags:
+      - messages
   /api/v1/users:
     get:
       consumes:

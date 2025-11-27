@@ -201,6 +201,207 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/chats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список всех чатов (приватных и групповых) пользователя на основе JWT токена. Для приватных чатов автоматически устанавливается название в формате \"Имя Фамилия\" собеседника.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chats"
+                ],
+                "summary": "Получить чаты пользователя",
+                "responses": {
+                    "200": {
+                        "description": "chats\": \"Список объектов ChatListItem\", \"count\": \"Количество чатов",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован - невалидный токен или claims",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Отправляет сообщение. Для существующих диалогов используйте chat_id, для новых - receiver_id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Отправить сообщение",
+                "parameters": [
+                    {
+                        "description": "Данные для отправки сообщения",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Сообщение отправлено",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные данные запроса",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизован",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/messages/private-chat/{user_id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает сообщения из приватного чата между двумя пользователями с автоматической отметкой о прочтении",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Получить сообщения чата",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID второго пользователя",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Количество сообщений на странице",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список сообщений",
+                        "schema": {
+                            "$ref": "#/definitions/models.GetMessagesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверные параметры",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Доступ запрещен",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/users": {
             "get": {
                 "security": [
@@ -315,6 +516,71 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.CreateMessageRequest": {
+            "type": "object",
+            "required": [
+                "chat_id",
+                "message_text",
+                "message_type"
+            ],
+            "properties": {
+                "chat_id": {
+                    "type": "string"
+                },
+                "message_text": {
+                    "type": "string"
+                },
+                "message_type": {
+                    "enum": [
+                        "text",
+                        "image",
+                        "file",
+                        "video",
+                        "audio"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.MessageType"
+                        }
+                    ]
+                },
+                "receiver_id": {
+                    "type": "string"
+                },
+                "reply_to_message_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.GetMessagesResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_prev": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.MessageDetail"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.LoginRequest": {
             "type": "object",
             "properties": {
@@ -325,6 +591,66 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "models.MessageDetail": {
+            "type": "object",
+            "properties": {
+                "chat_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_deleted": {
+                    "type": "boolean"
+                },
+                "is_edited": {
+                    "type": "boolean"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "message_text": {
+                    "type": "string"
+                },
+                "message_type": {
+                    "$ref": "#/definitions/models.MessageType"
+                },
+                "reply_to_message_id": {
+                    "type": "string"
+                },
+                "sender_avatar_url": {
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "string"
+                },
+                "sender_name": {
+                    "type": "string"
+                },
+                "sender_nickname": {
+                    "type": "string"
+                },
+                "sender_surname": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MessageType": {
+            "type": "string",
+            "enum": [
+                "text",
+                "image",
+                "file"
+            ],
+            "x-enum-varnames": [
+                "MessageTypeText",
+                "MessageTypeImage",
+                "MessageTypeFile"
+            ]
         },
         "models.RefreshRequest": {
             "type": "object",
@@ -391,6 +717,12 @@ const docTemplate = `{
                 "approved": {
                     "type": "boolean"
                 },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -398,6 +730,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "is_online": {
+                    "type": "boolean"
+                },
+                "last_seen": {
                     "type": "string"
                 },
                 "name": {

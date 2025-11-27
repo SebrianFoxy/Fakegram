@@ -63,9 +63,13 @@ func CreateTableUsers(db *sql.DB) error {
         email VARCHAR(255) UNIQUE NOT NULL,
 		password VARCHAR(255) NOT NULL,
         approved BOOL DEFAULT FALSE,
+        bio TEXT,
+        avatar_url VARCHAR(500),
+        is_online BOOLEAN DEFAULT FALSE,
+        last_seen TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+    );
     `
 
     _, err := db.Exec(query)
@@ -77,22 +81,102 @@ func CreateTableUsers(db *sql.DB) error {
     return nil
 }
 
-func CreateTableMessages(db *sql.DB) error {
+func CreateTableChatMembers(db *sql.DB) error {
     query := `
-    CREATE TABLE IF NOT EXISTS messages (
+    CREATE TABLE IF NOT EXISTS chat_members (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        sender_id UUID REFERENCES users(id),
-        receiver_id UUID REFERENCES users(id),
-        content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_deleted BOOLEAN DEFAULT FALSE
-    )`
+        chat_id VARCHAR(255) NOT NULL,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        role VARCHAR(20) DEFAULT 'member',
+        joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(chat_id, user_id)
+    );
+
+
+    CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members(user_id);
+    CREATE INDEX IF NOT EXISTS idx_chat_members_chat_id ON chat_members(chat_id);
+    `
+
     _, err := db.Exec(query)
     if err != nil {
         return err
     }
 
+    log.Println("Chat_members table created successfully!")
+    return nil
+}
+
+func CreateTableChats(db *sql.DB) error {
+    query := `
+    CREATE TABLE IF NOT EXISTS chats (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        chat_type VARCHAR(20) DEFAULT 'private',
+        title VARCHAR(255),
+        description TEXT,
+        avatar_url VARCHAR(500),
+        created_by UUID REFERENCES users(id),
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    `
+
+    _, err := db.Exec(query)
+    if err != nil {
+        return err
+    }
+
+    log.Println("Chats table created successfully!")
+    return nil
+}
+
+func CreateTableMessages(db *sql.DB) error {
+    query := `
+    CREATE TABLE IF NOT EXISTS messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        chat_id VARCHAR(255) NOT NULL,
+        sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        message_text TEXT,
+        message_type VARCHAR(20) DEFAULT 'text',
+        reply_to_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
+        is_edited BOOLEAN DEFAULT FALSE,
+        is_deleted BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages(chat_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_reply_to ON messages(reply_to_message_id);
+    `
+    
+    _, err := db.Exec(query)
+    if err != nil {
+        return fmt.Errorf("failed to create messages table: %v", err)
+    }
+
     log.Println("Messages table created successfully!")
+    return nil
+}
+
+func CreateTableMessageReadStatus(db *sql.DB) error {
+    query := `
+        CREATE TABLE IF NOT EXISTS message_read_status (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            read_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(message_id, user_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_message_read_status_user ON message_read_status(user_id);
+        CREATE INDEX IF NOT EXISTS idx_message_read_status_message ON message_read_status(message_id);
+    `
+    
+    _, err := db.Exec(query)
+    if err != nil {
+        return fmt.Errorf("failed to create message_read_status table: %v", err)
+    }
+
+    log.Println("Message_read_status table created successfully!")
     return nil
 }
 

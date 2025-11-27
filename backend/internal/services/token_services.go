@@ -23,7 +23,7 @@ func (s *TokenService) GenerateTokens(userID string) (*models.LoginToken, error)
 	}
 
 	refreshToken := uuid.New().String()
-	expiration := time.Now().Add(15 * time.Minute)
+	expiration := time.Now().Add(60 * time.Minute)
 	refreshExpiration := time.Now().Add(7 * 24 * time.Hour)
 
 	return &models.LoginToken{
@@ -56,7 +56,7 @@ func (s *TokenService) generateTokenPair(userID string, includeRefresh bool) (*m
 		refreshToken = uuid.New().String()
 	}
 
-	expiration := time.Now().Add(15 * time.Minute)
+	expiration := time.Now().Add(60 * time.Minute)
 	refreshExpiration := time.Now().Add(7 * 24 * time.Hour)
 
 	return &models.LoginToken{
@@ -71,7 +71,7 @@ func (s *TokenService) generateTokenPair(userID string, includeRefresh bool) (*m
 }
 
 func (s *TokenService) generateAccessToken(userID string) (string, error) {
-	expiration := time.Now().Add(15 * time.Minute)
+	expiration := time.Now().Add(60 * time.Minute)
 	claims := jwt.RegisteredClaims{
 		Subject:   userID,
 		ExpiresAt: jwt.NewNumericDate(expiration),
@@ -89,7 +89,7 @@ func (s *TokenService) refreshAccessTokenOnly(existingToken *models.LoginToken) 
 	}
 
 	existingToken.AccessToken = accessToken
-	existingToken.ExpiredAt = time.Now().Add(15 * time.Minute)
+	existingToken.ExpiredAt = time.Now().Add(60 * time.Minute)
 
 	return existingToken, nil
 }
@@ -116,6 +116,6 @@ func (s *TokenService) GetTokenResponse(loginToken *models.LoginToken) *models.T
 		AccessToken:  loginToken.AccessToken,
 		RefreshToken: loginToken.RefreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(15 * time.Minute / time.Second),
+		ExpiresIn:    int64(60 * time.Minute / time.Second),
 	}
 }

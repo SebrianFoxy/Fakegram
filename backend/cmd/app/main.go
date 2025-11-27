@@ -9,6 +9,7 @@ import (
 	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/routes"
 	"fakegram-api/internal/services"
+	wsMessage "fakegram-api/internal/websocket/messages"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -46,6 +47,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create users table: %v", err)
 	}
+
+	err = database.CreateTableChats(db)
+	if err != nil {
+		log.Fatalf("Failed to create users table: %v", err)
+	}
+
+	err = database.CreateTableChatMembers(db)
+	if err != nil {
+		log.Fatalf("Failed to create users table: %v", err)
+	}
 	
 	err = database.CreateTableMessages(db)
 	if err != nil {
@@ -57,12 +68,25 @@ func main() {
 		log.Fatalf("Failed to create tokens table: %v", err)
 	}
 
+	err = database.CreateTableMessageReadStatus(db)
+	if err != nil {
+		log.Fatalf("Failed to create tokens table: %v", err)
+	}
+	
+	wsPool := wsMessage.NewPool()
+	go wsPool.Start()
+
+	wsMessageHandler := wsMessage.NewMessageWebSocketHandler(wsPool)
+
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(db)
+	chatRepo := repositories.NewChatRepository(db)
+	messageRepo := repositories.NewMessageRepository(db)
 
 	jwtMiddleware := cnf.CreateJWTMiddleware()
 
 	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
+	messageService := services.NewMessageService(messageRepo, chatRepo, wsPool)
 	emailVerificationService := services.NewEmailVerificationService(
 		cnf.SMTPHost,
 		cnf.SMTPPort,
@@ -76,8 +100,17 @@ func main() {
 
 	userHandler := handlers.NewUserHandler(userRepo)
 	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService, emailVerificationService)
+	messageHandler := handlers.NewMessageHandler(messageService, wsPool)
+	chatHandler := handlers.NewChatHandler(chatRepo)
 
-	appRoutes := routes.NewRoutes(userHandler, authHandler, jwtMiddleware)
+	appRoutes := routes.NewRoutes(
+		userHandler, 
+		authHandler,
+		messageHandler,
+		chatHandler,
+		wsMessageHandler, 
+		jwtMiddleware,
+	)
 	appRoutes.Setup(e)
 
 	port := ":" + cnf.ServerPort
