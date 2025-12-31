@@ -1,13 +1,13 @@
-import 'package:fakegram/presenter/auth/notifier/auth_notifier.dart';
+import 'package:fakegram/features/chat/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../presenter/auth/page/login_page.dart';
-import '../../presenter/auth/page/registration_page.dart';
-import '../../presenter/chat/page/messages.dart';
-import '../../presenter/profile/page/profile.dart';
+import '../../features/auth/presentation/notifier/auth_notifier.dart';
+import '../../features/auth/presentation/page/login_page.dart';
+import '../../features/auth/presentation/page/registration_page.dart';
+import '../../features/profile/presentation/page/profile.dart';
 
 part 'app_router.g.dart';
 
@@ -52,7 +52,7 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/chat',
         name: 'chat',
-        builder: (context, state) => const MessagesPage(),
+        builder: (context, state) => const ChatPage(),
       ),
       GoRoute(
         path: '/profile',

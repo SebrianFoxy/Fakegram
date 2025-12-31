@@ -3,10 +3,13 @@ import 'package:fakegram/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+import 'core/di/service_locator.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
+
+  await di.initDependencies();
 
   WindowOptions windowOptions = WindowOptions(
     minimumSize: Size(300, 400),
