@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/direct_chat_entity.dart';
+import '../../../domain/entities/direct_chat_entity.dart';
 import 'chat_user_model.dart';
 import 'last_message_model.dart';
 

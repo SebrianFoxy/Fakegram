@@ -45,6 +45,16 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
                 ROW_NUMBER() OVER (PARTITION BY m.chat_id ORDER BY m.created_at DESC) as rn
             FROM messages m
             WHERE m.chat_id IN (SELECT chat_id FROM UserDialogs)
+        ),
+        UnreadCounts AS (
+            SELECT 
+                m.chat_id,
+                COUNT(CASE WHEN mrs.id IS NULL AND m.sender_id != $1 THEN 1 END) as unread_count
+            FROM messages m
+            LEFT JOIN message_read_status mrs ON m.id = mrs.message_id AND mrs.user_id = $1
+            WHERE m.chat_id IN (SELECT chat_id FROM UserDialogs)
+                AND NOT m.is_deleted
+            GROUP BY m.chat_id
         )
         SELECT 
             lm.chat_id as id,
@@ -56,8 +66,10 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
             lm.is_edited,
             lm.is_deleted,
             lm.created_at as message_created_at,
-            lm.created_at as updated_at
+            lm.created_at as updated_at,
+            COALESCE(uc.unread_count, 0) as unread_count
         FROM LastMessages lm
+        LEFT JOIN UnreadCounts uc ON lm.chat_id = uc.chat_id
         WHERE lm.rn = 1
         ORDER BY lm.created_at DESC
     `
@@ -85,6 +97,7 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
             &lastMessage.IsDeleted,
             &lastMessage.CreatedAt,
             &chat.UpdatedAt,
+            &chat.UnreadCount,
         )
         if err != nil {
             return nil, fmt.Errorf("failed to scan chat: %w", err)

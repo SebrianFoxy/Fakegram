@@ -2,14 +2,16 @@ package services
 
 import (
 	"context"
-	"encoding/json"
+	"time"
+	// "encoding/json"
 	"errors"
 	"fmt"
 	"log"
 
 	"fakegram-api/internal/models"
 	"fakegram-api/internal/repositories"
-	message_websocket "fakegram-api/internal/websocket/messages"
+	"fakegram-api/internal/websocket/types"
+	"fakegram-api/internal/websocket/utils"
 )
 
 
@@ -23,13 +25,13 @@ var (
 type MessageService struct {
     messageRepo *repositories.MessageRepository
     chatRepo    *repositories.ChatRepository
-    wsPool      *message_websocket.Pool
+    wsPool      types.PoolInterface
 }
 
 func NewMessageService(
     messageRepo *repositories.MessageRepository,
     chatRepo *repositories.ChatRepository,
-    wsPool *message_websocket.Pool,
+    wsPool types.PoolInterface,
 ) *MessageService {
     return &MessageService{
         messageRepo: messageRepo,
@@ -38,7 +40,7 @@ func NewMessageService(
     }
 }
 
-func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *models.CreateMessageRequest) (*models.Message, error) {
+func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *models.CreateMessageRequest) (*models.MessageDetail, error) {
     var chatID string
     
     if req.ChatID != "" {
@@ -64,6 +66,11 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
         return nil, fmt.Errorf("either chat_id or receiver_id must be provided")
     }
 
+    replyToMessageID := req.ReplyToMessageID
+    if replyToMessageID != nil && *replyToMessageID == "" {
+        replyToMessageID = nil
+    }
+
     createReq := &models.CreateMessageRequest{
         ChatID:           chatID,
         MessageText:      req.MessageText,
@@ -77,6 +84,8 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
     }
     
     s.broadcastNewMessage(message)
+    
+    s.notifyReceiverAboutNewMessage(chatID, message, senderID)
 
     s.notifyChatParticipantsAboutNewMessage(chatID, message, senderID)
     
@@ -111,28 +120,87 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
     return response, nil
 }
 
-func (s *MessageService) broadcastNewMessage(message *models.Message) {
-    event := message_websocket.WSEvent{
-        Event: message_websocket.EventMessageSent,
+func (s *MessageService) broadcastNewMessage(message *models.MessageDetail) {
+    event := types.WSEvent{
+        Event: types.EventMessageSent,
         Data:  message,
     }
 
-    s.wsPool.BroadcastToChat(message.ChatID, &message_websocket.Message{
+    s.wsPool.BroadcastToChat(message.ChatID, &types.Message{
         Type:    "event",
-        Payload: mustMarshal(event),
+        Payload: utils.MustMarshal(event),
     }, message.SenderID)
 }
 
-func mustMarshal(v interface{}) []byte {
-    data, err := json.Marshal(v)
-    if err != nil {
-        log.Printf("Marshal error: %v", err)
-        return []byte(`{"error": "marshal_failed"}`)
+func (s *MessageService) notifyReceiverAboutNewMessage(chatID string, message *models.MessageDetail, senderID string) {
+    if s.wsPool == nil {
+        return
     }
-    return data
+
+    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+    if err != nil {
+        log.Printf("Error extracting users from chat ID: %v", err)
+        return
+    }
+
+    var receiverID string
+    if user1 == senderID {
+        receiverID = user2
+    } else {
+        receiverID = user1
+    }
+
+    log.Printf("🟢 Preparing message list update for receiver %s", receiverID)
+    
+    updateEvent := types.WSEvent{
+        Event: types.EventMessageListUpdate,
+        Data: map[string]interface{}{
+            "action":      "new_message",
+            "message":     message,
+            "chat_id":     chatID,
+            "sender_id":   senderID,
+            "receiver_id": receiverID,
+            "timestamp":   time.Now().Format(time.RFC3339),
+        },
+    }
+
+    updateMessage := &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(updateEvent),
+    }
+
+    if err := s.wsPool.SendToUser(receiverID, updateMessage); err != nil {
+        log.Printf("❌ Failed to send message list update to user %s: %v", receiverID, err)
+    } else {
+        log.Printf("✅ Message list update sent to receiver %s", receiverID)
+    }
+    
+    senderEvent := types.WSEvent{
+        Event: types.EventMessageListUpdate,
+        Data: map[string]interface{}{
+            "action":      "new_message_sent",
+            "message":     message,
+            "chat_id":     chatID,
+            "sender_id":   senderID,
+            "receiver_id": receiverID,
+            "timestamp":   time.Now().Format(time.RFC3339),
+            "status":      "sent",
+        },
+    }
+    
+    senderMessage := &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(senderEvent),
+    }
+    
+    if err := s.wsPool.SendToUser(senderID, senderMessage); err != nil {
+        log.Printf("❌ Failed to send sent confirmation to sender %s: %v", senderID, err)
+    } else {
+        log.Printf("✅ Sent confirmation sent to sender %s", senderID)
+    }
 }
 
-func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, message *models.Message, excludeUserID string) {
+func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, message *models.MessageDetail, excludeUserID string) {
     if s.wsPool == nil {
         return
     }

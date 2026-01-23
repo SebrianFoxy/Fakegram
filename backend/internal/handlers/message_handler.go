@@ -1,10 +1,9 @@
-// internal/handlers/message.go
 package handlers
 
 import (
 	"fakegram-api/internal/models"
 	"fakegram-api/internal/services"
-	wsMessage "fakegram-api/internal/websocket/messages"
+	"fakegram-api/internal/websocket/types"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,10 +13,10 @@ import (
 
 type MessageHandler struct {
     messageService *services.MessageService
-    wsPool         *wsMessage.Pool
+    wsPool         types.PoolInterface
 }
 
-func NewMessageHandler(messageService *services.MessageService, wsPool *wsMessage.Pool) *MessageHandler {
+func NewMessageHandler(messageService *services.MessageService, wsPool types.PoolInterface) *MessageHandler {
     return &MessageHandler{
         messageService: messageService,
         wsPool:         wsPool,

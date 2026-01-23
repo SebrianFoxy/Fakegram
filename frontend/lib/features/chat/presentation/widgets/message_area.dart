@@ -35,7 +35,6 @@ class MessageArea extends ConsumerWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     final theme = Theme.of(context);
-
     return Expanded(
       child: Center(
         child: Text(
@@ -48,8 +47,8 @@ class MessageArea extends ConsumerWidget {
     );
   }
 
-  void _handleNewMessage(DirectMessageEntity newMessage, WidgetRef ref) {
-    final chatId = newMessage.receiverId;
+  void _handleNewMessage(MessageEntity newMessage, WidgetRef ref) {
+    final chatId = newMessage.senderId;
     ref.read(chatMessagesProvider(chatId).notifier).update((messages) {
       return [...messages, newMessage];
     });

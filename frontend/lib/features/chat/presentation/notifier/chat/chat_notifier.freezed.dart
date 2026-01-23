@@ -157,4 +157,66 @@ class ChatStateLoading extends ChatState {
   }
 }
 
+/// @nodoc
+
+class ChatStateError extends ChatState {
+  const ChatStateError({this.error}) : super._();
+
+  final Object? error;
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $ChatStateErrorCopyWith<ChatStateError> get copyWith =>
+      _$ChatStateErrorCopyWithImpl<ChatStateError>(this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is ChatStateError &&
+            const DeepCollectionEquality().equals(other.error, error));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(error));
+
+  @override
+  String toString() {
+    return 'ChatState.error(error: $error)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $ChatStateErrorCopyWith<$Res>
+    implements $ChatStateCopyWith<$Res> {
+  factory $ChatStateErrorCopyWith(
+          ChatStateError value, $Res Function(ChatStateError) _then) =
+      _$ChatStateErrorCopyWithImpl;
+  @useResult
+  $Res call({Object? error});
+}
+
+/// @nodoc
+class _$ChatStateErrorCopyWithImpl<$Res>
+    implements $ChatStateErrorCopyWith<$Res> {
+  _$ChatStateErrorCopyWithImpl(this._self, this._then);
+
+  final ChatStateError _self;
+  final $Res Function(ChatStateError) _then;
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? error = freezed,
+  }) {
+    return _then(ChatStateError(
+      error: freezed == error ? _self.error : error,
+    ));
+  }
+}
+
 // dart format on

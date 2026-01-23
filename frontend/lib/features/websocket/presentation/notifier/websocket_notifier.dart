@@ -109,6 +109,9 @@ class WebSocketNotifier extends _$WebSocketNotifier {
       case 'new_chat_created':
         ref.read(newChatProvider.notifier).update(event.data);
         break;
+      case 'message_list_update':
+        _handleMessageListUpdate(event.data);
+        break;
       case 'message_sent':
         ref.read(newMessageProvider.notifier).update(event.data);
         break;
@@ -124,6 +127,21 @@ class WebSocketNotifier extends _$WebSocketNotifier {
       case 'user_offline':
         ref.read(userOnlineStatusProvider.notifier).update(event.data);
         break;
+    }
+  }
+
+  void _handleMessageListUpdate(Map<String, dynamic> data) {
+    final action = data['action'] as String?;
+    print('ACTION: $action');
+
+    if (action == 'new_message') {
+      ref.read(newMessageFromSocketProvider.notifier).update(data);
+    } else if (action == 'new_message_sent') {
+      ref.read(messageSentConfirmationProvider.notifier).update(data);
+    } else if (action == 'message_status_update') {
+      ref.read(messageStatusUpdateProvider.notifier).update(data);
+    } else if (action == 'message_deleted') {
+      ref.read(messageDeletedProvider.notifier).update(data);
     }
   }
 

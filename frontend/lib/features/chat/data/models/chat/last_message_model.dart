@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '../../domain/entities/last_message_entity.dart';
+import '../../../domain/entities/last_message_entity.dart';
 
 part 'last_message_model.freezed.dart';
 part 'last_message_model.g.dart';

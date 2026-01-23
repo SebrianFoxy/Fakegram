@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:fakegram/features/auth/domain/repositories/auth_repository.dart';
+import 'package:fakegram/features/chat/data/datasource/remote/message_datasource.dart';
+import 'package:fakegram/features/chat/domain/repositories/message_repository.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import '../../features/auth/data/datasources/local/auth_local_datasource.dart';
@@ -10,6 +12,7 @@ import '../../features/auth/domain/services/token_service.dart';
 import '../../features/auth/domain/services/token_service_impl.dart';
 import '../../features/chat/data/datasource/remote/chat_datasource.dart';
 import '../../features/chat/data/repositories/chat_repository_impl.dart';
+import '../../features/chat/data/repositories/message_repository_impl.dart';
 import '../../features/chat/domain/repositories/chat_repository.dart';
 import '../../features/websocket/data/repository/websocket_repository_impl.dart';
 import '../../features/websocket/data/service/websocket_service.dart';
@@ -74,10 +77,17 @@ Future<void> initDependencies() async {
     ),
   );
 
-  getIt.registerLazySingleton<ChatRemoteDatasource>(
-        () => ChatRemoteDatasource(
+  getIt.registerLazySingleton<MessageRemoteDatasource>(
+        () => MessageRemoteDatasource(
           getIt<DioClient>().instance,
           baseUrl: 'http://127.0.0.1:8080/api/v1',
+    ),
+  );
+
+  getIt.registerLazySingleton<ChatRemoteDatasource>(
+        () => ChatRemoteDatasource(
+      getIt<DioClient>().instance,
+      baseUrl: 'http://127.0.0.1:8080/api/v1',
     ),
   );
 
@@ -97,6 +107,12 @@ Future<void> initDependencies() async {
     ),
   );
 
+  getIt.registerLazySingleton<MessageRepository>(
+        () => MessageRepositoryImpl(
+      remoteDataSource: getIt<MessageRemoteDatasource>(),
+      tokenService: getIt<TokenService>(),
+    ),
+  );
   getIt.registerLazySingleton<WebSocketRepository>(
         () => WebSocketRepositoryImpl(
       webSocketService: getIt<WebSocketService>(),

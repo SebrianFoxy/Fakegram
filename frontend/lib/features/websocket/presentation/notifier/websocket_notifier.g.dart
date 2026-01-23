@@ -25,7 +25,7 @@ final isWebSocketConnectedProvider = AutoDisposeProvider<bool>.internal(
 // ignore: unused_element
 typedef IsWebSocketConnectedRef = AutoDisposeProviderRef<bool>;
 String _$autoConnectWebSocketHash() =>
-    r'aab0ce69728dc736f313478ae961175a1bca4899';
+    r'2b451173f1c79c99e2517dde6ca1aa04e9022b51';
 
 /// See also [autoConnectWebSocket].
 @ProviderFor(autoConnectWebSocket)
@@ -42,7 +42,7 @@ final autoConnectWebSocketProvider = AutoDisposeFutureProvider<void>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AutoConnectWebSocketRef = AutoDisposeFutureProviderRef<void>;
-String _$webSocketNotifierHash() => r'83dc4315971f8b6802e8e119d4b50efb96aec179';
+String _$webSocketNotifierHash() => r'fefe8fe6b6c27d51005e1f41eae5e051f2bf08c2';
 
 /// See also [WebSocketNotifier].
 @ProviderFor(WebSocketNotifier)

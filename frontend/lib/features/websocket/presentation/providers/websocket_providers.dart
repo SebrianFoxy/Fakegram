@@ -35,6 +35,46 @@ class NewMessage extends _$NewMessage {
 }
 
 @riverpod
+class NewMessageFromSocket extends _$NewMessageFromSocket {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
+class MessageSentConfirmation extends _$MessageSentConfirmation {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
+class MessageStatusUpdate extends _$MessageStatusUpdate {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
+class MessageDeleted extends _$MessageDeleted {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
 class MessageRead extends _$MessageRead {
   @override
   Map<String, dynamic>? build() => null;

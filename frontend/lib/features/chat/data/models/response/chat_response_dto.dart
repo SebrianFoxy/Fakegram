@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../chat/direct_chat_model.dart';
 
-import '../direct_chat_model.dart';
 
 part 'chat_response_dto.freezed.dart';
 part 'chat_response_dto.g.dart';
