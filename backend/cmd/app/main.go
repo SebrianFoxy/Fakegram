@@ -9,7 +9,7 @@ import (
 	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/routes"
 	"fakegram-api/internal/services"
-	wsMessage "fakegram-api/internal/websocket/messages"
+	"fakegram-api/internal/websocket" 
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -73,10 +73,10 @@ func main() {
 		log.Fatalf("Failed to create tokens table: %v", err)
 	}
 	
-	wsPool := wsMessage.NewPool()
-	go wsPool.Start()
+	wsManager := websocket.NewWebSocketManager()
+	wsPool := wsManager.GetPool()
+	wsHandler := wsManager.GetHandler()
 
-	wsMessageHandler := wsMessage.NewMessageWebSocketHandler(wsPool)
 
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(db)
@@ -108,7 +108,7 @@ func main() {
 		authHandler,
 		messageHandler,
 		chatHandler,
-		wsMessageHandler, 
+		wsHandler, 
 		jwtMiddleware,
 	)
 	appRoutes.Setup(e)

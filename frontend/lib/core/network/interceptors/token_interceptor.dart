@@ -7,8 +7,7 @@ class TokenInterceptor extends Interceptor {
   final Dio _dio;
 
   bool _isRefreshing = false;
-  final List<({RequestOptions options, Completer<Response> completer})>
-  _pendingRequests = [];
+  final List<({RequestOptions options, ErrorInterceptorHandler handler})> _pendingRequests = [];
 
   TokenInterceptor({
     required TokenService tokenService,
@@ -36,31 +35,16 @@ class TokenInterceptor extends Interceptor {
       ErrorInterceptorHandler handler,
       ) async {
     if (_shouldRefreshToken(err)) {
-      _pendingRequests.add((
-      options: err.requestOptions,
-      completer: Completer<Response>(),
-      ));
+      final completer = Completer<void>();
+      _pendingRequests.add((options: err.requestOptions, handler: handler));
 
-      await _handleTokenRefresh();
-
-      final newToken = await _tokenService.getAccessToken();
-
-      if (newToken != null) {
-        try {
-          final response = await _retryRequest(err.requestOptions, newToken);
-          handler.resolve(response);
-          return;
-        } catch (e) {
-          handler.reject(DioException(
-            requestOptions: err.requestOptions,
-            error: e,
-          ));
-          return;
-        }
-      } else {
-        handler.reject(err);
-        return;
+      if (!_isRefreshing) {
+        _isRefreshing = true;
+        _refreshTokenAndRetry();
       }
+
+      await completer.future;
+      return;
     }
 
     handler.next(err);
@@ -76,13 +60,10 @@ class TokenInterceptor extends Interceptor {
     return path.contains('/auth/refresh');
   }
 
-  Future<void> _handleTokenRefresh() async {
-    if (_isRefreshing) return;
-
-    _isRefreshing = true;
-
+  Future<void> _refreshTokenAndRetry() async {
     try {
       await _tokenService.updateToken();
+
       await _retryPendingRequests();
     } catch (e) {
       await _tokenService.deleteTokens();
@@ -104,16 +85,22 @@ class TokenInterceptor extends Interceptor {
     for (final pending in _pendingRequests) {
       try {
         final response = await _retryRequest(pending.options, newToken);
-        pending.completer.complete(response);
+        pending.handler.resolve(response);
       } catch (e) {
-        pending.completer.completeError(e);
+        pending.handler.reject(DioException(
+          requestOptions: pending.options,
+          error: e,
+        ));
       }
     }
   }
 
   void _rejectPendingRequests(dynamic error) {
     for (final pending in _pendingRequests) {
-      pending.completer.completeError(error);
+      pending.handler.reject(DioException(
+        requestOptions: pending.options,
+        error: error,
+      ));
     }
   }
 

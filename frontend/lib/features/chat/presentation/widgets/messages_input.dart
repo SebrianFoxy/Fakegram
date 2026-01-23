@@ -3,7 +3,7 @@ part of 'widgets.dart';
 class MessageInput extends ConsumerStatefulWidget {
   final String chatId;
   final String receiverId;
-  final ValueChanged<DirectMessageEntity>? onMessageSent;
+  final ValueChanged<MessageEntity>? onMessageSent;
 
   const MessageInput({
     super.key,
@@ -41,54 +41,17 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 hintText: 'Сообщение...',
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: (_) => _sendMessage(),
+              //onSubmitted: (_) => _sendMessage(),
               textInputAction: TextInputAction.send,
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.send),
-            onPressed: _sendMessage,
+            onPressed: null,
           ),
         ],
       ),
     );
-  }
-
-  void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    final newMessage = DirectMessageEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: 'current_user',
-      receiverId: widget.receiverId,
-      text: text,
-      createdAt: DateTime.now(),
-      isRead: true,
-      isDelivered: true,
-    );
-
-    _controller.clear();
-
-    _focusNode.requestFocus();
-
-    widget.onMessageSent?.call(newMessage);
-
-
-    // Закомментированная реальная логика:
-    /*
-    final repository = ref.read(messageRepositoryProvider);
-
-    final messageDto = CreateMessageDto(
-      chatId: widget.chatId,
-      text: text,
-    );
-
-    repository.sendMessage(messageDto).then((_) {
-      _controller.clear();
-      _focusNode.requestFocus();
-    });
-    */
   }
 }

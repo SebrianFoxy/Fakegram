@@ -51,6 +51,73 @@ final newMessageProvider =
 );
 
 typedef _$NewMessage = AutoDisposeNotifier<Map<String, dynamic>?>;
+String _$newMessageFromSocketHash() =>
+    r'19b9729d145272303efd012931473190a6d7e455';
+
+/// See also [NewMessageFromSocket].
+@ProviderFor(NewMessageFromSocket)
+final newMessageFromSocketProvider = AutoDisposeNotifierProvider<
+    NewMessageFromSocket, Map<String, dynamic>?>.internal(
+  NewMessageFromSocket.new,
+  name: r'newMessageFromSocketProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$newMessageFromSocketHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$NewMessageFromSocket = AutoDisposeNotifier<Map<String, dynamic>?>;
+String _$messageSentConfirmationHash() =>
+    r'8f73f5bd218614211e02b0809437b5de2e964307';
+
+/// See also [MessageSentConfirmation].
+@ProviderFor(MessageSentConfirmation)
+final messageSentConfirmationProvider = AutoDisposeNotifierProvider<
+    MessageSentConfirmation, Map<String, dynamic>?>.internal(
+  MessageSentConfirmation.new,
+  name: r'messageSentConfirmationProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$messageSentConfirmationHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$MessageSentConfirmation = AutoDisposeNotifier<Map<String, dynamic>?>;
+String _$messageStatusUpdateHash() =>
+    r'6935d758a081fcc9f9157114be3c53a3ba1da732';
+
+/// See also [MessageStatusUpdate].
+@ProviderFor(MessageStatusUpdate)
+final messageStatusUpdateProvider = AutoDisposeNotifierProvider<
+    MessageStatusUpdate, Map<String, dynamic>?>.internal(
+  MessageStatusUpdate.new,
+  name: r'messageStatusUpdateProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$messageStatusUpdateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$MessageStatusUpdate = AutoDisposeNotifier<Map<String, dynamic>?>;
+String _$messageDeletedHash() => r'fe5368b139faeb4d58f2224262b0b5b162885f8c';
+
+/// See also [MessageDeleted].
+@ProviderFor(MessageDeleted)
+final messageDeletedProvider =
+    AutoDisposeNotifierProvider<MessageDeleted, Map<String, dynamic>?>.internal(
+  MessageDeleted.new,
+  name: r'messageDeletedProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$messageDeletedHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$MessageDeleted = AutoDisposeNotifier<Map<String, dynamic>?>;
 String _$messageReadHash() => r'46f5a467b4870be1ef13b529798f5f6165e0cb76';
 
 /// See also [MessageRead].

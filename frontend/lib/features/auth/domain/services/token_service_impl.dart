@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import '../../../../core/network/error_handling/error_handler.dart';
 import '../../../../core/network/error_handling/exceptions.dart';
 import '../../data/datasources/local/auth_local_datasource.dart';
 import '../../data/datasources/remote/auth_datasource.dart';
 import '../../data/models/request/token_request_dto.dart';
-import '../entities/token_entity.dart';
 import 'token_service.dart';
 
 class TokenServiceImpl implements TokenService {

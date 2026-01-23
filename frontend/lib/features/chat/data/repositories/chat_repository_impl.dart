@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:fakegram/features/auth/domain/services/token_service.dart';
 import 'package:fakegram/features/chat/data/datasource/remote/chat_datasource.dart';
-import 'package:fakegram/features/chat/data/models/direct_chat_model.dart';
 import 'package:fakegram/features/chat/domain/entities/direct_chat_entity.dart';
 import 'package:fakegram/features/chat/domain/repositories/chat_repository.dart';
-
 import '../../../../core/network/error_handling/error_handler.dart';
 
 class ChatRepositoryImpl implements ChatRepository {

@@ -20,6 +20,12 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
   bool _connectionStatus = false;
   bool _isConnecting = false;
   bool _shouldAutoReconnect = true;
+  bool _isUnauthorizedError(String error) {
+    return error.contains('401') ||
+        error.contains('Unauthorized') ||
+        error.contains('Token') ||
+        error.contains('token');
+  }
   Timer? _reconnectTimer;
 
   static const Duration _connectionTimeout = Duration(seconds: 5);
@@ -41,7 +47,6 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       if (kDebugMode) {
         print('WebSocketRepository: Connected callback');
       }
-
       _connectionStatus = true;
       _isConnecting = false;
       _connectionController.add(true);
@@ -54,6 +59,50 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       _handleConnectionLost();
       _scheduleReconnect();
     };
+
+    _webSocketService.onError = (error) {
+      if (kDebugMode) {
+        print('WebSocketRepository: Error callback: $error');
+      }
+      if (_isUnauthorizedError(error)) {
+        if (kDebugMode) {
+          print('WebSocketRepository: 401 Unauthorized error detected');
+        }
+        _handleUnauthorizedError();
+      } else {
+        _handleConnectionLost();
+        _scheduleReconnect();
+      }
+    };
+  }
+
+  Future<void> _handleUnauthorizedError() async {
+    if (kDebugMode) {
+      print('WebSocketRepository: Handling unauthorized error');
+    }
+
+    _handleConnectionLost();
+
+    try {
+      if (kDebugMode) {
+        print('WebSocketRepository: Attempting to refresh token...');
+      }
+
+      await _tokenService.updateToken();
+
+      if (kDebugMode) {
+        print('WebSocketRepository: Token refreshed successfully, reconnecting...');
+      }
+
+      await disconnect();
+      Future.delayed(const Duration(seconds: 1));
+      await connect();
+    } catch (e) {
+      if (kDebugMode) {
+        print('WebSocketRepository: Error during token refresh: $e');
+      }
+      _scheduleReconnect();
+    }
   }
 
   void _handleConnectionLost() {
@@ -120,8 +169,14 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       if (kDebugMode) {
         print('WebSocketRepository: Connection failed: $error');
       }
-      _handleConnectionLost();
-      _scheduleReconnect();
+
+      if (_isUnauthorizedError(error.toString())) {
+        await _handleUnauthorizedError();
+      } else {
+        _handleConnectionLost();
+        _scheduleReconnect();
+      }
+
       rethrow;
     } finally {
       _isConnecting = false;
@@ -220,6 +275,7 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       }
     }
   }
+
 
   void dispose() {
     _reconnectTimer?.cancel();

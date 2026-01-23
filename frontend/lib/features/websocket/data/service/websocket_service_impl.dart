@@ -34,6 +34,8 @@ class WebSocketServiceImpl implements WebSocketService {
       return;
     }
 
+    print(token);
+
     _currentUrl = url;
     _currentToken = token;
     _isConnecting = true;
@@ -126,8 +128,8 @@ class WebSocketServiceImpl implements WebSocketService {
     try {
       await _channel?.sink.close();
     } catch (e) {
+      debugPrint('WebsocketServiceDisconnect error: $e');
     }
-
     _cleanup();
 
     if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
@@ -192,7 +194,6 @@ class WebSocketServiceImpl implements WebSocketService {
       if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
         _connectionCompleter!.complete();
       }
-
       onEvent?.call(event);
     } catch (e) {
       if (kDebugMode) {
@@ -206,7 +207,6 @@ class WebSocketServiceImpl implements WebSocketService {
     if (!_shouldReconnect || _reconnectTimer != null) {
       return;
     }
-
     _reconnectTimer = Timer(const Duration(seconds: 3), () {
       _reconnectTimer = null;
       if (_shouldReconnect && !_isConnected && !_isConnecting && _currentUrl != null && _currentToken != null) {
@@ -214,7 +214,4 @@ class WebSocketServiceImpl implements WebSocketService {
       }
     });
   }
-
-  @override
-  bool get isConnected => _isConnected;
 }

@@ -1,16 +1,15 @@
 import 'package:dio/dio.dart';
-import 'package:fakegram/features/chat/data/models/direct_chat_model.dart';
 import 'package:fakegram/features/chat/domain/entities/direct_chat_entity.dart';
-import 'package:fakegram/features/chat/domain/entities/direct_message_entity.dart';
+import 'package:fakegram/features/chat/domain/entities/message_entity.dart';
 import 'package:fakegram/features/chat/domain/repositories/chat_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../../../core/di/service_locator.dart';
-import '../../../../core/network/error_handling/error_handler.dart';
-import '../../../websocket/presentation/notifier/websocket_notifier.dart';
-import '../../../websocket/presentation/providers/websocket_providers.dart';
+import '../../../../../core/di/service_locator.dart';
+import '../../../../../core/network/error_handling/error_handler.dart';
+import '../../../../websocket/presentation/providers/websocket_providers.dart';
+import '../../../data/models/chat/direct_chat_model.dart';
 
 part 'chat_notifier.freezed.dart';
 part 'chat_notifier.g.dart';
@@ -38,13 +37,11 @@ class ChatNotifier extends _$ChatNotifier {
       },
       fireImmediately: true,
     );
-
   }
 
   Future<void> loadChats() async {
     state = const ChatState.loading();
     try {
-
       final chats = await _chatRepository.getChats();
 
       state = ChatState.successLoading(chats: chats);
@@ -114,17 +111,33 @@ class ChatNotifier extends _$ChatNotifier {
 
 final selectedChatProvider = StateProvider<DirectChatEntity?>((ref) => null);
 
-final chatMessagesProvider = StateProvider.family<List<DirectMessageEntity>, String>((ref, chatId) {
-  final now = DateTime.now();
+final chatSelectionStateProvider = Provider<String>((ref) {
+  final selectedChat = ref.watch(selectedChatProvider);
+
+  if (selectedChat == null) {
+    return "Выберите чат";
+  }
+
+  return selectedChat.otherUser.id;
+});
+
+final chatMessagesProvider = StateProvider.family<List<MessageEntity>, String>((ref, chatId) {
   return [
-    DirectMessageEntity(
-      id: '-1',
+    MessageEntity(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      chatId: '',
       senderId: 'system',
-      receiverId: 'current_user',
-      text: 'Начало чата',
-      createdAt: now.subtract(const Duration(minutes: 30)),
-      isRead: true,
-      isDelivered: true,
+      messageText: 'Начните общение!',
+      messageType: 'text',
+      replyToMessageId: null,
+      isEdited: false,
+      isDeleted: false,
+      createdAt: DateTime.now(),
+      readAt: null,
+      senderName: '',
+      senderSurname: '',
+      senderNickname: '',
+      senderAvatarUrl: '',
     ),
   ];
 });

@@ -44,24 +44,41 @@ type GetMessagesResponse struct {
 }
 
 type MessageDetail struct {
-    ID               string      `json:"id"`
-    ChatID           string      `json:"chat_id"`
-    SenderID         string      `json:"sender_id"`
-    SenderName       string      `json:"sender_name"`
-    SenderSurname    string      `json:"sender_surname"`
-    SenderNickname   string      `json:"sender_nickname"`
-    SenderAvatarURL  *string     `json:"sender_avatar_url,omitempty"`
-    MessageText      string      `json:"message_text"`
-    MessageType      MessageType `json:"message_type"`
-    ReplyToMessageID *string     `json:"reply_to_message_id,omitempty"`
-    IsEdited         bool        `json:"is_edited"`
-    IsDeleted        bool        `json:"is_deleted"`
-    IsRead           bool        `json:"is_read"`
-    CreatedAt        time.Time   `json:"created_at"`
+	*Message
+	IsRead          bool        `json:"is_read"`
+	ReadAt          *time.Time  `json:"read_at,omitempty"`
+	SenderName      string      `json:"sender_name"`
+	SenderSurname   string      `json:"sender_surname"`
+	SenderNickname  string      `json:"sender_nickname"`
+	SenderAvatarURL *string     `json:"sender_avatar_url,omitempty"`
 }
 
 type UpdateMessageRequest struct {
 	MessageText string `json:"message_text" validate:"required"`
+}
+
+type MarkAsReadRequest struct {
+    ChatID             string `json:"chat_id" validate:"required"`
+    LastReadMessageID  string `json:"last_read_message_id" validate:"required,uuid4"`
+}
+
+type MessageReadStatus struct {
+    ID        string    `json:"id" db:"id"`
+    MessageID string    `json:"message_id" db:"message_id"`
+    UserID    string    `json:"user_id" db:"user_id"`
+    ReadAt    time.Time `json:"read_at" db:"read_at"`
+}
+
+type UnreadCountResponse struct {
+    ChatID      string `json:"chat_id"`
+    UnreadCount int    `json:"unread_count"`
+    TotalUnread int    `json:"total_unread,omitempty"` 
+}
+
+type MessageWithReadStatus struct {
+	*Message                     
+	IsRead          bool        `json:"is_read"`
+	ReadAt          *time.Time  `json:"read_at,omitempty"`
 }
 
 type MessageResponse struct {
@@ -81,6 +98,41 @@ func CreateMessage(chatID, senderID, messageText string, messageType MessageType
 		IsDeleted:   false,
 		CreatedAt:   time.Now(),
 	}
+}
+
+func CreateMessageWithReadStatus(msg *Message, isRead bool, readAt *time.Time) *MessageWithReadStatus {
+	return &MessageWithReadStatus{
+		Message: msg,
+		IsRead:  isRead,
+		ReadAt:  readAt,
+	}
+}
+
+func ToMessageDetail(msg *Message, isRead bool, readAt *time.Time, sender *User) *MessageDetail {
+	return &MessageDetail{
+		Message:         msg,
+		IsRead:          isRead,
+		ReadAt:          readAt,
+		SenderName:      sender.Name,
+		SenderSurname:   sender.Surname,
+		SenderNickname:  sender.Nickname,
+		SenderAvatarURL: sender.AvatarURL,
+	}
+}
+
+func ToGetMessagesResponse(messages []*MessageDetail, page, limit, total int) *GetMessagesResponse {
+    hasNext := (page * limit) < total
+    hasPrev := page > 1
+    
+    return &GetMessagesResponse{
+        Messages: messages,
+        Count:    len(messages),
+        Total:    total,
+        Page:     page,
+        Limit:    limit,
+        HasNext:  hasNext,
+        HasPrev:  hasPrev,
+    }
 }
 
 func CreateTextMessage(chatID, senderID, text string) *Message {
@@ -111,40 +163,6 @@ func (m *Message) Validate() error {
         return ErrEmptyMessageText
     }
     return nil
-}
-
-func (m *Message) ToMessageDetail(sender *User) *MessageDetail {
-    return &MessageDetail{
-        ID:               m.ID,
-        ChatID:           m.ChatID,
-        SenderID:         m.SenderID,
-        SenderName:       sender.Name,
-        SenderSurname:    sender.Surname,
-        SenderNickname:   sender.Nickname,
-        SenderAvatarURL:  sender.AvatarURL,
-        MessageText:      m.MessageText,
-        MessageType:      m.MessageType,
-        ReplyToMessageID: m.ReplyToMessageID,
-        IsEdited:         m.IsEdited,
-        IsDeleted:        m.IsDeleted,
-        IsRead:           false,
-        CreatedAt:        m.CreatedAt,
-    }
-}
-
-func ToGetMessagesResponse(messages []*MessageDetail, page, limit, total int) *GetMessagesResponse {
-    hasNext := (page * limit) < total
-    hasPrev := page > 1
-    
-    return &GetMessagesResponse{
-        Messages: messages,
-        Count:    len(messages),
-        Total:    total,
-        Page:     page,
-        Limit:    limit,
-        HasNext:  hasNext,
-        HasPrev:  hasPrev,
-    }
 }
 
 var (

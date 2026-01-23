@@ -2,7 +2,7 @@ package routes
 
 import (
 	"fakegram-api/internal/handlers"
-	wsMessage "fakegram-api/internal/websocket/messages"
+	wsMessage "fakegram-api/internal/websocket/handler"
 
 	"github.com/labstack/echo/v4"
 )
@@ -12,7 +12,7 @@ type Routes struct {
 	authHandler *handlers.AuthHandler
 	messageHandler *handlers.MessageHandler
 	chatHandler *handlers.ChatHandler
-	wsMessageHandler *wsMessage.MessageWebSocketHandler
+	wsHandler *wsMessage.WebSocketHandler
 	jwtMiddleware echo.MiddlewareFunc
 }
 
@@ -21,7 +21,7 @@ func NewRoutes(
 	authHandler *handlers.AuthHandler,
 	messageHandler *handlers.MessageHandler,
 	chatHandler *handlers.ChatHandler,
-	wsMessageHandler *wsMessage.MessageWebSocketHandler,
+	wsHandler *wsMessage.WebSocketHandler,
 	jwtMiddleware echo.MiddlewareFunc,
 	) *Routes {
     return &Routes{
@@ -29,7 +29,7 @@ func NewRoutes(
 		authHandler: authHandler,
 		messageHandler: messageHandler,
 		chatHandler: chatHandler,
-		wsMessageHandler: wsMessageHandler,
+		wsHandler: wsHandler,
 		jwtMiddleware: jwtMiddleware,
     }
 }
@@ -72,7 +72,7 @@ func (r *Routes) setupMessageRoutes(api *echo.Group) {
 }
 
 func (r *Routes) setupWebSocketRoutes(e *echo.Group) {
-	e.GET("/ws", r.wsMessageHandler.MessageWebSocket, r.jwtMiddleware)
+	e.GET("/ws", r.wsHandler.HandleWebSocket, r.jwtMiddleware)
 }
 
 func (r *Routes) setupChatRoutes(api *echo.Group) {

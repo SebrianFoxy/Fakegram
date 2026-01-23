@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
-
 import '../../models/response/chat_response_dto.dart';
 
 part 'chat_datasource.g.dart';

@@ -12,4 +12,8 @@ class ChatState with _$ChatState {
   }) = ChatStateSuccessLoading;
 
   const factory ChatState.loading() = ChatStateLoading;
+
+  const factory ChatState.error({
+    Object? error,
+  }) = ChatStateError;
 }
