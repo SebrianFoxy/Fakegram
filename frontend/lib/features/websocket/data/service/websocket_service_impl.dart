@@ -18,6 +18,7 @@ class WebSocketServiceImpl implements WebSocketService {
   Timer? _reconnectTimer;
   Completer<void>? _connectionCompleter;
   StreamSubscription<dynamic>? _streamSubscription;
+  Map<String, String>? headers;
 
   @override
   Function(WebSocketEventEntity)? onEvent;
@@ -34,8 +35,6 @@ class WebSocketServiceImpl implements WebSocketService {
       return;
     }
 
-    print(token);
-
     _currentUrl = url;
     _currentToken = token;
     _isConnecting = true;
@@ -48,18 +47,33 @@ class WebSocketServiceImpl implements WebSocketService {
     }
 
     try {
-      _channel = await Future<WebSocketChannel>(() {
-        try {
-          return IOWebSocketChannel.connect(
-            Uri.parse(url),
-            headers: {
-              'Authorization': 'Bearer $token',
-            },
-          );
-        } catch (e) {
-          throw Exception('Failed to create WebSocket: $e');
-        }
-      });
+      if (kIsWeb) {
+        final uri = Uri.parse(url);
+        final queryParams = {'token': token};
+
+        _currentUrl = Uri(
+          scheme: uri.scheme,
+          host: uri.host,
+          port: uri.port,
+          path: uri.path,
+          queryParameters: queryParams,
+        ).toString();
+
+        headers = null;
+      } else {
+        headers = {'Authorization': 'Bearer $token'};
+      }
+
+      if (kDebugMode) {
+        print('Platform: ${kIsWeb ? "WEB" : "DESKTOP"}');
+        print('Final URL: $_currentUrl');
+        if (headers != null) print('Headers: $headers');
+      }
+
+      _channel = kIsWeb
+          ? WebSocketChannel.connect(Uri.parse(url))
+          : IOWebSocketChannel.connect(Uri.parse(url), headers: headers);
+
 
       _streamSubscription = _channel!.stream.listen(
         _handleMessage,

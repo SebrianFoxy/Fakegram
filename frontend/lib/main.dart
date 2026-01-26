@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:fakegram/core/routes/app_router.dart';
 import 'package:fakegram/core/theme/app_theme.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
@@ -7,20 +10,27 @@ import 'core/di/service_locator.dart' as di;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
 
   await di.initDependencies();
 
-  WindowOptions windowOptions = WindowOptions(
-    minimumSize: Size(300, 400),
-    size: Size(800, 600),
-    center: true,
-  );
+  if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+    try {
+      await windowManager.ensureInitialized();
 
-  await windowManager.waitUntilReadyToShow(windowOptions, () async {
-    await windowManager.show();
-    await windowManager.focus();
-  });
+      WindowOptions windowOptions = WindowOptions(
+        minimumSize: Size(300, 400),
+        size: Size(800, 600),
+        center: true,
+      );
+
+      await windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+      });
+    } catch (e) {
+      debugPrint('Window management skipped: $e');
+    }
+  }
 
   runApp(ProviderScope(
     child: Fakegram(),

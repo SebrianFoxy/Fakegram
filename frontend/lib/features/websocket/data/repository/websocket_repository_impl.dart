@@ -138,12 +138,16 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
         throw Exception('No access token available');
       }
 
-      const baseUrl = 'ws://localhost:8080';
-      final url = '$baseUrl/api/v1/ws';
-
-      if (kDebugMode) {
-        print('WebSocketRepository: Connecting to $url');
+      String url;
+      if (kIsWeb) {
+        url = 'ws://localhost:8080/api/v1/ws-web?token=$token';
+        print('WEB: Connecting to $url');
+      } else {
+        url = 'ws://localhost:8080/api/v1/ws';
+        print('DESKTOP: Connecting to $url (token in Authorization header)');
       }
+
+      await _webSocketService.connect(url, token);
 
       final connectionFuture = _webSocketService.connect(url, token);
       final timeoutFuture = Future.delayed(

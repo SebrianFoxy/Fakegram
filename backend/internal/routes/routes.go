@@ -73,6 +73,7 @@ func (r *Routes) setupMessageRoutes(api *echo.Group) {
 
 func (r *Routes) setupWebSocketRoutes(e *echo.Group) {
 	e.GET("/ws", r.wsHandler.HandleWebSocket, r.jwtMiddleware)
+	e.GET("/ws-web", r.wsHandler.HandleWebSocket)
 }
 
 func (r *Routes) setupChatRoutes(api *echo.Group) {

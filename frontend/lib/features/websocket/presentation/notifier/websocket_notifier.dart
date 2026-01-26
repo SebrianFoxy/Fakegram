@@ -132,7 +132,6 @@ class WebSocketNotifier extends _$WebSocketNotifier {
 
   void _handleMessageListUpdate(Map<String, dynamic> data) {
     final action = data['action'] as String?;
-    print('ACTION: $action');
 
     if (action == 'new_message') {
       ref.read(newMessageFromSocketProvider.notifier).update(data);
