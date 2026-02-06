@@ -57,6 +57,21 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
         if !isMember {
             return nil, ErrAccessDenied
         }
+
+        user1, user2, err := models.ExtractUsersFromChatID(chatID)
+        if err != nil {
+            return nil, fmt.Errorf("failed to extract users from chat ID: %w", err)
+        }
+
+        if user1 != senderID && user2 != senderID {
+            return nil, fmt.Errorf("sender %s is not a participant in chat %s", senderID, chatID)
+        }
+
+        if user1 == senderID {
+            req.ReceiverID = user2
+        } else {
+            req.ReceiverID = user1
+        }
     } else if req.ReceiverID != "" {
         if senderID == req.ReceiverID {
             return nil, fmt.Errorf("cannot send message to yourself")

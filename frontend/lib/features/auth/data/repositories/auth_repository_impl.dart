@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource.dart';
 import 'package:fakegram/features/auth/data/datasources/remote/auth_datasource.dart';
 import 'package:fakegram/features/auth/domain/services/token_service.dart';
 import '../../../../core/network/error_handling/error_handler.dart';
@@ -9,16 +10,19 @@ import '../models/request/login_request_dto.dart';
 import '../models/request/registration_request_dto.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDatasource _remoteDataSource;
-  final AuthLocalDatasource _localDataSource;
+  final AuthRemoteDatasource _authRemoteDatasource;
+  final AuthLocalDatasource _authLocalDatasource;
+  final UserLocalDatasource _userLocalDatasource;
   final TokenService _tokenService;
 
   AuthRepositoryImpl({
-    required AuthRemoteDatasource remoteDataSource,
-    required AuthLocalDatasource localDataSource,
+    required AuthRemoteDatasource authRemoteDatasource,
+    required AuthLocalDatasource authLocalDatasource,
+    required UserLocalDatasource userLocalDatasource,
     required TokenService tokenService,
-  })  : _remoteDataSource = remoteDataSource,
-        _localDataSource = localDataSource,
+  })  : _authRemoteDatasource = authRemoteDatasource,
+        _authLocalDatasource = authLocalDatasource,
+        _userLocalDatasource = userLocalDatasource,
         _tokenService = tokenService;
 
   @override
@@ -29,10 +33,12 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final request = LoginRequestDTO(email: email, password: password)
           .toJson();
-      final response = await _remoteDataSource.login(request);
+      final response = await _authRemoteDatasource.login(request);
       final authResult = response.toEntity();
 
-      await _localDataSource.saveToken(authResult.token);
+      await _authLocalDatasource.saveToken(authResult.token);
+      await _userLocalDatasource.saveCurrentUserId(authResult.user.id);
+      await _userLocalDatasource.saveCurrentUser(authResult.user);
 
       return authResult;
     } on DioException catch (error) {
@@ -59,7 +65,7 @@ class AuthRepositoryImpl implements AuthRepository {
           nickname: nickname
       ).toJson();
 
-      await _remoteDataSource.registration(request);
+      await _authRemoteDatasource.registration(request);
     } on DioException catch (error) {
       throw ErrorHandler.handleDioError(error);
     } catch (error) {
@@ -69,7 +75,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> logout() async {
-    await _localDataSource.deleteToken();
+    await _authLocalDatasource.deleteToken();
   }
 
   @override

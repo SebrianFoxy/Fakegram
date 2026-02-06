@@ -1,9 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource.dart';
+import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource_impl.dart';
 import 'package:fakegram/features/auth/domain/repositories/auth_repository.dart';
+import 'package:fakegram/features/auth/domain/services/user_service.dart';
+import 'package:fakegram/features/auth/domain/services/user_service_impl.dart';
 import 'package:fakegram/features/chat/data/datasource/remote/message_datasource.dart';
 import 'package:fakegram/features/chat/domain/repositories/message_repository.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/data/datasources/local/auth_local_datasource.dart';
 import '../../features/auth/data/datasources/local/auth_local_datasource_impl.dart';
 import '../../features/auth/data/datasources/remote/auth_datasource.dart';
@@ -28,12 +33,25 @@ Future<void> initDependencies() async {
         () => const FlutterSecureStorage(),
   );
 
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerLazySingleton<SharedPreferences>(
+      () => sharedPreferences,
+  );
+
+  // LocalDatasource
   getIt.registerLazySingleton<AuthLocalDatasource>(
         () => AuthLocalDatasourceImpl(
       secureStorage: getIt<FlutterSecureStorage>(),
     ),
   );
 
+  getIt.registerLazySingleton<UserLocalDatasource>(
+        () => UserLocalDatasourceImpl(
+      prefs: getIt<SharedPreferences>(),
+    ),
+  );
+
+  //Service
   getIt.registerLazySingleton<TokenService>(
         () {
       final refreshDio = Dio(
@@ -54,6 +72,14 @@ Future<void> initDependencies() async {
       return TokenServiceImpl(
         localDataSource: getIt<AuthLocalDatasource>(),
         dio: refreshDio,
+      );
+    },
+  );
+
+  getIt.registerLazySingleton<UserService>(
+        () {
+      return UserServiceImpl(
+        userLocalDatasource: getIt<UserLocalDatasource>(),
       );
     },
   );
@@ -94,8 +120,9 @@ Future<void> initDependencies() async {
   // Repository
   getIt.registerLazySingleton<AuthRepository>(
         () => AuthRepositoryImpl(
-      remoteDataSource: getIt<AuthRemoteDatasource>(),
-      localDataSource: getIt<AuthLocalDatasource>(),
+      authRemoteDatasource: getIt<AuthRemoteDatasource>(),
+      authLocalDatasource: getIt<AuthLocalDatasource>(),
+      userLocalDatasource: getIt<UserLocalDatasource>(),
       tokenService: getIt<TokenService>(),
     ),
   );

@@ -67,7 +67,7 @@ func (r *Routes) setupMessageRoutes(api *echo.Group) {
 	messages := api.Group("/messages")
 	messages.Use(r.jwtMiddleware)
 	
-	messages.POST("", r.messageHandler.CreateMessage)
+	messages.POST("/send", r.messageHandler.CreateMessage)
 	messages.GET("/private-chat/:user_id", r.messageHandler.GetMessagesByChat)
 }
 

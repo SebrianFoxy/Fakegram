@@ -70,7 +70,10 @@ class MessageStateInitial extends MessageState with DiagnosticableTreeMixin {
 class MessageStateSuccessLoading extends MessageState
     with DiagnosticableTreeMixin {
   const MessageStateSuccessLoading(
-      {required final List<MessageEntity> messages, this.error})
+      {required final List<MessageEntity> messages,
+      this.hasMoreMessages = false,
+      this.isLoadingMore = false,
+      this.error})
       : _messages = messages,
         super._();
 
@@ -81,6 +84,10 @@ class MessageStateSuccessLoading extends MessageState
     return EqualUnmodifiableListView(_messages);
   }
 
+  @JsonKey()
+  final bool hasMoreMessages;
+  @JsonKey()
+  final bool isLoadingMore;
   final String? error;
 
   /// Create a copy of MessageState
@@ -97,6 +104,8 @@ class MessageStateSuccessLoading extends MessageState
     properties
       ..add(DiagnosticsProperty('type', 'MessageState.successLoading'))
       ..add(DiagnosticsProperty('messages', messages))
+      ..add(DiagnosticsProperty('hasMoreMessages', hasMoreMessages))
+      ..add(DiagnosticsProperty('isLoadingMore', isLoadingMore))
       ..add(DiagnosticsProperty('error', error));
   }
 
@@ -106,16 +115,24 @@ class MessageStateSuccessLoading extends MessageState
         (other.runtimeType == runtimeType &&
             other is MessageStateSuccessLoading &&
             const DeepCollectionEquality().equals(other._messages, _messages) &&
+            (identical(other.hasMoreMessages, hasMoreMessages) ||
+                other.hasMoreMessages == hasMoreMessages) &&
+            (identical(other.isLoadingMore, isLoadingMore) ||
+                other.isLoadingMore == isLoadingMore) &&
             (identical(other.error, error) || other.error == error));
   }
 
   @override
   int get hashCode => Object.hash(
-      runtimeType, const DeepCollectionEquality().hash(_messages), error);
+      runtimeType,
+      const DeepCollectionEquality().hash(_messages),
+      hasMoreMessages,
+      isLoadingMore,
+      error);
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'MessageState.successLoading(messages: $messages, error: $error)';
+    return 'MessageState.successLoading(messages: $messages, hasMoreMessages: $hasMoreMessages, isLoadingMore: $isLoadingMore, error: $error)';
   }
 }
 
@@ -126,7 +143,11 @@ abstract mixin class $MessageStateSuccessLoadingCopyWith<$Res>
           $Res Function(MessageStateSuccessLoading) _then) =
       _$MessageStateSuccessLoadingCopyWithImpl;
   @useResult
-  $Res call({List<MessageEntity> messages, String? error});
+  $Res call(
+      {List<MessageEntity> messages,
+      bool hasMoreMessages,
+      bool isLoadingMore,
+      String? error});
 }
 
 /// @nodoc
@@ -142,6 +163,8 @@ class _$MessageStateSuccessLoadingCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? messages = null,
+    Object? hasMoreMessages = null,
+    Object? isLoadingMore = null,
     Object? error = freezed,
   }) {
     return _then(MessageStateSuccessLoading(
@@ -149,6 +172,14 @@ class _$MessageStateSuccessLoadingCopyWithImpl<$Res>
           ? _self._messages
           : messages // ignore: cast_nullable_to_non_nullable
               as List<MessageEntity>,
+      hasMoreMessages: null == hasMoreMessages
+          ? _self.hasMoreMessages
+          : hasMoreMessages // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLoadingMore: null == isLoadingMore
+          ? _self.isLoadingMore
+          : isLoadingMore // ignore: cast_nullable_to_non_nullable
+              as bool,
       error: freezed == error
           ? _self.error
           : error // ignore: cast_nullable_to_non_nullable

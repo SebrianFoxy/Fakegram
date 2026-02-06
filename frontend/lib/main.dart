@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:fakegram/core/routes/app_router.dart';
 import 'package:fakegram/core/theme/app_theme.dart';
 import 'package:flutter/foundation.dart';

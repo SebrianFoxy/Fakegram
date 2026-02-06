@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource.dart';
 import 'package:fakegram/features/auth/domain/repositories/auth_repository.dart';
+import 'package:fakegram/features/chat/presentation/notifier/chat/chat_notifier.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -29,6 +31,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = AuthState.authenticated();
 
       await Future.delayed(const Duration(milliseconds: 100));
+
       ref.read(webSocketNotifierProvider.notifier).connect();
     } on AppException catch(error) {
       debugPrint('Auth check failed: ${error.message}');
@@ -103,18 +106,13 @@ class AuthNotifier extends _$AuthNotifier {
     try {
       ref.read(webSocketNotifierProvider.notifier).disconnect();
 
+      await getIt<UserLocalDatasource>().deleteUserInfo();
       await getIt<AuthRepository>().logout();
+
       state = const AuthState.initial();
     } catch (error) {
       debugPrint('LogoutError: $error');
       state = const AuthState.initial();
     }
   }
-}
-
-@riverpod
-bool isAuthentication(ref) {
-  final state = ref.watch(authNotifierProvider);
-
-  return state is AuthStateAuthenticated;
 }

@@ -23,12 +23,14 @@ mixin _$MessageEntity {
   String? get replyToMessageId;
   bool get isEdited;
   bool get isDeleted;
+  bool get isRead;
   DateTime get createdAt;
   DateTime? get readAt;
   String get senderName;
   String get senderSurname;
   String get senderNickname;
   String? get senderAvatarUrl;
+  MessageStatus get status;
 
   /// Create a copy of MessageEntity
   /// with the given fields replaced by the non-null parameter values.
@@ -57,6 +59,7 @@ mixin _$MessageEntity {
                 other.isEdited == isEdited) &&
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
+            (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
@@ -67,7 +70,8 @@ mixin _$MessageEntity {
             (identical(other.senderNickname, senderNickname) ||
                 other.senderNickname == senderNickname) &&
             (identical(other.senderAvatarUrl, senderAvatarUrl) ||
-                other.senderAvatarUrl == senderAvatarUrl));
+                other.senderAvatarUrl == senderAvatarUrl) &&
+            (identical(other.status, status) || other.status == status));
   }
 
   @override
@@ -81,16 +85,18 @@ mixin _$MessageEntity {
       replyToMessageId,
       isEdited,
       isDeleted,
+      isRead,
       createdAt,
       readAt,
       senderName,
       senderSurname,
       senderNickname,
-      senderAvatarUrl);
+      senderAvatarUrl,
+      status);
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
+    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
   }
 }
 
@@ -109,12 +115,14 @@ abstract mixin class $MessageEntityCopyWith<$Res> {
       String? replyToMessageId,
       bool isEdited,
       bool isDeleted,
+      bool isRead,
       DateTime createdAt,
       DateTime? readAt,
       String senderName,
       String senderSurname,
       String senderNickname,
-      String? senderAvatarUrl});
+      String? senderAvatarUrl,
+      MessageStatus status});
 }
 
 /// @nodoc
@@ -138,12 +146,14 @@ class _$MessageEntityCopyWithImpl<$Res>
     Object? replyToMessageId = freezed,
     Object? isEdited = null,
     Object? isDeleted = null,
+    Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
     Object? senderName = null,
     Object? senderSurname = null,
     Object? senderNickname = null,
     Object? senderAvatarUrl = freezed,
+    Object? status = null,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -178,6 +188,10 @@ class _$MessageEntityCopyWithImpl<$Res>
           ? _self.isDeleted
           : isDeleted // ignore: cast_nullable_to_non_nullable
               as bool,
+      isRead: null == isRead
+          ? _self.isRead
+          : isRead // ignore: cast_nullable_to_non_nullable
+              as bool,
       createdAt: null == createdAt
           ? _self.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -202,6 +216,10 @@ class _$MessageEntityCopyWithImpl<$Res>
           ? _self.senderAvatarUrl
           : senderAvatarUrl // ignore: cast_nullable_to_non_nullable
               as String?,
+      status: null == status
+          ? _self.status
+          : status // ignore: cast_nullable_to_non_nullable
+              as MessageStatus,
     ));
   }
 }
@@ -218,12 +236,14 @@ class _MessageEntity extends MessageEntity {
       required this.replyToMessageId,
       required this.isEdited,
       required this.isDeleted,
+      required this.isRead,
       required this.createdAt,
       required this.readAt,
       required this.senderName,
       required this.senderSurname,
       required this.senderNickname,
-      required this.senderAvatarUrl})
+      required this.senderAvatarUrl,
+      this.status = MessageStatus.none})
       : super._();
 
   @override
@@ -243,6 +263,8 @@ class _MessageEntity extends MessageEntity {
   @override
   final bool isDeleted;
   @override
+  final bool isRead;
+  @override
   final DateTime createdAt;
   @override
   final DateTime? readAt;
@@ -254,6 +276,9 @@ class _MessageEntity extends MessageEntity {
   final String senderNickname;
   @override
   final String? senderAvatarUrl;
+  @override
+  @JsonKey()
+  final MessageStatus status;
 
   /// Create a copy of MessageEntity
   /// with the given fields replaced by the non-null parameter values.
@@ -282,6 +307,7 @@ class _MessageEntity extends MessageEntity {
                 other.isEdited == isEdited) &&
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
+            (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
@@ -292,7 +318,8 @@ class _MessageEntity extends MessageEntity {
             (identical(other.senderNickname, senderNickname) ||
                 other.senderNickname == senderNickname) &&
             (identical(other.senderAvatarUrl, senderAvatarUrl) ||
-                other.senderAvatarUrl == senderAvatarUrl));
+                other.senderAvatarUrl == senderAvatarUrl) &&
+            (identical(other.status, status) || other.status == status));
   }
 
   @override
@@ -306,16 +333,18 @@ class _MessageEntity extends MessageEntity {
       replyToMessageId,
       isEdited,
       isDeleted,
+      isRead,
       createdAt,
       readAt,
       senderName,
       senderSurname,
       senderNickname,
-      senderAvatarUrl);
+      senderAvatarUrl,
+      status);
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
+    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
   }
 }
 
@@ -336,12 +365,14 @@ abstract mixin class _$MessageEntityCopyWith<$Res>
       String? replyToMessageId,
       bool isEdited,
       bool isDeleted,
+      bool isRead,
       DateTime createdAt,
       DateTime? readAt,
       String senderName,
       String senderSurname,
       String senderNickname,
-      String? senderAvatarUrl});
+      String? senderAvatarUrl,
+      MessageStatus status});
 }
 
 /// @nodoc
@@ -365,12 +396,14 @@ class __$MessageEntityCopyWithImpl<$Res>
     Object? replyToMessageId = freezed,
     Object? isEdited = null,
     Object? isDeleted = null,
+    Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
     Object? senderName = null,
     Object? senderSurname = null,
     Object? senderNickname = null,
     Object? senderAvatarUrl = freezed,
+    Object? status = null,
   }) {
     return _then(_MessageEntity(
       id: null == id
@@ -405,6 +438,10 @@ class __$MessageEntityCopyWithImpl<$Res>
           ? _self.isDeleted
           : isDeleted // ignore: cast_nullable_to_non_nullable
               as bool,
+      isRead: null == isRead
+          ? _self.isRead
+          : isRead // ignore: cast_nullable_to_non_nullable
+              as bool,
       createdAt: null == createdAt
           ? _self.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -429,6 +466,10 @@ class __$MessageEntityCopyWithImpl<$Res>
           ? _self.senderAvatarUrl
           : senderAvatarUrl // ignore: cast_nullable_to_non_nullable
               as String?,
+      status: null == status
+          ? _self.status
+          : status // ignore: cast_nullable_to_non_nullable
+              as MessageStatus,
     ));
   }
 }
