@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../features/auth/presentation/notifier/auth_notifier.dart';
 import '../../features/auth/presentation/page/login_page.dart';
 import '../../features/auth/presentation/page/registration_page.dart';
+import '../../features/chat/presentation/notifier/chat/chat_notifier.dart';
 import '../../features/profile/presentation/page/profile.dart';
 
 part 'app_router.g.dart';
@@ -72,12 +73,23 @@ class _GoRouterRefreshNotifier extends ChangeNotifier {
   _GoRouterRefreshNotifier(this.ref) {
     _subscription = ref.listen<AuthState>(
       authNotifierProvider,
-          (_, __) => notifyListeners(),
+          (previous, next) {
+        if (previous?.isAuthenticated == true &&
+            next.isAuthenticated == false) {
+          _resetRiverpodState();
+        }
+        notifyListeners();
+      },
     );
   }
 
   final Ref ref;
   late final ProviderSubscription<AuthState> _subscription;
+
+  void _resetRiverpodState() {
+    ref.invalidate(selectedChatProvider);
+    ref.invalidate(chatNotifierProvider);
+  }
 
   @override
   void dispose() {

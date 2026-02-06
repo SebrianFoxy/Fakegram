@@ -3,7 +3,6 @@ import '../notifier/websocket_notifier.dart';
 
 part 'websocket_providers.g.dart';
 
-
 @riverpod
 class ChatUpdate extends _$ChatUpdate {
   @override

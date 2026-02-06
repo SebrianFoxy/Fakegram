@@ -132,6 +132,7 @@ final chatMessagesProvider = StateProvider.family<List<MessageEntity>, String>((
       replyToMessageId: null,
       isEdited: false,
       isDeleted: false,
+      isRead: false,
       createdAt: DateTime.now(),
       readAt: null,
       senderName: '',

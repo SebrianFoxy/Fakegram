@@ -1,26 +1,27 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'message_notifier.dart';
+part of 'user_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$messageNotifierHash() => r'd0ef0e4d376151de9b44d4f6305e198b20c4af99';
+String _$currentUserIdHash() => r'0fb406094e3b474f00c8bdf2eb6e4b168814f55a';
 
-/// See also [MessageNotifier].
-@ProviderFor(MessageNotifier)
-final messageNotifierProvider =
-    AutoDisposeNotifierProvider<MessageNotifier, MessageState>.internal(
-  MessageNotifier.new,
-  name: r'messageNotifierProvider',
+/// See also [currentUserId].
+@ProviderFor(currentUserId)
+final currentUserIdProvider = AutoDisposeFutureProvider<String?>.internal(
+  currentUserId,
+  name: r'currentUserIdProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$messageNotifierHash,
+      : _$currentUserIdHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$MessageNotifier = AutoDisposeNotifier<MessageState>;
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef CurrentUserIdRef = AutoDisposeFutureProviderRef<String?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

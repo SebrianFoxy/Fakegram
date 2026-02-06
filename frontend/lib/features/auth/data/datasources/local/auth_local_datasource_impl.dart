@@ -71,4 +71,5 @@ class AuthLocalDatasourceImpl implements AuthLocalDatasource {
   Future<String?> getRefreshToken() async {
     return await _secureStorage.read(key: _refreshTokenKey);
   }
+
 }

@@ -16,6 +16,7 @@ _MessageDetailModel _$MessageDetailModelFromJson(Map<String, dynamic> json) =>
       replyToMessageId: json['reply_to_message_id'] as String?,
       isEdited: json['is_edited'] as bool? ?? false,
       isDeleted: json['is_deleted'] as bool? ?? false,
+      isRead: json['is_read'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
       readAt: json['read_at'] == null
           ? null
@@ -36,6 +37,7 @@ Map<String, dynamic> _$MessageDetailModelToJson(_MessageDetailModel instance) =>
       'reply_to_message_id': instance.replyToMessageId,
       'is_edited': instance.isEdited,
       'is_deleted': instance.isDeleted,
+      'is_read': instance.isRead,
       'created_at': instance.createdAt.toIso8601String(),
       'read_at': instance.readAt?.toIso8601String(),
       'sender_name': instance.senderName,

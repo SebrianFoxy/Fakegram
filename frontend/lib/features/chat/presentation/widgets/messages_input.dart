@@ -20,6 +20,8 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
 
+  bool _isSending = false;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -41,17 +43,44 @@ class _MessageInputState extends ConsumerState<MessageInput> {
                 hintText: 'Сообщение...',
                 border: OutlineInputBorder(),
               ),
-              //onSubmitted: (_) => _sendMessage(),
+              onSubmitted: (_) => _sendMessage(),
               textInputAction: TextInputAction.send,
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.send),
-            onPressed: null,
+            onPressed: () {
+              _sendMessage();
+            },
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _sendMessage() async {
+    final userText = _controller.text.trim();
+
+    if (userText.isEmpty || _isSending) {
+      return;
+    }
+
+    try {
+      _isSending = true;
+
+      _controller.clear();
+
+      await ref.read(messageNotifierProvider.notifier).sendMessage(
+          messageText: userText,
+          messageType: 'text',
+      );
+
+      _focusNode.requestFocus();
+    } catch (error) {
+      _controller.text = userText;
+    } finally {
+      _isSending = false;
+    }
   }
 }

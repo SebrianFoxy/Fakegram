@@ -67,12 +67,13 @@ func (r *Routes) setupMessageRoutes(api *echo.Group) {
 	messages := api.Group("/messages")
 	messages.Use(r.jwtMiddleware)
 	
-	messages.POST("", r.messageHandler.CreateMessage)
+	messages.POST("/send", r.messageHandler.CreateMessage)
 	messages.GET("/private-chat/:user_id", r.messageHandler.GetMessagesByChat)
 }
 
 func (r *Routes) setupWebSocketRoutes(e *echo.Group) {
 	e.GET("/ws", r.wsHandler.HandleWebSocket, r.jwtMiddleware)
+	e.GET("/ws-web", r.wsHandler.HandleWebSocket)
 }
 
 func (r *Routes) setupChatRoutes(api *echo.Group) {

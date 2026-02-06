@@ -33,7 +33,11 @@ class ChatList extends ConsumerWidget {
                   return ChatListItem(
                     chat: chat,
                     isSelected: selectedChat?.id == chat.id,
-                    onTap: () => ref.read(selectedChatProvider.notifier).state = chat,
+                      onTap: () {
+                        if (selectedChat?.id != chat.id) {
+                          ref.read(selectedChatProvider.notifier).state = chat;
+                        }
+                      }
                   );
                 },
               ),
