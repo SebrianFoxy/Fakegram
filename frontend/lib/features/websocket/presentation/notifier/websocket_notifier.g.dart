@@ -42,7 +42,7 @@ final autoConnectWebSocketProvider = AutoDisposeFutureProvider<void>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AutoConnectWebSocketRef = AutoDisposeFutureProviderRef<void>;
-String _$webSocketNotifierHash() => r'fefe8fe6b6c27d51005e1f41eae5e051f2bf08c2';
+String _$webSocketNotifierHash() => r'fd2c51a9c4d99f2581bcfd0268d8580290db1ef0';
 
 /// See also [WebSocketNotifier].
 @ProviderFor(WebSocketNotifier)

@@ -36,7 +36,7 @@ func NewMessageHandler(messageService *services.MessageService, wsPool types.Poo
 // @Failure      403 {object} map[string]string "Доступ запрещен"
 // @Failure      500 {object} map[string]string "Ошибка сервера"
 // @Security     BearerAuth
-// @Router       /api/v1/messages [post]
+// @Router       /api/v1/messages/send [post]
 func (h *MessageHandler) CreateMessage(c echo.Context) error {
     ctx := c.Request().Context()
     

@@ -8,6 +8,8 @@ abstract class MessageState with _$MessageState {
 
   const factory MessageState.successLoading({
     required List<MessageEntity> messages,
+    @Default(false) bool hasMoreMessages,
+    @Default(false) bool isLoadingMore,
     String? error,
   }) = MessageStateSuccessLoading;
 

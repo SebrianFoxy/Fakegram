@@ -30,6 +30,8 @@ mixin _$MessageDetailModel {
   bool get isEdited;
   @JsonKey(name: 'is_deleted', defaultValue: false)
   bool get isDeleted;
+  @JsonKey(name: 'is_read', defaultValue: false)
+  bool get isRead;
   @JsonKey(name: 'created_at')
   DateTime get createdAt;
   @JsonKey(name: 'read_at')
@@ -73,6 +75,7 @@ mixin _$MessageDetailModel {
                 other.isEdited == isEdited) &&
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
+            (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
@@ -98,6 +101,7 @@ mixin _$MessageDetailModel {
       replyToMessageId,
       isEdited,
       isDeleted,
+      isRead,
       createdAt,
       readAt,
       senderName,
@@ -107,7 +111,7 @@ mixin _$MessageDetailModel {
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
   }
 }
 
@@ -127,6 +131,7 @@ abstract mixin class $MessageDetailModelCopyWith<$Res> {
       String? replyToMessageId,
       @JsonKey(name: 'is_edited', defaultValue: false) bool isEdited,
       @JsonKey(name: 'is_deleted', defaultValue: false) bool isDeleted,
+      @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
       @JsonKey(name: 'sender_name') String senderName,
@@ -156,6 +161,7 @@ class _$MessageDetailModelCopyWithImpl<$Res>
     Object? replyToMessageId = freezed,
     Object? isEdited = null,
     Object? isDeleted = null,
+    Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
     Object? senderName = null,
@@ -195,6 +201,10 @@ class _$MessageDetailModelCopyWithImpl<$Res>
       isDeleted: null == isDeleted
           ? _self.isDeleted
           : isDeleted // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isRead: null == isRead
+          ? _self.isRead
+          : isRead // ignore: cast_nullable_to_non_nullable
               as bool,
       createdAt: null == createdAt
           ? _self.createdAt
@@ -237,6 +247,7 @@ class _MessageDetailModel extends MessageDetailModel {
       this.replyToMessageId,
       @JsonKey(name: 'is_edited', defaultValue: false) required this.isEdited,
       @JsonKey(name: 'is_deleted', defaultValue: false) required this.isDeleted,
+      @JsonKey(name: 'is_read', defaultValue: false) required this.isRead,
       @JsonKey(name: 'created_at') required this.createdAt,
       @JsonKey(name: 'read_at') required this.readAt,
       @JsonKey(name: 'sender_name') required this.senderName,
@@ -270,6 +281,9 @@ class _MessageDetailModel extends MessageDetailModel {
   @override
   @JsonKey(name: 'is_deleted', defaultValue: false)
   final bool isDeleted;
+  @override
+  @JsonKey(name: 'is_read', defaultValue: false)
+  final bool isRead;
   @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -323,6 +337,7 @@ class _MessageDetailModel extends MessageDetailModel {
                 other.isEdited == isEdited) &&
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
+            (identical(other.isRead, isRead) || other.isRead == isRead) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
@@ -348,6 +363,7 @@ class _MessageDetailModel extends MessageDetailModel {
       replyToMessageId,
       isEdited,
       isDeleted,
+      isRead,
       createdAt,
       readAt,
       senderName,
@@ -357,7 +373,7 @@ class _MessageDetailModel extends MessageDetailModel {
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
   }
 }
 
@@ -379,6 +395,7 @@ abstract mixin class _$MessageDetailModelCopyWith<$Res>
       String? replyToMessageId,
       @JsonKey(name: 'is_edited', defaultValue: false) bool isEdited,
       @JsonKey(name: 'is_deleted', defaultValue: false) bool isDeleted,
+      @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
       @JsonKey(name: 'sender_name') String senderName,
@@ -408,6 +425,7 @@ class __$MessageDetailModelCopyWithImpl<$Res>
     Object? replyToMessageId = freezed,
     Object? isEdited = null,
     Object? isDeleted = null,
+    Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
     Object? senderName = null,
@@ -447,6 +465,10 @@ class __$MessageDetailModelCopyWithImpl<$Res>
       isDeleted: null == isDeleted
           ? _self.isDeleted
           : isDeleted // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isRead: null == isRead
+          ? _self.isRead
+          : isRead // ignore: cast_nullable_to_non_nullable
               as bool,
       createdAt: null == createdAt
           ? _self.createdAt
