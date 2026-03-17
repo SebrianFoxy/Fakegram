@@ -14,6 +14,7 @@ var db *sql.DB
 func InitDB(cfg *config.Config) (*sql.DB, error) {
     adminConn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=postgres sslmode=disable",
         cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword)
+        
     dbAdmin, err := sql.Open("postgres", adminConn)
     if err != nil {
         return nil, err

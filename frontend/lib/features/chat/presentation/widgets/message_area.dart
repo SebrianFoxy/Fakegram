@@ -1,9 +1,7 @@
 part of 'widgets.dart';
 
 class MessageArea extends ConsumerWidget {
-  final ScrollController scrollController;
-
-  const MessageArea({super.key, required this.scrollController});
+  const MessageArea({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +18,6 @@ class MessageArea extends ConsumerWidget {
           Expanded(
             child: MessagesList(
               chatId: selectedChat.id,
-              scrollController: scrollController,
             ),
           ),
           MessageInput(

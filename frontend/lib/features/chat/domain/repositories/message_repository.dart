@@ -2,9 +2,20 @@ import 'package:fakegram/features/chat/domain/entities/message_entity.dart';
 import '../entities/pagination_messages_entity.dart';
 
 abstract class MessageRepository {
-  Future<PaginationMessagesEntity> getMessages({
+  Future<PaginationMessagesEntity> getInitialMessages({
     required String userId,
-    required int page,
+    required int limit,
+  });
+
+  Future<PaginationMessagesEntity> getOlderMessages({
+    required String userId,
+    required String cursor,
+    required int limit,
+  });
+
+  Future<PaginationMessagesEntity> getNewerMessages({
+    required String userId,
+    required String cursor,
     required int limit,
   });
 
@@ -14,5 +25,4 @@ abstract class MessageRepository {
     required String messageType,
     required String replyToMessageId,
   });
-
 }

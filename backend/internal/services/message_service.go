@@ -108,9 +108,21 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
     return message, nil
 }
 
-func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUserID string, page, limit int) (*models.GetMessagesResponse, error) {
+func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUserID string, cursor *time.Time, limit int, direction string) (*models.GetMessagesResponse, error) {
     if userID == otherUserID {
         return nil, fmt.Errorf("cannot get messages with yourself")
+    }
+    
+    if limit <= 0 || limit > 100 {
+        limit = 30
+    }
+    
+    if direction != "around" && direction != "older" && direction != "newer" {
+        return nil, fmt.Errorf("invalid direction: %s", direction)
+    }
+
+    if (direction == "older" || direction == "newer") && cursor == nil {
+        return nil, fmt.Errorf("cursor is required for direction: %s", direction)
     }
     
     chatID := models.GenerateChatID(userID, otherUserID)
@@ -123,14 +135,55 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
         return nil, ErrAccessDenied
     }
     
-    offset := (page - 1) * limit
-    
-    messages, totalCount, err := s.messageRepo.GetMessagesByChat(ctx, userID, otherUserID, limit, offset)
+    messages, hasMoreOlder, hasMoreNewer, unreadCount, err := s.messageRepo.GetMessagesByChat(
+        ctx, 
+        userID, 
+        otherUserID, 
+        cursor, 
+        limit, 
+        direction,
+    )
     if err != nil {
         return nil, fmt.Errorf("failed to get messages: %w", err)
     }
     
-    response := models.ToGetMessagesResponse(messages, page, limit, totalCount)
+    response := &models.GetMessagesResponse{
+        Messages:      messages,
+        Count:         len(messages),
+        TotalUnread:   unreadCount,
+        HasMoreOlder:  hasMoreOlder,
+        HasMoreNewer:  hasMoreNewer,
+    }
+    
+    if len(messages) > 0 {
+        if direction == "newer" {
+            firstMsgTime := messages[0].CreatedAt
+            lastMsgTime := messages[len(messages)-1].CreatedAt
+            response.FirstMsgTime = &firstMsgTime
+            response.LastMsgTime = &lastMsgTime
+            
+            response.Cursors = &models.MessageCursors{}
+            if hasMoreOlder {
+                response.Cursors.Older = &firstMsgTime
+            }
+            if hasMoreNewer {
+                response.Cursors.Newer = &lastMsgTime
+            }
+        } else {
+            firstMsgTime := messages[len(messages)-1].CreatedAt
+            lastMsgTime := messages[0].CreatedAt
+            response.FirstMsgTime = &firstMsgTime
+            response.LastMsgTime = &lastMsgTime
+            
+            response.Cursors = &models.MessageCursors{}
+            if hasMoreOlder {
+                response.Cursors.Older = &firstMsgTime
+            }
+            if hasMoreNewer {
+                response.Cursors.Newer = &lastMsgTime
+            }
+        }
+    }
     
     return response, nil
 }

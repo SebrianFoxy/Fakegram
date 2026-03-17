@@ -19,6 +19,11 @@ const (
     EventChatListUpdate = "chat_list_update"
     EventNewChatCreated = "new_chat_created"
 )
+
+const (
+    EventUnreadCountUpdate = "unread_count_update"
+)
+
 const (
     EventPing           = "ping"          
     EventPong           = "pong"  

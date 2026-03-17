@@ -141,10 +141,10 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       String url;
       if (kIsWeb) {
         url = 'ws://localhost:8080/api/v1/ws-web?token=$token';
-        print('WEB: Connecting to $url');
+        debugPrint('WEB: Connecting to $url');
       } else {
         url = 'ws://localhost:8080/api/v1/ws';
-        print('DESKTOP: Connecting to $url (token in Authorization header)');
+        debugPrint('DESKTOP: Connecting to $url (token in Authorization header)');
       }
 
       await _webSocketService.connect(url, token);
@@ -268,10 +268,14 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
           type: 'message_read',
           payload: {
             'chat_id': chatId,
-            'max_id': messageId,
+            'last_read_message_id': messageId,
           },
         );
         _webSocketService.sendMessage(message);
+
+        if (kDebugMode) {
+          print('📤 Sent read receipt: chat=$chatId, message=$messageId');
+        }
       } catch (e) {
         if (kDebugMode) {
           print('Failed to send message_read: $e');
@@ -279,7 +283,6 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       }
     }
   }
-
 
   void dispose() {
     _reconnectTimer?.cancel();

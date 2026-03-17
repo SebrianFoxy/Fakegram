@@ -2,12 +2,10 @@ part of 'widgets.dart';
 
 class MessagesList extends ConsumerStatefulWidget {
   final String chatId;
-  final ScrollController scrollController;
 
   const MessagesList({
     super.key,
     required this.chatId,
-    required this.scrollController,
   });
 
   @override
@@ -15,54 +13,224 @@ class MessagesList extends ConsumerStatefulWidget {
 }
 
 class _MessagesListState extends ConsumerState<MessagesList> {
-  final _scrollThreshold = 200.0;
-  bool _isLoadingMore = false;
+  bool _isLoadingOlder = false;
+  bool _isLoadingNewer = false;
+  bool _initialScrollDone = false;
+  bool _positionListenerEnabled = false;
+  bool _isLoadingMoreLocked = false;
+  int? _lastFirstVisibleIndex;
+  Timer? _readReceiptDebounce;
+  final Set<String> _processedMessageIds = {};
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
 
   @override
   void initState() {
     super.initState();
-    widget.scrollController.addListener(_onScroll);
+    _itemPositionsListener.itemPositions.addListener(_onPositionChange);
   }
 
   @override
   void dispose() {
-    widget.scrollController.removeListener(_onScroll);
+    _itemPositionsListener.itemPositions.removeListener(_onPositionChange);
+    _readReceiptDebounce?.cancel();
+    _readReceiptDebounce = null;
     super.dispose();
   }
 
-  void _onScroll() {
-    if (_isLoadingMore) return;
-
-    final maxScroll = widget.scrollController.position.maxScrollExtent;
-    final currentScroll = widget.scrollController.position.pixels;
-
-    if (maxScroll - currentScroll <= _scrollThreshold) {
-      _loadMoreMessages();
+  @override
+  void didUpdateWidget(MessagesList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chatId != widget.chatId) {
+      _initialScrollDone = false;
+      _positionListenerEnabled = false;
+      _isLoadingOlder = false;
+      _isLoadingNewer = false;
+      _isLoadingMoreLocked = false;
+      _lastFirstVisibleIndex = null;
+      _processedMessageIds.clear();
     }
   }
 
-  Future<void> _loadMoreMessages() async {
-    if (_isLoadingMore) return;
+  void _onPositionChange() {
+    if (!_positionListenerEnabled || _isLoadingMoreLocked) return;
+
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
 
     final messageState = ref.read(messageNotifierProvider);
-    if (messageState is! MessageStateSuccessLoading ||
-        !messageState.hasMoreMessages ||
-        messageState.isLoadingMore) {
-      return;
+    if (messageState is! MessageStateSuccess) return;
+
+    final firstVisibleIndex = positions
+        .where((p) => p.itemLeadingEdge >= 0 && p.itemLeadingEdge < 1)
+        .map((p) => p.index)
+        .fold<int?>(null, (min, index) => min == null ? index : (index < min ? index : min));
+
+    if (firstVisibleIndex == null) return;
+
+    _lastFirstVisibleIndex = firstVisibleIndex;
+
+    if (firstVisibleIndex <= 2 &&
+        messageState.hasMoreOlder &&
+        !_isLoadingOlder &&
+        !_isLoadingMoreLocked) {
+      _loadOlderMessages();
     }
 
+    final lastVisibleIndex = positions
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
+        .map((p) => p.index)
+        .fold<int?>(null, (max, index) => max == null ? index : (index > max ? index : max));
+
+    if (lastVisibleIndex != null &&
+        lastVisibleIndex >= messageState.messages.length - 2 &&
+        messageState.hasMoreNewer &&
+        !_isLoadingNewer &&
+        !_isLoadingMoreLocked) {
+      _loadNewerMessages();
+    }
+
+    _checkVisibleMessagesForRead(positions, messageState.messages);
+  }
+
+  void _checkVisibleMessagesForRead(
+      Iterable<ItemPosition> positions,
+      List<MessageEntity> messages) {
+
+    final visibleIndices = positions
+        .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
+        .map((p) => p.index)
+        .toSet();
+
+    if (visibleIndices.isEmpty) return;
+
+    final visibleMessageIds = visibleIndices
+        .where((index) => index >= 0 && index < messages.length)
+        .map((index) => messages[index].id)
+        .toList();
+
+    if (visibleMessageIds.isEmpty) return;
+
+    _readReceiptDebounce?.cancel();
+
+    _readReceiptDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        ref.read(messageNotifierProvider.notifier).markMessagesAsReadOnView(
+          visibleMessageIds,
+        );
+      }
+    });
+  }
+
+  Future<void> _loadOlderMessages() async {
+    if (_isLoadingOlder) return;
+
     setState(() {
-      _isLoadingMore = true;
+      _isLoadingOlder = true;
+      _isLoadingMoreLocked = true;
     });
 
     try {
-      await ref.read(messageNotifierProvider.notifier).loadMoreMessages();
+      final oldMessageState = ref.read(messageNotifierProvider);
+      final oldMessageCount = oldMessageState is MessageStateSuccess
+          ? oldMessageState.messages.length
+          : 0;
+      final oldFirstUnreadIndex = oldMessageState is MessageStateSuccess
+          ? oldMessageState.firstUnreadIndex
+          : null;
+
+      await ref.read(messageNotifierProvider.notifier).loadOlderMessages();
+
+      if (_initialScrollDone && mounted) {
+        final newMessageState = ref.read(messageNotifierProvider);
+        if (newMessageState is MessageStateSuccess) {
+          final newMessageCount = newMessageState.messages.length - oldMessageCount;
+
+          if (oldFirstUnreadIndex != null && newMessageCount > 0) {
+            final notifier = ref.read(messageNotifierProvider.notifier);
+            notifier.updateFirstUnreadIndex(oldFirstUnreadIndex + newMessageCount);
+          }
+
+          if (newMessageCount > 0 && _itemScrollController.isAttached) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_itemScrollController.isAttached) {
+                final targetIndex = newMessageCount + (_lastFirstVisibleIndex ?? 0);
+                _itemScrollController.jumpTo(
+                  index: targetIndex,
+                );
+              }
+            });
+          }
+        }
+      }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoadingMore = false;
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _isLoadingOlder = false;
+              _isLoadingMoreLocked = false;
+            });
+          }
         });
       }
+    }
+  }
+
+  Future<void> _loadNewerMessages() async {
+    if (_isLoadingNewer) return;
+
+    final currentPosition = _lastFirstVisibleIndex;
+
+    setState(() {
+      _isLoadingNewer = true;
+      _isLoadingMoreLocked = true;
+    });
+
+    try {
+      await ref.read(messageNotifierProvider.notifier).loadNewerMessages();
+
+      if (_initialScrollDone && mounted && currentPosition != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_itemScrollController.isAttached) {
+            _itemScrollController.jumpTo(
+              index: currentPosition,
+            );
+          }
+        });
+      }
+    } finally {
+      if (mounted) {
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) {
+            setState(() {
+              _isLoadingNewer = false;
+              _isLoadingMoreLocked = false;
+            });
+          }
+        });
+      }
+    }
+  }
+
+  void _scrollToPosition(int index) {
+    if (!_initialScrollDone && mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_itemScrollController.isAttached) {
+          _itemScrollController.jumpTo(
+            index: index,
+          );
+
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              setState(() {
+                _initialScrollDone = true;
+                _positionListenerEnabled = true;
+              });
+            }
+          });
+        }
+      });
     }
   }
 
@@ -70,103 +238,104 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   Widget build(BuildContext context) {
     final messageState = ref.watch(messageNotifierProvider);
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        if (notification is ScrollEndNotification) {
-          _onScroll();
+    if (messageState is MessageStateSuccess && !_initialScrollDone) {
+      final targetIndex = messageState.firstUnreadIndex ??
+          (messageState.messages.isNotEmpty ? messageState.messages.length - 1 : 0);
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_initialScrollDone && mounted) {
+          _scrollToPosition(targetIndex);
         }
-        return false;
-      },
-      child: switch (messageState) {
-        MessageStateInitial() => _buildEmptyState(),
-        MessageStateLoading() => _buildLoadingState(),
-        MessageStateSuccessLoading(
-        messages: final messages,
-        isLoadingMore: final isLoadingMore,
-        hasMoreMessages: final hasMoreMessages,
-        ) =>
-            Column(
-              children: [
-                if (isLoadingMore && messages.isNotEmpty) _buildLoadMoreIndicator(),
-                Expanded(
-                  child: _buildMessagesList(
-                    messages,
-                    ref,
-                    hasMoreMessages: hasMoreMessages,
-                    isLoadingMore: isLoadingMore,
-                  ),
-                ),
-              ],
-            ),
-        MessageStateError(error: final error) =>
-            _buildErrorState(error.toString()),
-        _ => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      },
-    );
+      });
+    }
+
+    return switch (messageState) {
+      MessageStateInitial() => _buildEmptyState(),
+      MessageStateLoading() => _buildLoadingState(),
+      MessageStateSuccess(
+      messages: final messages,
+      hasMoreOlder: final hasMoreOlder,
+      hasMoreNewer: final hasMoreNewer,
+      isLoadingMore: final isLoadingMore,
+      isLoadingNewer: final isLoadingNewer,
+      firstUnreadIndex: final firstUnreadIndex,
+      ) =>
+          _buildMessagesList(
+            messages,
+            hasMoreOlder: hasMoreOlder,
+            hasMoreNewer: hasMoreNewer,
+            isLoadingMore: isLoadingMore || _isLoadingOlder,
+            isLoadingNewer: isLoadingNewer || _isLoadingNewer,
+            firstUnreadIndex: firstUnreadIndex,
+          ),
+      MessageStateError(error: final error) =>
+          _buildErrorState(error.toString()),
+    };
   }
 
   Widget _buildMessagesList(
-      List<MessageEntity> messages,
-      WidgetRef ref, {
-        required bool hasMoreMessages,
+      List<MessageEntity> messages, {
+        required bool hasMoreOlder,
+        required bool hasMoreNewer,
         required bool isLoadingMore,
+        required bool isLoadingNewer,
+        int? firstUnreadIndex,
       }) {
     if (messages.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Нет сообщений',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
-            ),
-            Text(
-              'Начните диалог первым!',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      );
+      return _buildEmptyChatState();
     }
 
-    return ListView.builder(
-      controller: widget.scrollController,
-      reverse: true,
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 16),
-      itemCount: messages.length + (hasMoreMessages ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (hasMoreMessages && index == messages.length) {
-          return _buildLoadMoreIndicator();
-        }
+    return Column(
+      children: [
+        if (isLoadingMore && hasMoreOlder)
+          _buildLoadMoreIndicator(),
+        Expanded(
+          child: ScrollablePositionedList.builder(
+            key: ValueKey('messages_list_${widget.chatId}'),
+            itemScrollController: _itemScrollController,
+            itemPositionsListener: _itemPositionsListener,
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 16),
+            itemCount: messages.length,
+            itemBuilder: (context, index) {
+              final message = messages[index];
+              final showDate = _shouldShowDate(index, messages);
+              final isFirstUnread = index == firstUnreadIndex;
 
-        final messageIndex = index;
-        final message = messages[messageIndex];
-        final showDate = _shouldShowDate(messageIndex, messages);
+              return Column(
+                children: [
+                  if (showDate) _buildDateSeparator(message.createdAt),
+                  if (isFirstUnread) _buildUnreadIndicator(),
+                  MessageBubble(
+                    message: message,
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        if (isLoadingNewer && hasMoreNewer)
+          _buildLoadMoreIndicator(),
+      ],
+    );
+  }
 
-        return Column(
-          children: [
-            if (showDate) _buildDateSeparator(message.createdAt),
-            MessageBubble(
-              message: message,
-            ),
-          ],
-        );
-      },
+  Widget _buildUnreadIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      color: Colors.blue.withOpacity(0.1),
+      child: const Center(
+        child: Text(
+          'Непрочитанные сообщения',
+          style: TextStyle(
+            color: Colors.blue,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
     );
   }
 
@@ -185,8 +354,8 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   Widget _buildLoadMoreIndicator() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
       child: Center(
         child: SizedBox(
           width: 24,
@@ -201,7 +370,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
           color: Colors.grey[200],
           borderRadius: BorderRadius.circular(12),
@@ -221,7 +390,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(Duration(days: 1));
+    final yesterday = today.subtract(const Duration(days: 1));
     final messageDate = DateTime(date.year, date.month, date.day);
 
     if (messageDate == today) {
@@ -234,7 +403,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   Widget _buildLoadingState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -254,24 +423,24 @@ class _MessagesListState extends ConsumerState<MessagesList> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: Colors.red,
             size: 48,
           ),
-          SizedBox(height: 16),
-          Text(
+          const SizedBox(height: 16),
+          const Text(
             'Ошибка загрузки сообщений',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             error,
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               color: Colors.grey,
             ),
@@ -282,6 +451,28 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   Widget _buildEmptyState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 64,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Выберите чат',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyChatState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -291,12 +482,19 @@ class _MessagesListState extends ConsumerState<MessagesList> {
             size: 64,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
-            'Выберите чат',
+            'Нет сообщений',
             style: TextStyle(
               color: Colors.grey,
               fontSize: 16,
+            ),
+          ),
+          Text(
+            'Начните диалог первым!',
+            style: TextStyle(
+              color: Colors.grey[500],
+              fontSize: 14,
             ),
           ),
         ],

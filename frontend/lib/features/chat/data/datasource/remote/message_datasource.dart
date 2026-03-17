@@ -11,9 +11,10 @@ abstract class MessageRemoteDatasource {
   factory MessageRemoteDatasource(Dio dio, {String baseUrl}) = _MessageRemoteDatasource;
 
   @GET('/messages/private-chat/{user_id}')
-  Future<MessageResponseDTO> messages(
+  Future<MessageResponseDTO> getMessages(
       @Path('user_id') String userId,
-      @Query('page') int page,
+      @Query('direction') String direction,
+      @Query('cursor') String? cursor,
       @Query('limit') int limit,
       @Header("accept") String accept,
       @Header("Authorization") String authorization,

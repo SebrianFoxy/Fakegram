@@ -21,10 +21,8 @@ _MessageDetailModel _$MessageDetailModelFromJson(Map<String, dynamic> json) =>
       readAt: json['read_at'] == null
           ? null
           : DateTime.parse(json['read_at'] as String),
-      senderName: json['sender_name'] as String,
-      senderSurname: json['sender_surname'] as String,
-      senderNickname: json['sender_nickname'] as String,
-      senderAvatarUrl: json['sender_avatar_url'] as String?,
+      sender: MessageUserDetailModel.fromJson(
+          json['sender'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$MessageDetailModelToJson(_MessageDetailModel instance) =>
@@ -40,8 +38,5 @@ Map<String, dynamic> _$MessageDetailModelToJson(_MessageDetailModel instance) =>
       'is_read': instance.isRead,
       'created_at': instance.createdAt.toIso8601String(),
       'read_at': instance.readAt?.toIso8601String(),
-      'sender_name': instance.senderName,
-      'sender_surname': instance.senderSurname,
-      'sender_nickname': instance.senderNickname,
-      'sender_avatar_url': instance.senderAvatarUrl,
+      'sender': instance.sender,
     };

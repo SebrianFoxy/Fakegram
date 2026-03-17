@@ -8,7 +8,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../../core/di/service_locator.dart';
 import '../../../../../core/network/error_handling/error_handler.dart';
+import '../../../../websocket/presentation/notifier/websocket_notifier.dart';
 import '../../../../websocket/presentation/providers/websocket_providers.dart';
+import '../../../domain/entities/message_read_entity.dart';
+import '../../../domain/entities/pagination_messages_entity.dart';
 import '../chat/chat_notifier.dart';
 
 part 'message_notifier.freezed.dart';
@@ -19,12 +22,19 @@ part 'message_state.dart';
 class MessageNotifier extends _$MessageNotifier {
   late MessageRepository _messageRepository;
   late UserService _userService;
-  int _currentPage = 1;
-  final int _messagesPerPage = 20;
+  final int _messagesPerPage = 40;
   String? _currentChatId;
   String? _currentUserId;
-  bool _hasMoreMessages = true;
+  String? _olderCursor;
+  String? _newerCursor;
+  bool _hasMoreOlder = true;
+  bool _hasMoreNewer = true;
   bool _isLoadingMore = false;
+  bool _isLoadingNewer = false;
+  bool _hasUnread = false;
+  int _totalUnread = 0;
+  int? _firstUnreadIndex;
+  final Set<String> _loadedMessageIds = {};
 
   @override
   MessageState build() {
@@ -43,6 +53,15 @@ class MessageNotifier extends _$MessageNotifier {
       },
     );
 
+    ref.listen<Map<String, dynamic>?>(
+      messageReadProvider,
+          (previous, next) {
+        if (next != null) {
+          handleMessageReadEvent(next);
+        }
+      },
+    );
+
     if (userId == null) {
       return const MessageState.loading();
     }
@@ -51,116 +70,174 @@ class MessageNotifier extends _$MessageNotifier {
       _currentChatId = selectedChat.id;
       _currentUserId = userId;
       _resetPagination();
-      _loadMessages(
-        userId: selectedChat.otherUser.id,
-        page: _currentPage,
-        limit: _messagesPerPage,
-      );
+      _loadInitialMessages(userId: selectedChat.otherUser.id);
       return const MessageState.loading();
     }
 
     return state;
   }
 
-  Future<void> _loadMessages({
-    required String userId,
-    required int page,
-    required int limit,
-    bool isInitialLoad = false,
-  }) async {
+  Future<void> _loadInitialMessages({required String userId}) async {
     try {
-      final messages = await _messageRepository.getMessages(
+      final result = await _messageRepository.getInitialMessages(
         userId: userId,
-        page: page,
-        limit: limit,
+        limit: _messagesPerPage,
       );
 
-      final updatedMessages = messages.messages.map((message) {
+      _updatePaginationState(result);
+      _totalUnread = result.totalUnread;
+
+      final sortedMessages = _sortMessagesByDate(result.messages);
+
+      _loadedMessageIds.clear();
+      _loadedMessageIds.addAll(sortedMessages.map((m) => m.id));
+
+      if (sortedMessages.isNotEmpty) {
+        final firstUnreadIndex = sortedMessages.indexWhere(
+              (m) => !m.isRead && m.senderId != _currentUserId,
+        );
+
+        if (firstUnreadIndex != -1) {
+          _firstUnreadIndex = firstUnreadIndex;
+          _hasUnread = true;
+        } else {
+          _firstUnreadIndex = null;
+          _hasUnread = false;
+        }
+      }
+
+      final updatedMessages = sortedMessages.map((message) {
         return _updateMessageStatus(message);
       }).toList();
 
-      state = MessageState.successLoading(
+      state = MessageState.success(
         messages: updatedMessages,
-        hasMoreMessages: _hasMoreMessages,
+        hasMoreOlder: result.hasMoreOlder,
+        hasMoreNewer: result.hasMoreNewer,
         isLoadingMore: false,
+        isLoadingNewer: false,
+        olderCursor: result.olderCursor,
+        newerCursor: result.newerCursor,
+        totalUnread: result.totalUnread,
+        firstUnreadIndex: _firstUnreadIndex,
       );
     } catch (error) {
+      debugPrint('LoadMessageInitialError: ${error.toString()}');
       final exception = ErrorHandler.handleError(error);
       state = MessageState.error(error: exception);
     }
   }
 
-  Future<void> loadMoreMessages() async {
-    if (!_hasMoreMessages || _isLoadingMore || _currentChatId == null) {
+  Future<void> loadOlderMessages() async {
+    if (!_hasMoreOlder || _isLoadingMore || _currentChatId == null) {
       return;
     }
 
     _isLoadingMore = true;
-    _currentPage++;
+    _updateLoadingState();
 
     try {
       final selectedChat = ref.read(selectedChatProvider);
       if (selectedChat == null) return;
 
-      final newMessages = await _messageRepository.getMessages(
+      final result = await _messageRepository.getOlderMessages(
         userId: selectedChat.otherUser.id,
-        page: _currentPage,
+        cursor: _olderCursor ?? DateTime.now().toIso8601String(),
         limit: _messagesPerPage,
       );
 
-      if (newMessages.hasNext == false) {
-        _hasMoreMessages = false;
-        final updatedNewMessages = newMessages.messages.map((message) {
-          return _updateMessageStatus(message);
-        }).toList();
+      _updatePaginationState(result);
 
-        if (state is MessageStateSuccessLoading) {
-          final currentState = state as MessageStateSuccessLoading;
-          final allMessages = [...currentState.messages, ...updatedNewMessages];
-          state = currentState.copyWith(
-            messages: allMessages,
-            hasMoreMessages: _hasMoreMessages,
-            isLoadingMore: false,
-          );
-        }
-      } else {
-        final updatedNewMessages = newMessages.messages.map((message) {
-          return _updateMessageStatus(message);
-        }).toList();
+      final newMessages = result.messages
+          .where((m) => !_loadedMessageIds.contains(m.id))
+          .toList();
 
-        if (state is MessageStateSuccessLoading) {
-          final currentState = state as MessageStateSuccessLoading;
-          final allMessages = [...currentState.messages, ...updatedNewMessages];
-          state = currentState.copyWith(
-            messages: allMessages,
-            hasMoreMessages: _hasMoreMessages,
-            isLoadingMore: false,
-          );
-        }
-      }
+      _loadedMessageIds.addAll(newMessages.map((m) => m.id));
 
-    } catch (error) {
-      _currentPage--;
-      final exception = ErrorHandler.handleError(error);
-      debugPrint('Error loading more messages: $exception');
+      final updatedNewMessages = newMessages.map((message) {
+        return _updateMessageStatus(message);
+      }).toList();
 
-      if (state is MessageStateSuccessLoading) {
-        final currentState = state as MessageStateSuccessLoading;
+      if (state is MessageStateSuccess) {
+        final currentState = state as MessageStateSuccess;
+
+        final allMessages = [...updatedNewMessages, ...currentState.messages];
+        final sortedMessages = _sortMessagesByDate(allMessages);
+
+        _recalculateFirstUnreadIndex(sortedMessages);
+
         state = currentState.copyWith(
-          error: exception.toString(),
+          messages: sortedMessages,
+          hasMoreOlder: result.hasMoreOlder,
+          olderCursor: result.olderCursor,
           isLoadingMore: false,
+          firstUnreadIndex: _firstUnreadIndex,
         );
       }
+    } catch (error) {
+      _handleError(error);
     } finally {
       _isLoadingMore = false;
+    }
+  }
+
+  Future<void> loadNewerMessages() async {
+    if (!_hasMoreNewer || _isLoadingNewer || _currentChatId == null) {
+      return;
+    }
+
+    _isLoadingNewer = true;
+    _updateLoadingState();
+
+    try {
+      final selectedChat = ref.read(selectedChatProvider);
+      if (selectedChat == null) return;
+
+      final result = await _messageRepository.getNewerMessages(
+        userId: selectedChat.otherUser.id,
+        cursor: _newerCursor ?? DateTime.now().toIso8601String(),
+        limit: _messagesPerPage,
+      );
+
+      _updatePaginationState(result);
+
+      final newMessages = result.messages
+          .where((m) => !_loadedMessageIds.contains(m.id))
+          .toList();
+
+      _loadedMessageIds.addAll(newMessages.map((m) => m.id));
+
+      final updatedNewMessages = newMessages.map((message) {
+        return _updateMessageStatus(message);
+      }).toList();
+
+      if (state is MessageStateSuccess) {
+        final currentState = state as MessageStateSuccess;
+
+        final allMessages = [...currentState.messages, ...updatedNewMessages];
+        final sortedMessages = _sortMessagesByDate(allMessages);
+
+        _recalculateFirstUnreadIndex(sortedMessages);
+
+        state = currentState.copyWith(
+          messages: sortedMessages,
+          hasMoreNewer: result.hasMoreNewer,
+          newerCursor: result.newerCursor,
+          isLoadingNewer: false,
+          firstUnreadIndex: _firstUnreadIndex,
+        );
+      }
+    } catch (error) {
+      _handleError(error);
+    } finally {
+      _isLoadingNewer = false;
     }
   }
 
   Future<void> sendMessage({
     required String messageText,
     required String messageType,
-    String? replyToMessageId,
-  }) async {
+    String? replyToMessageId,}) async {
     try {
       if (_currentChatId == null || _currentUserId == null) {
         return;
@@ -182,9 +259,9 @@ class MessageNotifier extends _$MessageNotifier {
         replyToMessageId: replyToMessageId,
         isEdited: false,
         isDeleted: false,
-        isRead: false,
+        isRead: true,
         createdAt: DateTime.now().toLocal(),
-        readAt: null,
+        readAt: DateTime.now(),
         senderName: userData?.name ?? 'You',
         senderSurname: userData?.surname ?? '',
         senderNickname: userData?.nickname ?? 'you',
@@ -192,18 +269,90 @@ class MessageNotifier extends _$MessageNotifier {
         status: MessageStatus.sending,
       );
 
-      if (state is MessageStateSuccessLoading) {
-        final currentState = state as MessageStateSuccessLoading;
-        final updatedMessages = [tempMessage, ...currentState.messages];
-        state = currentState.copyWith(messages: updatedMessages);
-      }
+      _addTempMessage(tempMessage);
 
       final messageData = await _messageRepository.sendMessage(
-          chatId: _currentChatId.toString(),
-          messageText: messageText,
-          messageType: messageType,
-          replyToMessageId: replyToMessageId ?? ''
+        chatId: _currentChatId.toString(),
+        messageText: messageText,
+        messageType: messageType,
+        replyToMessageId: replyToMessageId ?? '',
       );
+
+      _replaceTempMessage(tempId, messageData);
+    } catch (error) {
+      _handleSendError(error, messageText);
+    }
+  }
+
+  List<MessageEntity> _sortMessagesByDate(List<MessageEntity> messages) {
+    final sorted = List<MessageEntity>.from(messages);
+    sorted.sort((a, b) {
+      final comparison = a.createdAt.compareTo(b.createdAt);
+
+      if (comparison == 0) {
+        return a.id.compareTo(b.id);
+      }
+      return comparison;
+    });
+    return sorted;
+  }
+
+  void _recalculateFirstUnreadIndex(List<MessageEntity> messages) {
+    final firstUnreadIndex = messages.indexWhere(
+          (m) => !m.isRead && m.senderId != _currentUserId,
+    );
+
+    if (firstUnreadIndex != -1) {
+      _firstUnreadIndex = firstUnreadIndex;
+      _hasUnread = true;
+    } else {
+      _firstUnreadIndex = null;
+      _hasUnread = false;
+    }
+  }
+
+  MessageEntity _updateMessageStatus(MessageEntity message) {
+    if (message.senderId == _currentUserId) {
+      return message.copyWith(
+        isRead: true,
+        status: (message.readAt != null && message.isRead) ? MessageStatus.read : MessageStatus.sent,
+      );
+    }
+
+    return message.copyWith(
+      isRead: message.isRead,
+      status: message.isRead ? MessageStatus.read : MessageStatus.sending,
+    );
+  }
+
+  void updateFirstUnreadIndex(int newIndex) {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+      state = currentState.copyWith(firstUnreadIndex: newIndex);
+    }
+  }
+
+  void _addTempMessage(MessageEntity tempMessage) {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      _loadedMessageIds.add(tempMessage.id);
+
+      final allMessages = [...currentState.messages, tempMessage];
+      final sortedMessages = _sortMessagesByDate(allMessages);
+
+      state = currentState.copyWith(
+        messages: sortedMessages,
+      );
+    }
+  }
+
+  void _replaceTempMessage(String tempId, MessageEntity messageData) {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      _loadedMessageIds.remove(tempId);
+      _loadedMessageIds.add(messageData.id);
 
       final serverMessage = MessageEntity(
         id: messageData.id,
@@ -214,51 +363,45 @@ class MessageNotifier extends _$MessageNotifier {
         replyToMessageId: messageData.replyToMessageId,
         isEdited: messageData.isEdited,
         isDeleted: messageData.isDeleted,
-        isRead: messageData.isRead,
+        isRead: true,
         createdAt: messageData.createdAt.toLocal(),
-        readAt: messageData.readAt,
+        readAt: messageData.createdAt.toLocal(),
         senderName: messageData.senderName,
         senderSurname: messageData.senderSurname,
         senderNickname: messageData.senderNickname,
-        senderAvatarUrl: messageData.senderAvatarUrl,
-        status: messageData.isRead
-            ? MessageStatus.read
-            : MessageStatus.sent,
+        senderAvatarUrl: '',
+        status: MessageStatus.sent,
       );
 
-      if (state is MessageStateSuccessLoading) {
-        final currentState = state as MessageStateSuccessLoading;
-        final updatedMessages = currentState.messages
-            .where((m) => m.id != tempId)
-            .toList();
+      final filteredMessages = currentState.messages
+          .where((m) => m.id != tempId)
+          .toList();
 
-        updatedMessages.insert(0, serverMessage);
-        state = currentState.copyWith(messages: updatedMessages);
-      }
-    } catch (error) {
-      final exception = ErrorHandler.handleError(error);
+      filteredMessages.add(serverMessage);
 
-      if (kDebugMode) {
-        print('❌ Ошибка отправки сообщения: $exception');
-      }
+      final sortedMessages = _sortMessagesByDate(filteredMessages);
 
-      if (state is MessageStateSuccessLoading) {
-        final currentState = state as MessageStateSuccessLoading;
-        final updatedMessages = currentState.messages.map((message) {
-          if (message.id.startsWith('temp_') &&
-              message.status == MessageStatus.sending &&
-              message.messageText == messageText) {
-            return message.copyWith(status: MessageStatus.error);
-          }
-          return message;
-        }).toList();
+      state = currentState.copyWith(messages: sortedMessages);
+    }
+  }
 
-        state = currentState.copyWith(messages: updatedMessages);
+  void _handleSendError(Object error, String messageText) {
+    final exception = ErrorHandler.handleError(error);
+    debugPrint('❌ Ошибка отправки сообщения: $exception');
 
-        if (kDebugMode) {
-          print('⚠️  Статус временного сообщения изменен на error');
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      final updatedMessages = currentState.messages.map((message) {
+        if (message.id.startsWith('temp_') &&
+            message.status == MessageStatus.sending &&
+            message.messageText == messageText) {
+          return message.copyWith(status: MessageStatus.error);
         }
-      }
+        return message;
+      }).toList();
+
+      state = currentState.copyWith(messages: updatedMessages);
     }
   }
 
@@ -267,58 +410,219 @@ class MessageNotifier extends _$MessageNotifier {
     final chatId = data['chat_id'] as String?;
 
     if (kDebugMode) {
-      print('🎯 MessageNotifier: Обработка нового сообщения из WebSocket');
-      print('🎯 Chat ID: $chatId, Current Chat ID: $_currentChatId');
-      print('🎯 Data: $data');
+      print('🎯 Новое сообщение из WebSocket: $action для чата $chatId');
     }
 
-    if (action == 'new_message' &&
-        chatId == _currentChatId &&
-        state is MessageStateSuccessLoading) {
-
+    if (action == 'new_message' && chatId == _currentChatId) {
       final messageData = data['message'] as Map<String, dynamic>?;
       if (messageData != null) {
         try {
           final newMessage = MessageDetailModel.fromJson(messageData).toEntity();
 
-          final currentState = state as MessageStateSuccessLoading;
+          if (state is MessageStateSuccess) {
+            final currentState = state as MessageStateSuccess;
 
-          if (!currentState.messages.any((m) => m.id == newMessage.id)) {
-            final updatedMessages = [newMessage, ...currentState.messages];
-
-            state = currentState.copyWith(messages: updatedMessages);
-
-            if (kDebugMode) {
-              print('✅ Сообщение добавлено в список');
-              print('✅ Теперь сообщений: ${updatedMessages.length}');
+            if (_loadedMessageIds.contains(newMessage.id)) {
+              debugPrint('⏭️ Сообщение уже загружено, пропускаем: ${newMessage.id}');
+              return;
             }
+
+            final hasTempDuplicate = currentState.messages.any((m) =>
+            m.id.startsWith('temp_') &&
+                m.messageText == newMessage.messageText &&
+                m.senderId == newMessage.senderId &&
+                (m.createdAt.second == newMessage.createdAt.second ||
+                    m.createdAt.isAtSameMomentAs(newMessage.createdAt))
+            );
+
+            if (hasTempDuplicate) {
+              debugPrint('⏭️ Найдено временное сообщение-дубликат, пропускаем');
+              return;
+            }
+
+            debugPrint('✅ Добавляем новое сообщение: ${newMessage.id}');
+
+            _loadedMessageIds.add(newMessage.id);
+
+            final updatedMessage = _updateMessageStatus(newMessage);
+
+            final allMessages = [...currentState.messages, updatedMessage];
+            final sortedMessages = _sortMessagesByDate(allMessages);
+
+            if (!updatedMessage.isRead && updatedMessage.senderId != _currentUserId) {
+              _totalUnread++;
+            }
+
+            _recalculateFirstUnreadIndex(sortedMessages);
+
+            state = currentState.copyWith(
+              messages: sortedMessages,
+              totalUnread: _totalUnread,
+              firstUnreadIndex: _firstUnreadIndex,
+            );
           }
         } catch (e) {
           debugPrint('Error parsing new message from socket: $e');
-
-          if (kDebugMode) {
-            print('❌ Ошибка создания сообщения: $e');
-            print('❌ Данные сообщения: $messageData');
-          }
         }
       }
     }
   }
 
-  MessageEntity _updateMessageStatus(MessageEntity message) {
-    if (message.senderId == _currentUserId) {
-      if (message.readAt != null) {
-        return message.copyWith(status: MessageStatus.read);
-      } else {
-        return message.copyWith(status: MessageStatus.sent);
+  Future<void> markMessagesAsReadOnView(List<String> messageIds) async {
+    if (messageIds.isEmpty || _currentChatId == null || _currentUserId == null) {
+      return;
+    }
+
+    final unreadMessageIds = messageIds.where((id) {
+      if (state is! MessageStateSuccess) return false;
+      final currentState = state as MessageStateSuccess;
+      final message = currentState.messages.firstWhere(
+            (m) => m.id == id,
+        orElse: () => throw Exception(),
+      );
+      return !message.isRead && message.senderId != _currentUserId;
+    }).toList();
+
+    if (unreadMessageIds.isEmpty) return;
+
+    _sendReadReceipts(unreadMessageIds);
+
+    _markMessagesAsRead(unreadMessageIds);
+  }
+
+  void _sendReadReceipts(List<String> messageIds) {
+    if (messageIds.isEmpty || _currentChatId == null) return;
+
+    final webSocketNotifier = ref.read(webSocketNotifierProvider.notifier);
+
+    final lastMessageId = messageIds.last;
+    webSocketNotifier.sendMessageRead(_currentChatId!, lastMessageId);
+
+    if (kDebugMode) {
+      print('📤 Отправлено подтверждение о прочтении для сообщения: $lastMessageId');
+    }
+  }
+
+  void _markMessagesAsRead(List<String> messageIds) {
+    if (messageIds.isEmpty || _currentChatId == null) return;
+
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      final updatedMessages = currentState.messages.map((message) {
+        if (messageIds.contains(message.id) && !message.isRead) {
+          return message.copyWith(
+            isRead: true,
+            readAt: DateTime.now(),
+            status: MessageStatus.read,
+          );
+        }
+        return message;
+      }).toList();
+
+      _totalUnread = updatedMessages
+          .where((m) => !m.isRead && m.senderId != _currentUserId)
+          .length;
+
+      _recalculateFirstUnreadIndex(updatedMessages);
+
+      state = currentState.copyWith(
+        messages: updatedMessages,
+        totalUnread: _totalUnread,
+        firstUnreadIndex: _firstUnreadIndex,
+      );
+    }
+  }
+
+  void handleMessageReadEvent(Map<String, dynamic> data) {
+    try {
+      final readEntity = MessageReadEntity.fromJson(data);
+
+      if (readEntity.chatId != _currentChatId) return;
+
+      if (kDebugMode) {
+        print('📖 Получено подтверждение о прочтении от ${readEntity.userId}');
+      }
+
+      if (state is! MessageStateSuccess) return;
+
+      final currentState = state as MessageStateSuccess;
+
+      final lastReadMessageIndex = currentState.messages.indexWhere(
+              (m) => m.id == readEntity.lastReadMessageId
+      );
+
+      if (lastReadMessageIndex == -1) return;
+
+      final updatedMessages = currentState.messages.asMap().entries.map((entry) {
+        final index = entry.key;
+        final message = entry.value;
+
+        if (message.senderId == _currentUserId && index <= lastReadMessageIndex) {
+          if (!message.isRead || message.status != MessageStatus.read) {
+            if (kDebugMode) {
+              print('   ✅ Отмечаем как прочитанное: ${message.id} (${message.messageText})');
+            }
+            return message.copyWith(
+              isRead: true,
+              readAt: readEntity.readAt.toLocal(),
+              status: MessageStatus.read,
+            );
+          }
+        }
+        return message;
+      }).toList();
+
+      state = currentState.copyWith(messages: updatedMessages);
+
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('Error handling message_read event: $e');
+        print(stackTrace);
       }
     }
-    return message.copyWith(status: MessageStatus.none);
+  }
+
+  void _handleError(Object error) {
+    final exception = ErrorHandler.handleError(error);
+    debugPrint('Error: $exception');
+
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+      state = currentState.copyWith(
+        error: exception.toString(),
+        isLoadingMore: false,
+        isLoadingNewer: false,
+      );
+    }
+  }
+
+  void _updatePaginationState(PaginationMessagesEntity result) {
+    _olderCursor = result.olderCursor;
+    _newerCursor = result.newerCursor;
+    _hasMoreOlder = result.hasMoreOlder;
+    _hasMoreNewer = result.hasMoreNewer;
+  }
+
+  void _updateLoadingState() {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+      state = currentState.copyWith(
+        isLoadingMore: _isLoadingMore,
+        isLoadingNewer: _isLoadingNewer,
+      );
+    }
   }
 
   void _resetPagination() {
-    _currentPage = 1;
-    _hasMoreMessages = true;
+    _olderCursor = null;
+    _newerCursor = null;
+    _hasMoreOlder = true;
+    _hasMoreNewer = true;
     _isLoadingMore = false;
+    _isLoadingNewer = false;
+    _totalUnread = 0;
+    _hasUnread = false;
+    _loadedMessageIds.clear();
   }
 }

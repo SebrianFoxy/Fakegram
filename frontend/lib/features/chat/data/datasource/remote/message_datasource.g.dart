@@ -18,15 +18,21 @@ class _MessageRemoteDatasource implements MessageRemoteDatasource {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<MessageResponseDTO> messages(
+  Future<MessageResponseDTO> getMessages(
     String userId,
-    int page,
+    String direction,
+    String? cursor,
     int limit,
     String accept,
     String authorization,
   ) async {
     final _extra = <String, dynamic>{};
-    final queryParameters = <String, dynamic>{r'page': page, r'limit': limit};
+    final queryParameters = <String, dynamic>{
+      r'direction': direction,
+      r'cursor': cursor,
+      r'limit': limit,
+    };
+    queryParameters.removeWhere((k, v) => v == null);
     final _headers = <String, dynamic>{
       r'accept': accept,
       r'Authorization': authorization,

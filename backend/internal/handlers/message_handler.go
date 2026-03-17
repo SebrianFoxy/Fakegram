@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -85,16 +86,18 @@ func (h *MessageHandler) CreateMessage(c echo.Context) error {
 
 // GetMessagesByChat получает сообщения из чата между двумя пользователями
 // @Summary      Получить сообщения чата
-// @Description  Возвращает сообщения из приватного чата между двумя пользователями с автоматической отметкой о прочтении
+// @Description  Возвращает сообщения из приватного чата с поддержкой двунаправленной пагинации.
+// @Description  При первой загрузке (direction=around) автоматически позиционирует на первом непрочитанном сообщении.
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        user_id path string true "ID второго пользователя"
-// @Param        page query int false "Номер страницы" default(1)
-// @Param        limit query int false "Количество сообщений на странице" default(20)
-// @Success      200 {object} models.GetMessagesResponse "Список сообщений"
-// @Failure      400 {object} map[string]string "Неверные параметры"
-// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Param        user_id   path     string  true   "ID второго пользователя"
+// @Param        direction query    string  false  "Направление загрузки: around (первая загрузка вокруг непрочитанного), older (старые сообщения), newer (новые сообщения)" default(around) Enums(around, older, newer)
+// @Param        cursor    query    string  false  "Временная метка опорного сообщения в формате RFC3339 (например, 2024-01-02T15:04:05Z). Обязателен для direction=older или direction=newer"
+// @Param        limit     query    int     false  "Количество сообщений (1-100)" default(30) mininum(1) maximum(100)
+// @Success      200 {object} models.GetMessagesResponse "Список сообщений с информацией о пагинации"
+// @Failure      400 {object} map[string]string "Неверные параметры (неверный direction, неверный формат cursor и т.д.)"
+// @Failure      403 {object} map[string]string "Доступ запрещен (пользователь не является участником чата)"
 // @Failure      500 {object} map[string]string "Ошибка сервера"
 // @Security     BearerAuth
 // @Router       /api/v1/messages/private-chat/{user_id} [get]
@@ -121,17 +124,43 @@ func (h *MessageHandler) GetMessagesByChat(c echo.Context) error {
         })
     }
     
-    page, _ := strconv.Atoi(c.QueryParam("page"))
-    if page < 1 {
-        page = 1
+    direction := c.QueryParam("direction")
+    if direction == "" {
+        direction = "around"
+    }
+    
+    if direction != "around" && direction != "older" && direction != "newer" {
+        return c.JSON(http.StatusBadRequest, map[string]interface{}{
+            "error": "Invalid direction. Must be 'around', 'older', or 'newer'",
+        })
+    }
+    
+    var cursor *time.Time
+    cursorStr := c.QueryParam("cursor")
+    if cursorStr != "" {
+        parsedTime, err := time.Parse(time.RFC3339, cursorStr)
+        if err != nil {
+            return c.JSON(http.StatusBadRequest, map[string]interface{}{
+                "error": "Invalid cursor format. Use RFC3339 format (e.g., 2024-01-02T15:04:05Z)",
+            })
+        }
+        cursor = &parsedTime
     }
     
     limit, _ := strconv.Atoi(c.QueryParam("limit"))
     if limit < 1 || limit > 100 {
-        limit = 20
+        limit = 30
     }
+
+    response, err := h.messageService.GetMessagesByChat(
+        ctx, 
+        currentUserID, 
+        otherUserID, 
+        cursor, 
+        limit, 
+        direction,
+    )
     
-    response, err := h.messageService.GetMessagesByChat(ctx, currentUserID, otherUserID, page, limit)
     if err != nil {
         if err == services.ErrAccessDenied {
             return c.JSON(http.StatusForbidden, map[string]interface{}{

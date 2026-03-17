@@ -27,19 +27,21 @@ definitions:
     properties:
       count:
         type: integer
-      has_next:
+      cursors:
+        $ref: '#/definitions/models.MessageCursors'
+      first_msg_time:
+        type: string
+      has_more_newer:
         type: boolean
-      has_prev:
+      has_more_older:
         type: boolean
-      limit:
-        type: integer
+      last_msg_time:
+        type: string
       messages:
         items:
           $ref: '#/definitions/models.MessageDetail'
         type: array
-      page:
-        type: integer
-      total:
+      total_unread:
         type: integer
     type: object
   models.LoginRequest:
@@ -47,6 +49,13 @@ definitions:
       email:
         type: string
       password:
+        type: string
+    type: object
+  models.MessageCursors:
+    properties:
+      newer:
+        type: string
+      older:
         type: string
     type: object
   models.MessageDetail:
@@ -71,15 +80,9 @@ definitions:
         type: string
       reply_to_message_id:
         type: string
-      sender_avatar_url:
-        type: string
+      sender:
+        $ref: '#/definitions/models.UserDetail'
       sender_id:
-        type: string
-      sender_name:
-        type: string
-      sender_nickname:
-        type: string
-      sender_surname:
         type: string
     required:
     - sender_id
@@ -132,6 +135,17 @@ definitions:
       refresh_token:
         type: string
       token_type:
+        type: string
+    type: object
+  models.UserDetail:
+    properties:
+      avatar_url:
+        type: string
+      name:
+        type: string
+      nickname:
+        type: string
+      surname:
         type: string
     type: object
   models.UserResponse:
@@ -326,39 +340,52 @@ paths:
     get:
       consumes:
       - application/json
-      description: Возвращает сообщения из приватного чата между двумя пользователями
-        с автоматической отметкой о прочтении
+      description: |-
+        Возвращает сообщения из приватного чата с поддержкой двунаправленной пагинации.
+        При первой загрузке (direction=around) автоматически позиционирует на первом непрочитанном сообщении.
       parameters:
       - description: ID второго пользователя
         in: path
         name: user_id
         required: true
         type: string
-      - default: 1
-        description: Номер страницы
+      - default: around
+        description: 'Направление загрузки: around (первая загрузка вокруг непрочитанного),
+          older (старые сообщения), newer (новые сообщения)'
+        enum:
+        - around
+        - older
+        - newer
         in: query
-        name: page
-        type: integer
-      - default: 20
-        description: Количество сообщений на странице
+        name: direction
+        type: string
+      - description: Временная метка опорного сообщения в формате RFC3339 (например,
+          2024-01-02T15:04:05Z). Обязателен для direction=older или direction=newer
         in: query
+        name: cursor
+        type: string
+      - default: 30
+        description: Количество сообщений (1-100)
+        in: query
+        maximum: 100
         name: limit
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Список сообщений
+          description: Список сообщений с информацией о пагинации
           schema:
             $ref: '#/definitions/models.GetMessagesResponse'
         "400":
-          description: Неверные параметры
+          description: Неверные параметры (неверный direction, неверный формат cursor
+            и т.д.)
           schema:
             additionalProperties:
               type: string
             type: object
         "403":
-          description: Доступ запрещен
+          description: Доступ запрещен (пользователь не является участником чата)
           schema:
             additionalProperties:
               type: string
