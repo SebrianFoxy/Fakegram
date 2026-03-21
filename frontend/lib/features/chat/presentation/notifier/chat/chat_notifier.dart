@@ -8,6 +8,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../../core/di/service_locator.dart';
 import '../../../../../core/network/error_handling/error_handler.dart';
+import '../../../../auth/presentation/providers/user_providers.dart';
 import '../../../../websocket/presentation/providers/websocket_providers.dart';
 import '../../../data/models/chat/direct_chat_model.dart';
 
@@ -37,6 +38,24 @@ class ChatNotifier extends _$ChatNotifier {
       },
       fireImmediately: true,
     );
+
+    // ref.listen(
+    //   messageReadProvider,
+    //       (previous, next) {
+    //     if (next != null) {
+    //       _handleMessageReadEvent(next);
+    //     }
+    //   },
+    // );
+
+    ref.listen(
+      unreadCountUpdateProvider,
+          (previous, next) {
+        if (next != null) {
+          _handleMessageReadEvent(next);
+        }
+      },
+    );
   }
 
   Future<void> loadChats() async {
@@ -62,6 +81,71 @@ class ChatNotifier extends _$ChatNotifier {
           error: exception.toString()
       );
     }
+  }
+
+  void _handleMessageReadEvent(Map<String, dynamic> data) {
+    try {
+      final chatId = data['chat_id'] as String;
+      final userId = data['user_id'] as String;
+      final unreadCount = data['unread_count'] as int? ?? 0;
+
+      debugPrint('📖 MessageReadWebSocket: чат $chatId, пользователь $userId, непрочитанно $unreadCount');
+
+      final currentState = state;
+      if (currentState is! ChatStateSuccessLoading) return;
+
+      final chatIndex = currentState.chats.indexWhere(
+            (chat) => chat.id == chatId,
+      );
+
+      if (chatIndex == -1) {
+        debugPrint('⚠️ Чат $chatId не найден в списке');
+        return;
+      }
+
+      final chat = currentState.chats[chatIndex];
+
+      final currentUserId = ref.read(currentUserIdProvider).value;
+
+      if (userId == currentUserId) {
+        debugPrint('👤 Текущий пользователь прочитал сообщения в чате $chatId');
+
+        _updateUnreadCount(chat, chatIndex, unreadCount);
+      } else {
+        debugPrint('👥 Собеседник прочитал наши сообщения в чате $chatId');
+
+        if (chat.lastMessage.senderId == currentUserId) {
+
+          final updatedLastMessage = chat.lastMessage;
+
+          final updatedChat = chat.copyWith(
+            lastMessage: updatedLastMessage,
+          );
+
+          _updateChatInList(updatedChat);
+          debugPrint('✅ Обновлен статус последнего сообщения на "прочитано"');
+        }
+      }
+
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error handling message read event: $e');
+      debugPrint(stackTrace.toString());
+    }
+  }
+
+  void _updateUnreadCount(DirectChatEntity chat, int chatIndex, int newUnreadCount) {
+    final currentState = state;
+    if (currentState is! ChatStateSuccessLoading) return;
+
+    final updatedChat = chat.copyWith(
+      unreadCount: newUnreadCount,
+    );
+
+    final updatedChats = List<DirectChatEntity>.from(currentState.chats);
+    updatedChats[chatIndex] = updatedChat;
+
+    state = currentState.copyWith(chats: updatedChats);
+    debugPrint('📊 Обновлен счетчик непрочитанных для чата ${chat.id}: $newUnreadCount');
   }
 
   void _updateChatInList(DirectChatEntity updatedChat) {

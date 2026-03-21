@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../notifier/websocket_notifier.dart';
+import '../../../chat/domain/entities/message_read_entity.dart';
 
 part 'websocket_providers.g.dart';
 
@@ -84,6 +84,19 @@ class MessageRead extends _$MessageRead {
 }
 
 @riverpod
+class MessageReadStatus extends _$MessageReadStatus {
+  @override
+  Map<String, DateTime>? build(String chatId) => null;
+
+  void updateReadStatus(MessageReadEntity readEvent) {
+    state = {
+      ...?state,
+      readEvent.lastReadMessageId: readEvent.readAt,
+    };
+  }
+}
+
+@riverpod
 class TypingStatus extends _$TypingStatus {
   @override
   Map<String, dynamic>? build() => null;
@@ -95,6 +108,16 @@ class TypingStatus extends _$TypingStatus {
 
 @riverpod
 class UserOnlineStatus extends _$UserOnlineStatus {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
+class UnreadCountUpdate extends _$UnreadCountUpdate {
   @override
   Map<String, dynamic>? build() => null;
 

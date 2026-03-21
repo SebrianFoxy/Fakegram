@@ -6,8 +6,10 @@ import 'package:fakegram/core/di/service_locator.dart';
 import 'package:fakegram/features/websocket/domain/entities/websocket_event_entity.dart';
 import 'package:fakegram/features/websocket/domain/repository/websocket_repository.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import '../../../../core/network/error_handling/error_handler.dart';
+import '../../../chat/domain/entities/message_read_entity.dart';
+import '../../../chat/presentation/notifier/chat/chat_notifier.dart';
+import '../../../chat/presentation/notifier/message/message_notifier.dart';
 import '../providers/websocket_providers.dart';
 
 part 'websocket_notifier.g.dart';
@@ -116,10 +118,13 @@ class WebSocketNotifier extends _$WebSocketNotifier {
         ref.read(newMessageProvider.notifier).update(event.data);
         break;
       case 'message_read':
-        ref.read(messageReadProvider.notifier).update(event.data);
+        _handleMessageRead(event.data);
         break;
       case 'user_typing':
         ref.read(typingStatusProvider.notifier).update(event.data);
+        break;
+      case 'unread_count_update':
+        ref.read(unreadCountUpdateProvider.notifier).update(event.data);
         break;
       case 'user_online':
         ref.read(userOnlineStatusProvider.notifier).update(event.data);
@@ -141,6 +146,31 @@ class WebSocketNotifier extends _$WebSocketNotifier {
       ref.read(messageStatusUpdateProvider.notifier).update(data);
     } else if (action == 'message_deleted') {
       ref.read(messageDeletedProvider.notifier).update(data);
+    }
+  }
+
+  void _handleMessageRead(Map<String, dynamic> data) {
+    try {
+      final readEntity = MessageReadEntity.fromJson(data);
+
+      if (kDebugMode) {
+        print('📖 Message read by ${readEntity.userId} in chat ${readEntity.chatId}');
+        print('   Last read message: ${readEntity.lastReadMessageId}');
+      }
+
+      final chatId = readEntity.chatId;
+      ref.read(messageReadStatusProvider(chatId).notifier)
+          .updateReadStatus(readEntity);
+
+      final currentChat = ref.read(selectedChatProvider);
+      if (currentChat?.id == chatId) {
+        ref.read(messageNotifierProvider.notifier).handleMessageReadEvent(data);
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('Error handling message_read event: $e');
+        print(stackTrace);
+      }
     }
   }
 

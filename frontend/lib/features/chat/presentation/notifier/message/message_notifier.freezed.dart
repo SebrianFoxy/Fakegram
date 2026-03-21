@@ -42,8 +42,8 @@ class $MessageStateCopyWith<$Res> {
 
 /// @nodoc
 
-class MessageStateInitial extends MessageState with DiagnosticableTreeMixin {
-  const MessageStateInitial() : super._();
+class MessageStateInitial with DiagnosticableTreeMixin implements MessageState {
+  const MessageStateInitial();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -67,131 +67,8 @@ class MessageStateInitial extends MessageState with DiagnosticableTreeMixin {
 
 /// @nodoc
 
-class MessageStateSuccessLoading extends MessageState
-    with DiagnosticableTreeMixin {
-  const MessageStateSuccessLoading(
-      {required final List<MessageEntity> messages,
-      this.hasMoreMessages = false,
-      this.isLoadingMore = false,
-      this.error})
-      : _messages = messages,
-        super._();
-
-  final List<MessageEntity> _messages;
-  List<MessageEntity> get messages {
-    if (_messages is EqualUnmodifiableListView) return _messages;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(_messages);
-  }
-
-  @JsonKey()
-  final bool hasMoreMessages;
-  @JsonKey()
-  final bool isLoadingMore;
-  final String? error;
-
-  /// Create a copy of MessageState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  @pragma('vm:prefer-inline')
-  $MessageStateSuccessLoadingCopyWith<MessageStateSuccessLoading>
-      get copyWith =>
-          _$MessageStateSuccessLoadingCopyWithImpl<MessageStateSuccessLoading>(
-              this, _$identity);
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties
-      ..add(DiagnosticsProperty('type', 'MessageState.successLoading'))
-      ..add(DiagnosticsProperty('messages', messages))
-      ..add(DiagnosticsProperty('hasMoreMessages', hasMoreMessages))
-      ..add(DiagnosticsProperty('isLoadingMore', isLoadingMore))
-      ..add(DiagnosticsProperty('error', error));
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        (other.runtimeType == runtimeType &&
-            other is MessageStateSuccessLoading &&
-            const DeepCollectionEquality().equals(other._messages, _messages) &&
-            (identical(other.hasMoreMessages, hasMoreMessages) ||
-                other.hasMoreMessages == hasMoreMessages) &&
-            (identical(other.isLoadingMore, isLoadingMore) ||
-                other.isLoadingMore == isLoadingMore) &&
-            (identical(other.error, error) || other.error == error));
-  }
-
-  @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      const DeepCollectionEquality().hash(_messages),
-      hasMoreMessages,
-      isLoadingMore,
-      error);
-
-  @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'MessageState.successLoading(messages: $messages, hasMoreMessages: $hasMoreMessages, isLoadingMore: $isLoadingMore, error: $error)';
-  }
-}
-
-/// @nodoc
-abstract mixin class $MessageStateSuccessLoadingCopyWith<$Res>
-    implements $MessageStateCopyWith<$Res> {
-  factory $MessageStateSuccessLoadingCopyWith(MessageStateSuccessLoading value,
-          $Res Function(MessageStateSuccessLoading) _then) =
-      _$MessageStateSuccessLoadingCopyWithImpl;
-  @useResult
-  $Res call(
-      {List<MessageEntity> messages,
-      bool hasMoreMessages,
-      bool isLoadingMore,
-      String? error});
-}
-
-/// @nodoc
-class _$MessageStateSuccessLoadingCopyWithImpl<$Res>
-    implements $MessageStateSuccessLoadingCopyWith<$Res> {
-  _$MessageStateSuccessLoadingCopyWithImpl(this._self, this._then);
-
-  final MessageStateSuccessLoading _self;
-  final $Res Function(MessageStateSuccessLoading) _then;
-
-  /// Create a copy of MessageState
-  /// with the given fields replaced by the non-null parameter values.
-  @pragma('vm:prefer-inline')
-  $Res call({
-    Object? messages = null,
-    Object? hasMoreMessages = null,
-    Object? isLoadingMore = null,
-    Object? error = freezed,
-  }) {
-    return _then(MessageStateSuccessLoading(
-      messages: null == messages
-          ? _self._messages
-          : messages // ignore: cast_nullable_to_non_nullable
-              as List<MessageEntity>,
-      hasMoreMessages: null == hasMoreMessages
-          ? _self.hasMoreMessages
-          : hasMoreMessages // ignore: cast_nullable_to_non_nullable
-              as bool,
-      isLoadingMore: null == isLoadingMore
-          ? _self.isLoadingMore
-          : isLoadingMore // ignore: cast_nullable_to_non_nullable
-              as bool,
-      error: freezed == error
-          ? _self.error
-          : error // ignore: cast_nullable_to_non_nullable
-              as String?,
-    ));
-  }
-}
-
-/// @nodoc
-
-class MessageStateLoading extends MessageState with DiagnosticableTreeMixin {
-  const MessageStateLoading() : super._();
+class MessageStateLoading with DiagnosticableTreeMixin implements MessageState {
+  const MessageStateLoading();
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
@@ -215,10 +92,199 @@ class MessageStateLoading extends MessageState with DiagnosticableTreeMixin {
 
 /// @nodoc
 
-class MessageStateError extends MessageState with DiagnosticableTreeMixin {
-  const MessageStateError({this.error}) : super._();
+class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
+  const MessageStateSuccess(
+      {required final List<MessageEntity> messages,
+      required this.hasMoreOlder,
+      required this.hasMoreNewer,
+      required this.isLoadingMore,
+      required this.isLoadingNewer,
+      this.olderCursor,
+      this.newerCursor,
+      this.totalUnread,
+      this.firstUnreadIndex,
+      this.error})
+      : _messages = messages;
 
-  final Object? error;
+  final List<MessageEntity> _messages;
+  List<MessageEntity> get messages {
+    if (_messages is EqualUnmodifiableListView) return _messages;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_messages);
+  }
+
+  final bool hasMoreOlder;
+  final bool hasMoreNewer;
+  final bool isLoadingMore;
+  final bool isLoadingNewer;
+  final String? olderCursor;
+  final String? newerCursor;
+  final int? totalUnread;
+  final int? firstUnreadIndex;
+  final String? error;
+
+  /// Create a copy of MessageState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $MessageStateSuccessCopyWith<MessageStateSuccess> get copyWith =>
+      _$MessageStateSuccessCopyWithImpl<MessageStateSuccess>(this, _$identity);
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties
+      ..add(DiagnosticsProperty('type', 'MessageState.success'))
+      ..add(DiagnosticsProperty('messages', messages))
+      ..add(DiagnosticsProperty('hasMoreOlder', hasMoreOlder))
+      ..add(DiagnosticsProperty('hasMoreNewer', hasMoreNewer))
+      ..add(DiagnosticsProperty('isLoadingMore', isLoadingMore))
+      ..add(DiagnosticsProperty('isLoadingNewer', isLoadingNewer))
+      ..add(DiagnosticsProperty('olderCursor', olderCursor))
+      ..add(DiagnosticsProperty('newerCursor', newerCursor))
+      ..add(DiagnosticsProperty('totalUnread', totalUnread))
+      ..add(DiagnosticsProperty('firstUnreadIndex', firstUnreadIndex))
+      ..add(DiagnosticsProperty('error', error));
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is MessageStateSuccess &&
+            const DeepCollectionEquality().equals(other._messages, _messages) &&
+            (identical(other.hasMoreOlder, hasMoreOlder) ||
+                other.hasMoreOlder == hasMoreOlder) &&
+            (identical(other.hasMoreNewer, hasMoreNewer) ||
+                other.hasMoreNewer == hasMoreNewer) &&
+            (identical(other.isLoadingMore, isLoadingMore) ||
+                other.isLoadingMore == isLoadingMore) &&
+            (identical(other.isLoadingNewer, isLoadingNewer) ||
+                other.isLoadingNewer == isLoadingNewer) &&
+            (identical(other.olderCursor, olderCursor) ||
+                other.olderCursor == olderCursor) &&
+            (identical(other.newerCursor, newerCursor) ||
+                other.newerCursor == newerCursor) &&
+            (identical(other.totalUnread, totalUnread) ||
+                other.totalUnread == totalUnread) &&
+            (identical(other.firstUnreadIndex, firstUnreadIndex) ||
+                other.firstUnreadIndex == firstUnreadIndex) &&
+            (identical(other.error, error) || other.error == error));
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      runtimeType,
+      const DeepCollectionEquality().hash(_messages),
+      hasMoreOlder,
+      hasMoreNewer,
+      isLoadingMore,
+      isLoadingNewer,
+      olderCursor,
+      newerCursor,
+      totalUnread,
+      firstUnreadIndex,
+      error);
+
+  @override
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+    return 'MessageState.success(messages: $messages, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, isLoadingMore: $isLoadingMore, isLoadingNewer: $isLoadingNewer, olderCursor: $olderCursor, newerCursor: $newerCursor, totalUnread: $totalUnread, firstUnreadIndex: $firstUnreadIndex, error: $error)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $MessageStateSuccessCopyWith<$Res>
+    implements $MessageStateCopyWith<$Res> {
+  factory $MessageStateSuccessCopyWith(
+          MessageStateSuccess value, $Res Function(MessageStateSuccess) _then) =
+      _$MessageStateSuccessCopyWithImpl;
+  @useResult
+  $Res call(
+      {List<MessageEntity> messages,
+      bool hasMoreOlder,
+      bool hasMoreNewer,
+      bool isLoadingMore,
+      bool isLoadingNewer,
+      String? olderCursor,
+      String? newerCursor,
+      int? totalUnread,
+      int? firstUnreadIndex,
+      String? error});
+}
+
+/// @nodoc
+class _$MessageStateSuccessCopyWithImpl<$Res>
+    implements $MessageStateSuccessCopyWith<$Res> {
+  _$MessageStateSuccessCopyWithImpl(this._self, this._then);
+
+  final MessageStateSuccess _self;
+  final $Res Function(MessageStateSuccess) _then;
+
+  /// Create a copy of MessageState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? messages = null,
+    Object? hasMoreOlder = null,
+    Object? hasMoreNewer = null,
+    Object? isLoadingMore = null,
+    Object? isLoadingNewer = null,
+    Object? olderCursor = freezed,
+    Object? newerCursor = freezed,
+    Object? totalUnread = freezed,
+    Object? firstUnreadIndex = freezed,
+    Object? error = freezed,
+  }) {
+    return _then(MessageStateSuccess(
+      messages: null == messages
+          ? _self._messages
+          : messages // ignore: cast_nullable_to_non_nullable
+              as List<MessageEntity>,
+      hasMoreOlder: null == hasMoreOlder
+          ? _self.hasMoreOlder
+          : hasMoreOlder // ignore: cast_nullable_to_non_nullable
+              as bool,
+      hasMoreNewer: null == hasMoreNewer
+          ? _self.hasMoreNewer
+          : hasMoreNewer // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLoadingMore: null == isLoadingMore
+          ? _self.isLoadingMore
+          : isLoadingMore // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isLoadingNewer: null == isLoadingNewer
+          ? _self.isLoadingNewer
+          : isLoadingNewer // ignore: cast_nullable_to_non_nullable
+              as bool,
+      olderCursor: freezed == olderCursor
+          ? _self.olderCursor
+          : olderCursor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      newerCursor: freezed == newerCursor
+          ? _self.newerCursor
+          : newerCursor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      totalUnread: freezed == totalUnread
+          ? _self.totalUnread
+          : totalUnread // ignore: cast_nullable_to_non_nullable
+              as int?,
+      firstUnreadIndex: freezed == firstUnreadIndex
+          ? _self.firstUnreadIndex
+          : firstUnreadIndex // ignore: cast_nullable_to_non_nullable
+              as int?,
+      error: freezed == error
+          ? _self.error
+          : error // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
+  }
+}
+
+/// @nodoc
+
+class MessageStateError with DiagnosticableTreeMixin implements MessageState {
+  const MessageStateError({required this.error});
+
+  final Object error;
 
   /// Create a copy of MessageState
   /// with the given fields replaced by the non-null parameter values.
@@ -259,7 +325,7 @@ abstract mixin class $MessageStateErrorCopyWith<$Res>
           MessageStateError value, $Res Function(MessageStateError) _then) =
       _$MessageStateErrorCopyWithImpl;
   @useResult
-  $Res call({Object? error});
+  $Res call({Object error});
 }
 
 /// @nodoc
@@ -274,10 +340,10 @@ class _$MessageStateErrorCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   $Res call({
-    Object? error = freezed,
+    Object? error = null,
   }) {
     return _then(MessageStateError(
-      error: freezed == error ? _self.error : error,
+      error: null == error ? _self.error : error,
     ));
   }
 }

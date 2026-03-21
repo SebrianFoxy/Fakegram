@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/services"
 	"fakegram-api/internal/websocket/events"
 	"fakegram-api/internal/websocket/handler"
@@ -13,14 +14,18 @@ type WebSocketManager struct {
     Router  *events.Router
     Handler *handler.WebSocketHandler
     TokenService *services.TokenService
+    MessageRepo    *repositories.MessageRepository
 }
 
-func NewWebSocketManager(tokenService *services.TokenService) *WebSocketManager {
+func NewWebSocketManager(
+    tokenService *services.TokenService,
+    messageRepo *repositories.MessageRepository,
+    ) *WebSocketManager {
     p := pool.NewPool()
     
     r := events.NewRouter()
     
-    messageHandlers := events.NewMessageHandlers(p)
+    messageHandlers := events.NewMessageHandlers(messageRepo, p)
     typingHandlers := events.NewTypingHandlers(p)
     
     r.Register("message_read", messageHandlers.CreateMessageReadHandler())
@@ -36,6 +41,8 @@ func NewWebSocketManager(tokenService *services.TokenService) *WebSocketManager 
         Pool:    p,
         Router:  r,
         Handler: h,
+        TokenService: tokenService,
+        MessageRepo:  messageRepo,
     }
 }
 

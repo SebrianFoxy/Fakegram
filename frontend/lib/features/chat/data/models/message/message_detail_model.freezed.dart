@@ -36,14 +36,8 @@ mixin _$MessageDetailModel {
   DateTime get createdAt;
   @JsonKey(name: 'read_at')
   DateTime? get readAt;
-  @JsonKey(name: 'sender_name')
-  String get senderName;
-  @JsonKey(name: 'sender_surname')
-  String get senderSurname;
-  @JsonKey(name: 'sender_nickname')
-  String get senderNickname;
-  @JsonKey(name: 'sender_avatar_url')
-  String? get senderAvatarUrl;
+  @JsonKey(name: 'sender')
+  MessageUserDetailModel get sender;
 
   /// Create a copy of MessageDetailModel
   /// with the given fields replaced by the non-null parameter values.
@@ -79,14 +73,7 @@ mixin _$MessageDetailModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
-            (identical(other.senderName, senderName) ||
-                other.senderName == senderName) &&
-            (identical(other.senderSurname, senderSurname) ||
-                other.senderSurname == senderSurname) &&
-            (identical(other.senderNickname, senderNickname) ||
-                other.senderNickname == senderNickname) &&
-            (identical(other.senderAvatarUrl, senderAvatarUrl) ||
-                other.senderAvatarUrl == senderAvatarUrl));
+            (identical(other.sender, sender) || other.sender == sender));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -104,14 +91,11 @@ mixin _$MessageDetailModel {
       isRead,
       createdAt,
       readAt,
-      senderName,
-      senderSurname,
-      senderNickname,
-      senderAvatarUrl);
+      sender);
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender)';
   }
 }
 
@@ -134,10 +118,9 @@ abstract mixin class $MessageDetailModelCopyWith<$Res> {
       @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
-      @JsonKey(name: 'sender_name') String senderName,
-      @JsonKey(name: 'sender_surname') String senderSurname,
-      @JsonKey(name: 'sender_nickname') String senderNickname,
-      @JsonKey(name: 'sender_avatar_url') String? senderAvatarUrl});
+      @JsonKey(name: 'sender') MessageUserDetailModel sender});
+
+  $MessageUserDetailModelCopyWith<$Res> get sender;
 }
 
 /// @nodoc
@@ -164,10 +147,7 @@ class _$MessageDetailModelCopyWithImpl<$Res>
     Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
-    Object? senderName = null,
-    Object? senderSurname = null,
-    Object? senderNickname = null,
-    Object? senderAvatarUrl = freezed,
+    Object? sender = null,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -214,23 +194,21 @@ class _$MessageDetailModelCopyWithImpl<$Res>
           ? _self.readAt
           : readAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      senderName: null == senderName
-          ? _self.senderName
-          : senderName // ignore: cast_nullable_to_non_nullable
-              as String,
-      senderSurname: null == senderSurname
-          ? _self.senderSurname
-          : senderSurname // ignore: cast_nullable_to_non_nullable
-              as String,
-      senderNickname: null == senderNickname
-          ? _self.senderNickname
-          : senderNickname // ignore: cast_nullable_to_non_nullable
-              as String,
-      senderAvatarUrl: freezed == senderAvatarUrl
-          ? _self.senderAvatarUrl
-          : senderAvatarUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
+      sender: null == sender
+          ? _self.sender
+          : sender // ignore: cast_nullable_to_non_nullable
+              as MessageUserDetailModel,
     ));
+  }
+
+  /// Create a copy of MessageDetailModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageUserDetailModelCopyWith<$Res> get sender {
+    return $MessageUserDetailModelCopyWith<$Res>(_self.sender, (value) {
+      return _then(_self.copyWith(sender: value));
+    });
   }
 }
 
@@ -250,10 +228,7 @@ class _MessageDetailModel extends MessageDetailModel {
       @JsonKey(name: 'is_read', defaultValue: false) required this.isRead,
       @JsonKey(name: 'created_at') required this.createdAt,
       @JsonKey(name: 'read_at') required this.readAt,
-      @JsonKey(name: 'sender_name') required this.senderName,
-      @JsonKey(name: 'sender_surname') required this.senderSurname,
-      @JsonKey(name: 'sender_nickname') required this.senderNickname,
-      @JsonKey(name: 'sender_avatar_url') required this.senderAvatarUrl})
+      @JsonKey(name: 'sender') required this.sender})
       : super._();
   factory _MessageDetailModel.fromJson(Map<String, dynamic> json) =>
       _$MessageDetailModelFromJson(json);
@@ -291,17 +266,8 @@ class _MessageDetailModel extends MessageDetailModel {
   @JsonKey(name: 'read_at')
   final DateTime? readAt;
   @override
-  @JsonKey(name: 'sender_name')
-  final String senderName;
-  @override
-  @JsonKey(name: 'sender_surname')
-  final String senderSurname;
-  @override
-  @JsonKey(name: 'sender_nickname')
-  final String senderNickname;
-  @override
-  @JsonKey(name: 'sender_avatar_url')
-  final String? senderAvatarUrl;
+  @JsonKey(name: 'sender')
+  final MessageUserDetailModel sender;
 
   /// Create a copy of MessageDetailModel
   /// with the given fields replaced by the non-null parameter values.
@@ -341,14 +307,7 @@ class _MessageDetailModel extends MessageDetailModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
-            (identical(other.senderName, senderName) ||
-                other.senderName == senderName) &&
-            (identical(other.senderSurname, senderSurname) ||
-                other.senderSurname == senderSurname) &&
-            (identical(other.senderNickname, senderNickname) ||
-                other.senderNickname == senderNickname) &&
-            (identical(other.senderAvatarUrl, senderAvatarUrl) ||
-                other.senderAvatarUrl == senderAvatarUrl));
+            (identical(other.sender, sender) || other.sender == sender));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -366,14 +325,11 @@ class _MessageDetailModel extends MessageDetailModel {
       isRead,
       createdAt,
       readAt,
-      senderName,
-      senderSurname,
-      senderNickname,
-      senderAvatarUrl);
+      sender);
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender)';
   }
 }
 
@@ -398,10 +354,10 @@ abstract mixin class _$MessageDetailModelCopyWith<$Res>
       @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
-      @JsonKey(name: 'sender_name') String senderName,
-      @JsonKey(name: 'sender_surname') String senderSurname,
-      @JsonKey(name: 'sender_nickname') String senderNickname,
-      @JsonKey(name: 'sender_avatar_url') String? senderAvatarUrl});
+      @JsonKey(name: 'sender') MessageUserDetailModel sender});
+
+  @override
+  $MessageUserDetailModelCopyWith<$Res> get sender;
 }
 
 /// @nodoc
@@ -428,10 +384,7 @@ class __$MessageDetailModelCopyWithImpl<$Res>
     Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
-    Object? senderName = null,
-    Object? senderSurname = null,
-    Object? senderNickname = null,
-    Object? senderAvatarUrl = freezed,
+    Object? sender = null,
   }) {
     return _then(_MessageDetailModel(
       id: null == id
@@ -478,23 +431,21 @@ class __$MessageDetailModelCopyWithImpl<$Res>
           ? _self.readAt
           : readAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      senderName: null == senderName
-          ? _self.senderName
-          : senderName // ignore: cast_nullable_to_non_nullable
-              as String,
-      senderSurname: null == senderSurname
-          ? _self.senderSurname
-          : senderSurname // ignore: cast_nullable_to_non_nullable
-              as String,
-      senderNickname: null == senderNickname
-          ? _self.senderNickname
-          : senderNickname // ignore: cast_nullable_to_non_nullable
-              as String,
-      senderAvatarUrl: freezed == senderAvatarUrl
-          ? _self.senderAvatarUrl
-          : senderAvatarUrl // ignore: cast_nullable_to_non_nullable
-              as String?,
+      sender: null == sender
+          ? _self.sender
+          : sender // ignore: cast_nullable_to_non_nullable
+              as MessageUserDetailModel,
     ));
+  }
+
+  /// Create a copy of MessageDetailModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageUserDetailModelCopyWith<$Res> get sender {
+    return $MessageUserDetailModelCopyWith<$Res>(_self.sender, (value) {
+      return _then(_self.copyWith(sender: value));
+    });
   }
 }
 

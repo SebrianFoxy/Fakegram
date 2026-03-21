@@ -9,11 +9,8 @@ class ChatPage extends ConsumerStatefulWidget {
 }
 
 class _ChatPageState extends ConsumerState<ChatPage> {
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -23,7 +20,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       body: Row(
         children: [
           const ChatList(),
-          MessageArea(scrollController: _scrollController),
+          MessageArea(),
         ],
       ),
     );

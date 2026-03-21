@@ -14,15 +14,15 @@ const (
 )
 
 type Message struct {
-    ID               string   	 `json:"id" db:"id"`
-    ChatID           string   	 `json:"chat_id" db:"chat_id"`
-    SenderID         string  	 `json:"sender_id" db:"sender_id" validate:"required,uuid4"`
-    MessageText      string      `json:"message_text" db:"message_text"`
+    ID               string    `json:"id" db:"id"`
+    ChatID           string    `json:"chat_id" db:"chat_id"`
+    SenderID         string    `json:"sender_id" db:"sender_id" validate:"required,uuid4"`
+    MessageText      string    `json:"message_text" db:"message_text"`
     MessageType      MessageType `json:"message_type" db:"message_type"`
-    ReplyToMessageID *string  	 `json:"reply_to_message_id,omitempty" db:"reply_to_message_id" validate:"uuid4"`
-    IsEdited         bool        `json:"is_edited" db:"is_edited"`
-    IsDeleted        bool        `json:"is_deleted" db:"is_deleted"`
-    CreatedAt        time.Time   `json:"created_at" db:"created_at"`
+    ReplyToMessageID *string   `json:"reply_to_message_id,omitempty" db:"reply_to_message_id" validate:"uuid4"`
+    IsEdited         bool      `json:"is_edited" db:"is_edited"`
+    IsDeleted        bool      `json:"is_deleted" db:"is_deleted"`
+    CreatedAt        time.Time `json:"created_at" db:"created_at"`
 }
 
 type CreateMessageRequest struct {
@@ -33,28 +33,45 @@ type CreateMessageRequest struct {
 	ReplyToMessageID *string     `json:"reply_to_message_id,omitempty" validate:"omitempty,uuid4"`
 }
 
+type GetMessagesRequest struct {
+    OtherUserID string     `json:"other_user_id" validate:"required"`
+    Cursor      *time.Time `json:"cursor,omitempty"`              
+    Limit       int        `json:"limit,omitempty" validate:"omitempty,min=1,max=100"`
+    Direction   string     `json:"direction" validate:"required,oneof=around older newer"` 
+}
+
 type GetMessagesResponse struct {
-    Messages []*MessageDetail `json:"messages"`
-    Count    int              `json:"count"`
-    Total    int              `json:"total"`
-    Page     int              `json:"page"`
-    Limit    int              `json:"limit"`
-    HasNext  bool             `json:"has_next"`
-    HasPrev  bool             `json:"has_prev"`
+    Messages      []*MessageDetail `json:"messages"`
+    Count         int              `json:"count"`                    
+    TotalUnread   int64            `json:"total_unread"`             
+    HasMoreOlder  bool             `json:"has_more_older"`           
+    HasMoreNewer  bool             `json:"has_more_newer"`           
+    FirstMsgTime  *time.Time       `json:"first_msg_time,omitempty"` 
+    LastMsgTime   *time.Time       `json:"last_msg_time,omitempty"`  
+    Cursors       *MessageCursors   `json:"cursors,omitempty"`        
+}
+
+type MessageCursors struct {
+    Older *time.Time `json:"older,omitempty"`
+    Newer *time.Time `json:"newer,omitempty"`
 }
 
 type MessageDetail struct {
-	*Message
-	IsRead          bool        `json:"is_read"`
-	ReadAt          *time.Time  `json:"read_at,omitempty"`
-	SenderName      string      `json:"sender_name"`
-	SenderSurname   string      `json:"sender_surname"`
-	SenderNickname  string      `json:"sender_nickname"`
-	SenderAvatarURL *string     `json:"sender_avatar_url,omitempty"`
+    *Message
+    IsRead          bool         `json:"is_read"`
+    ReadAt          *time.Time   `json:"read_at,omitempty"`
+    Sender          *UserDetail  `json:"sender"`
+}
+
+type UserDetail struct {
+    Name      string  `json:"name"`
+    Surname   string  `json:"surname"`
+    Nickname  string  `json:"nickname"`
+    AvatarURL *string `json:"avatar_url,omitempty"`
 }
 
 type UpdateMessageRequest struct {
-	MessageText string `json:"message_text" validate:"required"`
+    MessageText string `json:"message_text" validate:"required"`
 }
 
 type MarkAsReadRequest struct {
@@ -108,30 +125,49 @@ func CreateMessageWithReadStatus(msg *Message, isRead bool, readAt *time.Time) *
 	}
 }
 
-func ToMessageDetail(msg *Message, isRead bool, readAt *time.Time, sender *User) *MessageDetail {
+func ToMessageDetail(msg *Message, isRead bool, readAt *time.Time, sender *UserDetail) *MessageDetail {
 	return &MessageDetail{
-		Message:         msg,
-		IsRead:          isRead,
-		ReadAt:          readAt,
-		SenderName:      sender.Name,
-		SenderSurname:   sender.Surname,
-		SenderNickname:  sender.Nickname,
-		SenderAvatarURL: sender.AvatarURL,
+		Message: msg,
+		IsRead:  isRead,
+		ReadAt:  readAt,
+		Sender:  sender,
 	}
 }
 
-func ToGetMessagesResponse(messages []*MessageDetail, page, limit, total int) *GetMessagesResponse {
-    hasNext := (page * limit) < total
-    hasPrev := page > 1
+func ToGetMessagesResponse(messages []*MessageDetail, totalUnread int64, hasMoreOlder, hasMoreNewer bool) *GetMessagesResponse {
+    resp := &GetMessagesResponse{
+        Messages:     messages,
+        Count:        len(messages),
+        TotalUnread:  totalUnread,
+        HasMoreOlder: hasMoreOlder,
+        HasMoreNewer: hasMoreNewer,
+    }
     
+    if len(messages) > 0 {
+        firstMsgTime := messages[0].CreatedAt
+        lastMsgTime := messages[len(messages)-1].CreatedAt
+        resp.FirstMsgTime = &firstMsgTime
+        resp.LastMsgTime = &lastMsgTime
+
+        resp.Cursors = &MessageCursors{}
+        if hasMoreOlder {
+            resp.Cursors.Older = &firstMsgTime
+        }
+        if hasMoreNewer {
+            resp.Cursors.Newer = &lastMsgTime
+        }
+    }
+    
+    return resp
+}
+
+func ToEmptyGetMessagesResponse() *GetMessagesResponse {
     return &GetMessagesResponse{
-        Messages: messages,
-        Count:    len(messages),
-        Total:    total,
-        Page:     page,
-        Limit:    limit,
-        HasNext:  hasNext,
-        HasPrev:  hasPrev,
+        Messages:      []*MessageDetail{},
+        Count:         0,
+        TotalUnread:   0,
+        HasMoreOlder:  false,
+        HasMoreNewer:  false,
     }
 }
 
@@ -165,10 +201,25 @@ func (m *Message) Validate() error {
     return nil
 }
 
+func (r *GetMessagesRequest) Validate() error {
+    if r.OtherUserID == "" {
+        return ErrEmptyOtherUserID
+    }
+    if r.Direction != "around" && r.Direction != "older" && r.Direction != "newer" {
+        return ErrInvalidDirection
+    }
+    if r.Limit <= 0 || r.Limit > 100 {
+        r.Limit = 30
+    }
+    return nil
+}
+
 var (
-    ErrMessageNotFound   = errors.New("message not found")
-    ErrEmptyChatID       = errors.New("chat ID cannot be empty")
-    ErrEmptySenderID     = errors.New("sender ID cannot be empty")
-    ErrEmptyMessageText  = errors.New("message text cannot be empty for text messages")
+    ErrMessageNotFound    = errors.New("message not found")
+    ErrEmptyChatID        = errors.New("chat ID cannot be empty")
+    ErrEmptySenderID      = errors.New("sender ID cannot be empty")
+    ErrEmptyOtherUserID   = errors.New("other user ID cannot be empty")
+    ErrEmptyMessageText   = errors.New("message text cannot be empty for text messages")
     ErrInvalidMessageType = errors.New("invalid message type")
+    ErrInvalidDirection   = errors.New("invalid direction, must be around, older, or newer")
 )

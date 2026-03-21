@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:fakegram/features/auth/domain/services/token_service.dart';
+import 'package:flutter/cupertino.dart';
 
 class TokenInterceptor extends Interceptor {
   final TokenService _tokenService;
   final Dio _dio;
 
   bool _isRefreshing = false;
-  final List<({RequestOptions options, ErrorInterceptorHandler handler})> _pendingRequests = [];
+  final List<({RequestOptions options, ErrorInterceptorHandler handler, DioException originalError})> _pendingRequests = [];
 
   TokenInterceptor({
     required TokenService tokenService,
@@ -35,15 +36,16 @@ class TokenInterceptor extends Interceptor {
       ErrorInterceptorHandler handler,
       ) async {
     if (_shouldRefreshToken(err)) {
-      final completer = Completer<void>();
-      _pendingRequests.add((options: err.requestOptions, handler: handler));
+      _pendingRequests.add((
+      options: err.requestOptions,
+      handler: handler,
+      originalError: err,
+      ));
 
       if (!_isRefreshing) {
         _isRefreshing = true;
-        _refreshTokenAndRetry();
+        await _refreshTokenAndRetry();
       }
-
-      await completer.future;
       return;
     }
 
@@ -51,9 +53,11 @@ class TokenInterceptor extends Interceptor {
   }
 
   bool _shouldRefreshToken(DioException err) {
-    return err.response?.statusCode == 401 &&
-        !_isRefreshing &&
-        !_isRefreshEndpoint(err.requestOptions.path);
+    if (_isRefreshEndpoint(err.requestOptions.path)) {
+      return false;
+    }
+
+    return err.response?.statusCode == 401;
   }
 
   bool _isRefreshEndpoint(String path) {
@@ -65,9 +69,10 @@ class TokenInterceptor extends Interceptor {
       await _tokenService.updateToken();
 
       await _retryPendingRequests();
+
     } catch (e) {
-      await _tokenService.deleteTokens();
-      _rejectPendingRequests(e);
+      debugPrint('Token refresh failed: $e');
+      _rejectPendingRequestsWithOriginalErrors();
     } finally {
       _isRefreshing = false;
       _pendingRequests.clear();
@@ -78,7 +83,7 @@ class TokenInterceptor extends Interceptor {
     final newToken = await _tokenService.getAccessToken();
 
     if (newToken == null) {
-      _rejectPendingRequests(Exception('No token after refresh'));
+      _rejectPendingRequestsWithOriginalErrors();
       return;
     }
 
@@ -87,26 +92,20 @@ class TokenInterceptor extends Interceptor {
         final response = await _retryRequest(pending.options, newToken);
         pending.handler.resolve(response);
       } catch (e) {
-        pending.handler.reject(DioException(
-          requestOptions: pending.options,
-          error: e,
-        ));
+        pending.handler.next(pending.originalError);
       }
     }
   }
 
-  void _rejectPendingRequests(dynamic error) {
+  void _rejectPendingRequestsWithOriginalErrors() {
     for (final pending in _pendingRequests) {
-      pending.handler.reject(DioException(
-        requestOptions: pending.options,
-        error: error,
-      ));
+      pending.handler.next(pending.originalError);
     }
   }
 
   Future<Response> _retryRequest(
       RequestOptions options,
-      String newToken
+      String newToken,
       ) async {
     final newOptions = Options(
       method: options.method,

@@ -1,11 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource.dart';
 import 'package:fakegram/features/auth/domain/repositories/auth_repository.dart';
-import 'package:fakegram/features/chat/presentation/notifier/chat/chat_notifier.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/network/error_handling/error_handler.dart';
 import '../../../../core/network/error_handling/exceptions.dart';
@@ -91,12 +89,8 @@ class AuthNotifier extends _$AuthNotifier {
 
       state = AuthState.registrationSuccess();
       state = AuthState.initial();
-    } on DioException catch(error) {
-      debugPrint('RegistrationError: $error');
-      final exception = ErrorHandler.handleDioError(error);
-
-      state = AuthState.initial(error: exception.message);
     } catch (error) {
+      debugPrint('RegistrationError: $error');
       final exception = ErrorHandler.handleError(error);
       state = AuthState.initial(error: exception.message);
     }

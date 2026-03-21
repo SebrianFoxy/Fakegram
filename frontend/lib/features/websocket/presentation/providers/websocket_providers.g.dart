@@ -133,6 +133,174 @@ final messageReadProvider =
 );
 
 typedef _$MessageRead = AutoDisposeNotifier<Map<String, dynamic>?>;
+String _$messageReadStatusHash() => r'383257e2acf431762c867257f67f8b4eadd9c404';
+
+/// Copied from Dart SDK
+class _SystemHash {
+  _SystemHash._();
+
+  static int combine(int hash, int value) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + value);
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  static int finish(int hash) {
+    // ignore: parameter_assignments
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    // ignore: parameter_assignments
+    hash = hash ^ (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+}
+
+abstract class _$MessageReadStatus
+    extends BuildlessAutoDisposeNotifier<Map<String, DateTime>?> {
+  late final String chatId;
+
+  Map<String, DateTime>? build(
+    String chatId,
+  );
+}
+
+/// See also [MessageReadStatus].
+@ProviderFor(MessageReadStatus)
+const messageReadStatusProvider = MessageReadStatusFamily();
+
+/// See also [MessageReadStatus].
+class MessageReadStatusFamily extends Family<Map<String, DateTime>?> {
+  /// See also [MessageReadStatus].
+  const MessageReadStatusFamily();
+
+  /// See also [MessageReadStatus].
+  MessageReadStatusProvider call(
+    String chatId,
+  ) {
+    return MessageReadStatusProvider(
+      chatId,
+    );
+  }
+
+  @override
+  MessageReadStatusProvider getProviderOverride(
+    covariant MessageReadStatusProvider provider,
+  ) {
+    return call(
+      provider.chatId,
+    );
+  }
+
+  static const Iterable<ProviderOrFamily>? _dependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get dependencies => _dependencies;
+
+  static const Iterable<ProviderOrFamily>? _allTransitiveDependencies = null;
+
+  @override
+  Iterable<ProviderOrFamily>? get allTransitiveDependencies =>
+      _allTransitiveDependencies;
+
+  @override
+  String? get name => r'messageReadStatusProvider';
+}
+
+/// See also [MessageReadStatus].
+class MessageReadStatusProvider extends AutoDisposeNotifierProviderImpl<
+    MessageReadStatus, Map<String, DateTime>?> {
+  /// See also [MessageReadStatus].
+  MessageReadStatusProvider(
+    String chatId,
+  ) : this._internal(
+          () => MessageReadStatus()..chatId = chatId,
+          from: messageReadStatusProvider,
+          name: r'messageReadStatusProvider',
+          debugGetCreateSourceHash:
+              const bool.fromEnvironment('dart.vm.product')
+                  ? null
+                  : _$messageReadStatusHash,
+          dependencies: MessageReadStatusFamily._dependencies,
+          allTransitiveDependencies:
+              MessageReadStatusFamily._allTransitiveDependencies,
+          chatId: chatId,
+        );
+
+  MessageReadStatusProvider._internal(
+    super._createNotifier, {
+    required super.name,
+    required super.dependencies,
+    required super.allTransitiveDependencies,
+    required super.debugGetCreateSourceHash,
+    required super.from,
+    required this.chatId,
+  }) : super.internal();
+
+  final String chatId;
+
+  @override
+  Map<String, DateTime>? runNotifierBuild(
+    covariant MessageReadStatus notifier,
+  ) {
+    return notifier.build(
+      chatId,
+    );
+  }
+
+  @override
+  Override overrideWith(MessageReadStatus Function() create) {
+    return ProviderOverride(
+      origin: this,
+      override: MessageReadStatusProvider._internal(
+        () => create()..chatId = chatId,
+        from: from,
+        name: null,
+        dependencies: null,
+        allTransitiveDependencies: null,
+        debugGetCreateSourceHash: null,
+        chatId: chatId,
+      ),
+    );
+  }
+
+  @override
+  AutoDisposeNotifierProviderElement<MessageReadStatus, Map<String, DateTime>?>
+      createElement() {
+    return _MessageReadStatusProviderElement(this);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is MessageReadStatusProvider && other.chatId == chatId;
+  }
+
+  @override
+  int get hashCode {
+    var hash = _SystemHash.combine(0, runtimeType.hashCode);
+    hash = _SystemHash.combine(hash, chatId.hashCode);
+
+    return _SystemHash.finish(hash);
+  }
+}
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+mixin MessageReadStatusRef
+    on AutoDisposeNotifierProviderRef<Map<String, DateTime>?> {
+  /// The parameter `chatId` of this provider.
+  String get chatId;
+}
+
+class _MessageReadStatusProviderElement
+    extends AutoDisposeNotifierProviderElement<MessageReadStatus,
+        Map<String, DateTime>?> with MessageReadStatusRef {
+  _MessageReadStatusProviderElement(super.provider);
+
+  @override
+  String get chatId => (origin as MessageReadStatusProvider).chatId;
+}
+
 String _$typingStatusHash() => r'ff0cfefafea8881290d4cd9ff41347700df00442';
 
 /// See also [TypingStatus].
@@ -164,5 +332,21 @@ final userOnlineStatusProvider = AutoDisposeNotifierProvider<UserOnlineStatus,
 );
 
 typedef _$UserOnlineStatus = AutoDisposeNotifier<Map<String, dynamic>?>;
+String _$unreadCountUpdateHash() => r'3bb4e0387800e6751cc8d62de77770f1f3ec5815';
+
+/// See also [UnreadCountUpdate].
+@ProviderFor(UnreadCountUpdate)
+final unreadCountUpdateProvider = AutoDisposeNotifierProvider<UnreadCountUpdate,
+    Map<String, dynamic>?>.internal(
+  UnreadCountUpdate.new,
+  name: r'unreadCountUpdateProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$unreadCountUpdateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$UnreadCountUpdate = AutoDisposeNotifier<Map<String, dynamic>?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

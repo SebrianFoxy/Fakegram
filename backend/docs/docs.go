@@ -255,7 +255,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает сообщения из приватного чата между двумя пользователями с автоматической отметкой о прочтении",
+                "description": "Возвращает сообщения из приватного чата с поддержкой двунаправленной пагинации.\nПри первой загрузке (direction=around) автоматически позиционирует на первом непрочитанном сообщении.",
                 "consumes": [
                     "application/json"
                 ],
@@ -275,29 +275,41 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "Номер страницы",
-                        "name": "page",
+                        "enum": [
+                            "around",
+                            "older",
+                            "newer"
+                        ],
+                        "type": "string",
+                        "default": "around",
+                        "description": "Направление загрузки: around (первая загрузка вокруг непрочитанного), older (старые сообщения), newer (новые сообщения)",
+                        "name": "direction",
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "description": "Временная метка опорного сообщения в формате RFC3339 (например, 2024-01-02T15:04:05Z). Обязателен для direction=older или direction=newer",
+                        "name": "cursor",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
                         "type": "integer",
-                        "default": 20,
-                        "description": "Количество сообщений на странице",
+                        "default": 30,
+                        "description": "Количество сообщений (1-100)",
                         "name": "limit",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Список сообщений",
+                        "description": "Список сообщений с информацией о пагинации",
                         "schema": {
                             "$ref": "#/definitions/models.GetMessagesResponse"
                         }
                     },
                     "400": {
-                        "description": "Неверные параметры",
+                        "description": "Неверные параметры (неверный direction, неверный формат cursor и т.д.)",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -306,7 +318,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Доступ запрещен",
+                        "description": "Доступ запрещен (пользователь не является участником чата)",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -558,14 +570,20 @@ const docTemplate = `{
                 "count": {
                     "type": "integer"
                 },
-                "has_next": {
+                "cursors": {
+                    "$ref": "#/definitions/models.MessageCursors"
+                },
+                "first_msg_time": {
+                    "type": "string"
+                },
+                "has_more_newer": {
                     "type": "boolean"
                 },
-                "has_prev": {
+                "has_more_older": {
                     "type": "boolean"
                 },
-                "limit": {
-                    "type": "integer"
+                "last_msg_time": {
+                    "type": "string"
                 },
                 "messages": {
                     "type": "array",
@@ -573,10 +591,7 @@ const docTemplate = `{
                         "$ref": "#/definitions/models.MessageDetail"
                     }
                 },
-                "page": {
-                    "type": "integer"
-                },
-                "total": {
+                "total_unread": {
                     "type": "integer"
                 }
             }
@@ -588,6 +603,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.MessageCursors": {
+            "type": "object",
+            "properties": {
+                "newer": {
+                    "type": "string"
+                },
+                "older": {
                     "type": "string"
                 }
             }
@@ -628,19 +654,10 @@ const docTemplate = `{
                 "reply_to_message_id": {
                     "type": "string"
                 },
-                "sender_avatar_url": {
-                    "type": "string"
+                "sender": {
+                    "$ref": "#/definitions/models.UserDetail"
                 },
                 "sender_id": {
-                    "type": "string"
-                },
-                "sender_name": {
-                    "type": "string"
-                },
-                "sender_nickname": {
-                    "type": "string"
-                },
-                "sender_surname": {
                     "type": "string"
                 }
             }
@@ -713,6 +730,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "token_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserDetail": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "surname": {
                     "type": "string"
                 }
             }

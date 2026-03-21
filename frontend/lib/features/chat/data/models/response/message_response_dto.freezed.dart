@@ -19,16 +19,18 @@ mixin _$MessageResponseDTO {
   List<MessageDetailModel> get messages;
   @JsonKey(name: 'count')
   int get count;
-  @JsonKey(name: 'total')
-  int get total;
-  @JsonKey(name: 'page')
-  int get page;
-  @JsonKey(name: 'limit')
-  int get limit;
-  @JsonKey(name: 'has_next')
-  bool get hasNext;
-  @JsonKey(name: 'has_prev')
-  bool get hasPrev;
+  @JsonKey(name: 'total_unread')
+  int get totalUnread;
+  @JsonKey(name: 'has_more_older')
+  bool get hasMoreOlder;
+  @JsonKey(name: 'has_more_newer')
+  bool get hasMoreNewer;
+  @JsonKey(name: 'first_msg_time')
+  String? get firstMsgTime;
+  @JsonKey(name: 'last_msg_time')
+  String? get lastMsgTime;
+  @JsonKey(name: 'cursors')
+  MessageCursorsModel? get cursors;
 
   /// Create a copy of MessageResponseDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -48,11 +50,17 @@ mixin _$MessageResponseDTO {
             other is MessageResponseDTO &&
             const DeepCollectionEquality().equals(other.messages, messages) &&
             (identical(other.count, count) || other.count == count) &&
-            (identical(other.total, total) || other.total == total) &&
-            (identical(other.page, page) || other.page == page) &&
-            (identical(other.limit, limit) || other.limit == limit) &&
-            (identical(other.hasNext, hasNext) || other.hasNext == hasNext) &&
-            (identical(other.hasPrev, hasPrev) || other.hasPrev == hasPrev));
+            (identical(other.totalUnread, totalUnread) ||
+                other.totalUnread == totalUnread) &&
+            (identical(other.hasMoreOlder, hasMoreOlder) ||
+                other.hasMoreOlder == hasMoreOlder) &&
+            (identical(other.hasMoreNewer, hasMoreNewer) ||
+                other.hasMoreNewer == hasMoreNewer) &&
+            (identical(other.firstMsgTime, firstMsgTime) ||
+                other.firstMsgTime == firstMsgTime) &&
+            (identical(other.lastMsgTime, lastMsgTime) ||
+                other.lastMsgTime == lastMsgTime) &&
+            (identical(other.cursors, cursors) || other.cursors == cursors));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -61,15 +69,16 @@ mixin _$MessageResponseDTO {
       runtimeType,
       const DeepCollectionEquality().hash(messages),
       count,
-      total,
-      page,
-      limit,
-      hasNext,
-      hasPrev);
+      totalUnread,
+      hasMoreOlder,
+      hasMoreNewer,
+      firstMsgTime,
+      lastMsgTime,
+      cursors);
 
   @override
   String toString() {
-    return 'MessageResponseDTO(messages: $messages, count: $count, total: $total, page: $page, limit: $limit, hasNext: $hasNext, hasPrev: $hasPrev)';
+    return 'MessageResponseDTO(messages: $messages, count: $count, totalUnread: $totalUnread, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, firstMsgTime: $firstMsgTime, lastMsgTime: $lastMsgTime, cursors: $cursors)';
   }
 }
 
@@ -82,11 +91,14 @@ abstract mixin class $MessageResponseDTOCopyWith<$Res> {
   $Res call(
       {@JsonKey(name: 'messages') List<MessageDetailModel> messages,
       @JsonKey(name: 'count') int count,
-      @JsonKey(name: 'total') int total,
-      @JsonKey(name: 'page') int page,
-      @JsonKey(name: 'limit') int limit,
-      @JsonKey(name: 'has_next') bool hasNext,
-      @JsonKey(name: 'has_prev') bool hasPrev});
+      @JsonKey(name: 'total_unread') int totalUnread,
+      @JsonKey(name: 'has_more_older') bool hasMoreOlder,
+      @JsonKey(name: 'has_more_newer') bool hasMoreNewer,
+      @JsonKey(name: 'first_msg_time') String? firstMsgTime,
+      @JsonKey(name: 'last_msg_time') String? lastMsgTime,
+      @JsonKey(name: 'cursors') MessageCursorsModel? cursors});
+
+  $MessageCursorsModelCopyWith<$Res>? get cursors;
 }
 
 /// @nodoc
@@ -104,11 +116,12 @@ class _$MessageResponseDTOCopyWithImpl<$Res>
   $Res call({
     Object? messages = null,
     Object? count = null,
-    Object? total = null,
-    Object? page = null,
-    Object? limit = null,
-    Object? hasNext = null,
-    Object? hasPrev = null,
+    Object? totalUnread = null,
+    Object? hasMoreOlder = null,
+    Object? hasMoreNewer = null,
+    Object? firstMsgTime = freezed,
+    Object? lastMsgTime = freezed,
+    Object? cursors = freezed,
   }) {
     return _then(_self.copyWith(
       messages: null == messages
@@ -119,27 +132,45 @@ class _$MessageResponseDTOCopyWithImpl<$Res>
           ? _self.count
           : count // ignore: cast_nullable_to_non_nullable
               as int,
-      total: null == total
-          ? _self.total
-          : total // ignore: cast_nullable_to_non_nullable
+      totalUnread: null == totalUnread
+          ? _self.totalUnread
+          : totalUnread // ignore: cast_nullable_to_non_nullable
               as int,
-      page: null == page
-          ? _self.page
-          : page // ignore: cast_nullable_to_non_nullable
-              as int,
-      limit: null == limit
-          ? _self.limit
-          : limit // ignore: cast_nullable_to_non_nullable
-              as int,
-      hasNext: null == hasNext
-          ? _self.hasNext
-          : hasNext // ignore: cast_nullable_to_non_nullable
+      hasMoreOlder: null == hasMoreOlder
+          ? _self.hasMoreOlder
+          : hasMoreOlder // ignore: cast_nullable_to_non_nullable
               as bool,
-      hasPrev: null == hasPrev
-          ? _self.hasPrev
-          : hasPrev // ignore: cast_nullable_to_non_nullable
+      hasMoreNewer: null == hasMoreNewer
+          ? _self.hasMoreNewer
+          : hasMoreNewer // ignore: cast_nullable_to_non_nullable
               as bool,
+      firstMsgTime: freezed == firstMsgTime
+          ? _self.firstMsgTime
+          : firstMsgTime // ignore: cast_nullable_to_non_nullable
+              as String?,
+      lastMsgTime: freezed == lastMsgTime
+          ? _self.lastMsgTime
+          : lastMsgTime // ignore: cast_nullable_to_non_nullable
+              as String?,
+      cursors: freezed == cursors
+          ? _self.cursors
+          : cursors // ignore: cast_nullable_to_non_nullable
+              as MessageCursorsModel?,
     ));
+  }
+
+  /// Create a copy of MessageResponseDTO
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageCursorsModelCopyWith<$Res>? get cursors {
+    if (_self.cursors == null) {
+      return null;
+    }
+
+    return $MessageCursorsModelCopyWith<$Res>(_self.cursors!, (value) {
+      return _then(_self.copyWith(cursors: value));
+    });
   }
 }
 
@@ -150,11 +181,12 @@ class _MessageResponseDTO implements MessageResponseDTO {
       {@JsonKey(name: 'messages')
       required final List<MessageDetailModel> messages,
       @JsonKey(name: 'count') required this.count,
-      @JsonKey(name: 'total') required this.total,
-      @JsonKey(name: 'page') required this.page,
-      @JsonKey(name: 'limit') required this.limit,
-      @JsonKey(name: 'has_next') required this.hasNext,
-      @JsonKey(name: 'has_prev') required this.hasPrev})
+      @JsonKey(name: 'total_unread') required this.totalUnread,
+      @JsonKey(name: 'has_more_older') required this.hasMoreOlder,
+      @JsonKey(name: 'has_more_newer') required this.hasMoreNewer,
+      @JsonKey(name: 'first_msg_time') this.firstMsgTime,
+      @JsonKey(name: 'last_msg_time') this.lastMsgTime,
+      @JsonKey(name: 'cursors') this.cursors})
       : _messages = messages;
   factory _MessageResponseDTO.fromJson(Map<String, dynamic> json) =>
       _$MessageResponseDTOFromJson(json);
@@ -172,20 +204,23 @@ class _MessageResponseDTO implements MessageResponseDTO {
   @JsonKey(name: 'count')
   final int count;
   @override
-  @JsonKey(name: 'total')
-  final int total;
+  @JsonKey(name: 'total_unread')
+  final int totalUnread;
   @override
-  @JsonKey(name: 'page')
-  final int page;
+  @JsonKey(name: 'has_more_older')
+  final bool hasMoreOlder;
   @override
-  @JsonKey(name: 'limit')
-  final int limit;
+  @JsonKey(name: 'has_more_newer')
+  final bool hasMoreNewer;
   @override
-  @JsonKey(name: 'has_next')
-  final bool hasNext;
+  @JsonKey(name: 'first_msg_time')
+  final String? firstMsgTime;
   @override
-  @JsonKey(name: 'has_prev')
-  final bool hasPrev;
+  @JsonKey(name: 'last_msg_time')
+  final String? lastMsgTime;
+  @override
+  @JsonKey(name: 'cursors')
+  final MessageCursorsModel? cursors;
 
   /// Create a copy of MessageResponseDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -209,11 +244,17 @@ class _MessageResponseDTO implements MessageResponseDTO {
             other is _MessageResponseDTO &&
             const DeepCollectionEquality().equals(other._messages, _messages) &&
             (identical(other.count, count) || other.count == count) &&
-            (identical(other.total, total) || other.total == total) &&
-            (identical(other.page, page) || other.page == page) &&
-            (identical(other.limit, limit) || other.limit == limit) &&
-            (identical(other.hasNext, hasNext) || other.hasNext == hasNext) &&
-            (identical(other.hasPrev, hasPrev) || other.hasPrev == hasPrev));
+            (identical(other.totalUnread, totalUnread) ||
+                other.totalUnread == totalUnread) &&
+            (identical(other.hasMoreOlder, hasMoreOlder) ||
+                other.hasMoreOlder == hasMoreOlder) &&
+            (identical(other.hasMoreNewer, hasMoreNewer) ||
+                other.hasMoreNewer == hasMoreNewer) &&
+            (identical(other.firstMsgTime, firstMsgTime) ||
+                other.firstMsgTime == firstMsgTime) &&
+            (identical(other.lastMsgTime, lastMsgTime) ||
+                other.lastMsgTime == lastMsgTime) &&
+            (identical(other.cursors, cursors) || other.cursors == cursors));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -222,15 +263,16 @@ class _MessageResponseDTO implements MessageResponseDTO {
       runtimeType,
       const DeepCollectionEquality().hash(_messages),
       count,
-      total,
-      page,
-      limit,
-      hasNext,
-      hasPrev);
+      totalUnread,
+      hasMoreOlder,
+      hasMoreNewer,
+      firstMsgTime,
+      lastMsgTime,
+      cursors);
 
   @override
   String toString() {
-    return 'MessageResponseDTO(messages: $messages, count: $count, total: $total, page: $page, limit: $limit, hasNext: $hasNext, hasPrev: $hasPrev)';
+    return 'MessageResponseDTO(messages: $messages, count: $count, totalUnread: $totalUnread, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, firstMsgTime: $firstMsgTime, lastMsgTime: $lastMsgTime, cursors: $cursors)';
   }
 }
 
@@ -245,11 +287,15 @@ abstract mixin class _$MessageResponseDTOCopyWith<$Res>
   $Res call(
       {@JsonKey(name: 'messages') List<MessageDetailModel> messages,
       @JsonKey(name: 'count') int count,
-      @JsonKey(name: 'total') int total,
-      @JsonKey(name: 'page') int page,
-      @JsonKey(name: 'limit') int limit,
-      @JsonKey(name: 'has_next') bool hasNext,
-      @JsonKey(name: 'has_prev') bool hasPrev});
+      @JsonKey(name: 'total_unread') int totalUnread,
+      @JsonKey(name: 'has_more_older') bool hasMoreOlder,
+      @JsonKey(name: 'has_more_newer') bool hasMoreNewer,
+      @JsonKey(name: 'first_msg_time') String? firstMsgTime,
+      @JsonKey(name: 'last_msg_time') String? lastMsgTime,
+      @JsonKey(name: 'cursors') MessageCursorsModel? cursors});
+
+  @override
+  $MessageCursorsModelCopyWith<$Res>? get cursors;
 }
 
 /// @nodoc
@@ -267,11 +313,12 @@ class __$MessageResponseDTOCopyWithImpl<$Res>
   $Res call({
     Object? messages = null,
     Object? count = null,
-    Object? total = null,
-    Object? page = null,
-    Object? limit = null,
-    Object? hasNext = null,
-    Object? hasPrev = null,
+    Object? totalUnread = null,
+    Object? hasMoreOlder = null,
+    Object? hasMoreNewer = null,
+    Object? firstMsgTime = freezed,
+    Object? lastMsgTime = freezed,
+    Object? cursors = freezed,
   }) {
     return _then(_MessageResponseDTO(
       messages: null == messages
@@ -282,27 +329,45 @@ class __$MessageResponseDTOCopyWithImpl<$Res>
           ? _self.count
           : count // ignore: cast_nullable_to_non_nullable
               as int,
-      total: null == total
-          ? _self.total
-          : total // ignore: cast_nullable_to_non_nullable
+      totalUnread: null == totalUnread
+          ? _self.totalUnread
+          : totalUnread // ignore: cast_nullable_to_non_nullable
               as int,
-      page: null == page
-          ? _self.page
-          : page // ignore: cast_nullable_to_non_nullable
-              as int,
-      limit: null == limit
-          ? _self.limit
-          : limit // ignore: cast_nullable_to_non_nullable
-              as int,
-      hasNext: null == hasNext
-          ? _self.hasNext
-          : hasNext // ignore: cast_nullable_to_non_nullable
+      hasMoreOlder: null == hasMoreOlder
+          ? _self.hasMoreOlder
+          : hasMoreOlder // ignore: cast_nullable_to_non_nullable
               as bool,
-      hasPrev: null == hasPrev
-          ? _self.hasPrev
-          : hasPrev // ignore: cast_nullable_to_non_nullable
+      hasMoreNewer: null == hasMoreNewer
+          ? _self.hasMoreNewer
+          : hasMoreNewer // ignore: cast_nullable_to_non_nullable
               as bool,
+      firstMsgTime: freezed == firstMsgTime
+          ? _self.firstMsgTime
+          : firstMsgTime // ignore: cast_nullable_to_non_nullable
+              as String?,
+      lastMsgTime: freezed == lastMsgTime
+          ? _self.lastMsgTime
+          : lastMsgTime // ignore: cast_nullable_to_non_nullable
+              as String?,
+      cursors: freezed == cursors
+          ? _self.cursors
+          : cursors // ignore: cast_nullable_to_non_nullable
+              as MessageCursorsModel?,
     ));
+  }
+
+  /// Create a copy of MessageResponseDTO
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageCursorsModelCopyWith<$Res>? get cursors {
+    if (_self.cursors == null) {
+      return null;
+    }
+
+    return $MessageCursorsModelCopyWith<$Res>(_self.cursors!, (value) {
+      return _then(_self.copyWith(cursors: value));
+    });
   }
 }
 

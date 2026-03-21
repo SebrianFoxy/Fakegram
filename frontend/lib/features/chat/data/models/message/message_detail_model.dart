@@ -1,3 +1,4 @@
+import 'package:fakegram/features/chat/data/models/message/message_user_detail_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../domain/entities/message_entity.dart';
 
@@ -18,10 +19,7 @@ abstract class MessageDetailModel with _$MessageDetailModel {
     @JsonKey(name: 'is_read', defaultValue: false) required bool isRead,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'read_at') required DateTime? readAt,
-    @JsonKey(name: 'sender_name') required String senderName,
-    @JsonKey(name: 'sender_surname') required String senderSurname,
-    @JsonKey(name: 'sender_nickname') required String senderNickname,
-    @JsonKey(name: 'sender_avatar_url') required String? senderAvatarUrl,
+    @JsonKey(name: 'sender') required MessageUserDetailModel sender,
   }) = _MessageDetailModel;
 
   const MessageDetailModel._();
@@ -41,9 +39,9 @@ abstract class MessageDetailModel with _$MessageDetailModel {
     isDeleted: isDeleted,
     createdAt: createdAt.toLocal(),
     readAt: readAt,
-    senderName: senderName,
-    senderSurname: senderSurname,
-    senderNickname: senderNickname,
-    senderAvatarUrl: senderAvatarUrl,
+    senderName: sender.name,
+    senderSurname: sender.surname,
+    senderNickname: sender.nickname,
+    senderAvatarUrl: sender.avatarUrl,
   );
 }

@@ -17,8 +17,8 @@ Future<void> main() async {
       await windowManager.ensureInitialized();
 
       WindowOptions windowOptions = WindowOptions(
-        minimumSize: Size(300, 400),
-        size: Size(800, 600),
+        minimumSize: Size(800, 600),
+        size: Size(801, 601),
         center: true,
       );
 

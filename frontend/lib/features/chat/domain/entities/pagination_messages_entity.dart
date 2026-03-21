@@ -8,11 +8,13 @@ abstract class PaginationMessagesEntity with _$PaginationMessagesEntity {
   const factory PaginationMessagesEntity({
     required List<MessageEntity> messages,
     required int count,
-    required int total,
-    required int page,
-    required int limit,
-    required bool hasNext,
-    required bool hasPrev,
+    required int totalUnread,
+    required bool hasMoreOlder,
+    required bool hasMoreNewer,
+    DateTime? firstMsgTime,
+    DateTime? lastMsgTime,
+    String? olderCursor,
+    String? newerCursor,
   }) = _PaginationMessagesEntity;
 
   const PaginationMessagesEntity._();

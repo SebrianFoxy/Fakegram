@@ -72,18 +72,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create tokens table: %v", err)
 	}
-
-
-	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
-	
-	wsManager := websocket.NewWebSocketManager(tokenService)
-	wsPool := wsManager.GetPool()
-	wsHandler := wsManager.GetHandler()
 	
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(db)
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
+
+	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
+	
+	wsManager := websocket.NewWebSocketManager(tokenService, messageRepo)
+	wsPool := wsManager.GetPool()
+	wsHandler := wsManager.GetHandler()
 
 	jwtMiddleware := cnf.CreateJWTMiddleware()
 

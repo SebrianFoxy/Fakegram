@@ -17,11 +17,13 @@ T _$identity<T>(T value) => value;
 mixin _$PaginationMessagesEntity {
   List<MessageEntity> get messages;
   int get count;
-  int get total;
-  int get page;
-  int get limit;
-  bool get hasNext;
-  bool get hasPrev;
+  int get totalUnread;
+  bool get hasMoreOlder;
+  bool get hasMoreNewer;
+  DateTime? get firstMsgTime;
+  DateTime? get lastMsgTime;
+  String? get olderCursor;
+  String? get newerCursor;
 
   /// Create a copy of PaginationMessagesEntity
   /// with the given fields replaced by the non-null parameter values.
@@ -38,11 +40,20 @@ mixin _$PaginationMessagesEntity {
             other is PaginationMessagesEntity &&
             const DeepCollectionEquality().equals(other.messages, messages) &&
             (identical(other.count, count) || other.count == count) &&
-            (identical(other.total, total) || other.total == total) &&
-            (identical(other.page, page) || other.page == page) &&
-            (identical(other.limit, limit) || other.limit == limit) &&
-            (identical(other.hasNext, hasNext) || other.hasNext == hasNext) &&
-            (identical(other.hasPrev, hasPrev) || other.hasPrev == hasPrev));
+            (identical(other.totalUnread, totalUnread) ||
+                other.totalUnread == totalUnread) &&
+            (identical(other.hasMoreOlder, hasMoreOlder) ||
+                other.hasMoreOlder == hasMoreOlder) &&
+            (identical(other.hasMoreNewer, hasMoreNewer) ||
+                other.hasMoreNewer == hasMoreNewer) &&
+            (identical(other.firstMsgTime, firstMsgTime) ||
+                other.firstMsgTime == firstMsgTime) &&
+            (identical(other.lastMsgTime, lastMsgTime) ||
+                other.lastMsgTime == lastMsgTime) &&
+            (identical(other.olderCursor, olderCursor) ||
+                other.olderCursor == olderCursor) &&
+            (identical(other.newerCursor, newerCursor) ||
+                other.newerCursor == newerCursor));
   }
 
   @override
@@ -50,15 +61,17 @@ mixin _$PaginationMessagesEntity {
       runtimeType,
       const DeepCollectionEquality().hash(messages),
       count,
-      total,
-      page,
-      limit,
-      hasNext,
-      hasPrev);
+      totalUnread,
+      hasMoreOlder,
+      hasMoreNewer,
+      firstMsgTime,
+      lastMsgTime,
+      olderCursor,
+      newerCursor);
 
   @override
   String toString() {
-    return 'PaginationMessagesEntity(messages: $messages, count: $count, total: $total, page: $page, limit: $limit, hasNext: $hasNext, hasPrev: $hasPrev)';
+    return 'PaginationMessagesEntity(messages: $messages, count: $count, totalUnread: $totalUnread, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, firstMsgTime: $firstMsgTime, lastMsgTime: $lastMsgTime, olderCursor: $olderCursor, newerCursor: $newerCursor)';
   }
 }
 
@@ -71,11 +84,13 @@ abstract mixin class $PaginationMessagesEntityCopyWith<$Res> {
   $Res call(
       {List<MessageEntity> messages,
       int count,
-      int total,
-      int page,
-      int limit,
-      bool hasNext,
-      bool hasPrev});
+      int totalUnread,
+      bool hasMoreOlder,
+      bool hasMoreNewer,
+      DateTime? firstMsgTime,
+      DateTime? lastMsgTime,
+      String? olderCursor,
+      String? newerCursor});
 }
 
 /// @nodoc
@@ -93,11 +108,13 @@ class _$PaginationMessagesEntityCopyWithImpl<$Res>
   $Res call({
     Object? messages = null,
     Object? count = null,
-    Object? total = null,
-    Object? page = null,
-    Object? limit = null,
-    Object? hasNext = null,
-    Object? hasPrev = null,
+    Object? totalUnread = null,
+    Object? hasMoreOlder = null,
+    Object? hasMoreNewer = null,
+    Object? firstMsgTime = freezed,
+    Object? lastMsgTime = freezed,
+    Object? olderCursor = freezed,
+    Object? newerCursor = freezed,
   }) {
     return _then(_self.copyWith(
       messages: null == messages
@@ -108,26 +125,34 @@ class _$PaginationMessagesEntityCopyWithImpl<$Res>
           ? _self.count
           : count // ignore: cast_nullable_to_non_nullable
               as int,
-      total: null == total
-          ? _self.total
-          : total // ignore: cast_nullable_to_non_nullable
+      totalUnread: null == totalUnread
+          ? _self.totalUnread
+          : totalUnread // ignore: cast_nullable_to_non_nullable
               as int,
-      page: null == page
-          ? _self.page
-          : page // ignore: cast_nullable_to_non_nullable
-              as int,
-      limit: null == limit
-          ? _self.limit
-          : limit // ignore: cast_nullable_to_non_nullable
-              as int,
-      hasNext: null == hasNext
-          ? _self.hasNext
-          : hasNext // ignore: cast_nullable_to_non_nullable
+      hasMoreOlder: null == hasMoreOlder
+          ? _self.hasMoreOlder
+          : hasMoreOlder // ignore: cast_nullable_to_non_nullable
               as bool,
-      hasPrev: null == hasPrev
-          ? _self.hasPrev
-          : hasPrev // ignore: cast_nullable_to_non_nullable
+      hasMoreNewer: null == hasMoreNewer
+          ? _self.hasMoreNewer
+          : hasMoreNewer // ignore: cast_nullable_to_non_nullable
               as bool,
+      firstMsgTime: freezed == firstMsgTime
+          ? _self.firstMsgTime
+          : firstMsgTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      lastMsgTime: freezed == lastMsgTime
+          ? _self.lastMsgTime
+          : lastMsgTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      olderCursor: freezed == olderCursor
+          ? _self.olderCursor
+          : olderCursor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      newerCursor: freezed == newerCursor
+          ? _self.newerCursor
+          : newerCursor // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -138,11 +163,13 @@ class _PaginationMessagesEntity extends PaginationMessagesEntity {
   const _PaginationMessagesEntity(
       {required final List<MessageEntity> messages,
       required this.count,
-      required this.total,
-      required this.page,
-      required this.limit,
-      required this.hasNext,
-      required this.hasPrev})
+      required this.totalUnread,
+      required this.hasMoreOlder,
+      required this.hasMoreNewer,
+      this.firstMsgTime,
+      this.lastMsgTime,
+      this.olderCursor,
+      this.newerCursor})
       : _messages = messages,
         super._();
 
@@ -157,15 +184,19 @@ class _PaginationMessagesEntity extends PaginationMessagesEntity {
   @override
   final int count;
   @override
-  final int total;
+  final int totalUnread;
   @override
-  final int page;
+  final bool hasMoreOlder;
   @override
-  final int limit;
+  final bool hasMoreNewer;
   @override
-  final bool hasNext;
+  final DateTime? firstMsgTime;
   @override
-  final bool hasPrev;
+  final DateTime? lastMsgTime;
+  @override
+  final String? olderCursor;
+  @override
+  final String? newerCursor;
 
   /// Create a copy of PaginationMessagesEntity
   /// with the given fields replaced by the non-null parameter values.
@@ -183,11 +214,20 @@ class _PaginationMessagesEntity extends PaginationMessagesEntity {
             other is _PaginationMessagesEntity &&
             const DeepCollectionEquality().equals(other._messages, _messages) &&
             (identical(other.count, count) || other.count == count) &&
-            (identical(other.total, total) || other.total == total) &&
-            (identical(other.page, page) || other.page == page) &&
-            (identical(other.limit, limit) || other.limit == limit) &&
-            (identical(other.hasNext, hasNext) || other.hasNext == hasNext) &&
-            (identical(other.hasPrev, hasPrev) || other.hasPrev == hasPrev));
+            (identical(other.totalUnread, totalUnread) ||
+                other.totalUnread == totalUnread) &&
+            (identical(other.hasMoreOlder, hasMoreOlder) ||
+                other.hasMoreOlder == hasMoreOlder) &&
+            (identical(other.hasMoreNewer, hasMoreNewer) ||
+                other.hasMoreNewer == hasMoreNewer) &&
+            (identical(other.firstMsgTime, firstMsgTime) ||
+                other.firstMsgTime == firstMsgTime) &&
+            (identical(other.lastMsgTime, lastMsgTime) ||
+                other.lastMsgTime == lastMsgTime) &&
+            (identical(other.olderCursor, olderCursor) ||
+                other.olderCursor == olderCursor) &&
+            (identical(other.newerCursor, newerCursor) ||
+                other.newerCursor == newerCursor));
   }
 
   @override
@@ -195,15 +235,17 @@ class _PaginationMessagesEntity extends PaginationMessagesEntity {
       runtimeType,
       const DeepCollectionEquality().hash(_messages),
       count,
-      total,
-      page,
-      limit,
-      hasNext,
-      hasPrev);
+      totalUnread,
+      hasMoreOlder,
+      hasMoreNewer,
+      firstMsgTime,
+      lastMsgTime,
+      olderCursor,
+      newerCursor);
 
   @override
   String toString() {
-    return 'PaginationMessagesEntity(messages: $messages, count: $count, total: $total, page: $page, limit: $limit, hasNext: $hasNext, hasPrev: $hasPrev)';
+    return 'PaginationMessagesEntity(messages: $messages, count: $count, totalUnread: $totalUnread, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, firstMsgTime: $firstMsgTime, lastMsgTime: $lastMsgTime, olderCursor: $olderCursor, newerCursor: $newerCursor)';
   }
 }
 
@@ -218,11 +260,13 @@ abstract mixin class _$PaginationMessagesEntityCopyWith<$Res>
   $Res call(
       {List<MessageEntity> messages,
       int count,
-      int total,
-      int page,
-      int limit,
-      bool hasNext,
-      bool hasPrev});
+      int totalUnread,
+      bool hasMoreOlder,
+      bool hasMoreNewer,
+      DateTime? firstMsgTime,
+      DateTime? lastMsgTime,
+      String? olderCursor,
+      String? newerCursor});
 }
 
 /// @nodoc
@@ -240,11 +284,13 @@ class __$PaginationMessagesEntityCopyWithImpl<$Res>
   $Res call({
     Object? messages = null,
     Object? count = null,
-    Object? total = null,
-    Object? page = null,
-    Object? limit = null,
-    Object? hasNext = null,
-    Object? hasPrev = null,
+    Object? totalUnread = null,
+    Object? hasMoreOlder = null,
+    Object? hasMoreNewer = null,
+    Object? firstMsgTime = freezed,
+    Object? lastMsgTime = freezed,
+    Object? olderCursor = freezed,
+    Object? newerCursor = freezed,
   }) {
     return _then(_PaginationMessagesEntity(
       messages: null == messages
@@ -255,26 +301,34 @@ class __$PaginationMessagesEntityCopyWithImpl<$Res>
           ? _self.count
           : count // ignore: cast_nullable_to_non_nullable
               as int,
-      total: null == total
-          ? _self.total
-          : total // ignore: cast_nullable_to_non_nullable
+      totalUnread: null == totalUnread
+          ? _self.totalUnread
+          : totalUnread // ignore: cast_nullable_to_non_nullable
               as int,
-      page: null == page
-          ? _self.page
-          : page // ignore: cast_nullable_to_non_nullable
-              as int,
-      limit: null == limit
-          ? _self.limit
-          : limit // ignore: cast_nullable_to_non_nullable
-              as int,
-      hasNext: null == hasNext
-          ? _self.hasNext
-          : hasNext // ignore: cast_nullable_to_non_nullable
+      hasMoreOlder: null == hasMoreOlder
+          ? _self.hasMoreOlder
+          : hasMoreOlder // ignore: cast_nullable_to_non_nullable
               as bool,
-      hasPrev: null == hasPrev
-          ? _self.hasPrev
-          : hasPrev // ignore: cast_nullable_to_non_nullable
+      hasMoreNewer: null == hasMoreNewer
+          ? _self.hasMoreNewer
+          : hasMoreNewer // ignore: cast_nullable_to_non_nullable
               as bool,
+      firstMsgTime: freezed == firstMsgTime
+          ? _self.firstMsgTime
+          : firstMsgTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      lastMsgTime: freezed == lastMsgTime
+          ? _self.lastMsgTime
+          : lastMsgTime // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      olderCursor: freezed == olderCursor
+          ? _self.olderCursor
+          : olderCursor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      newerCursor: freezed == newerCursor
+          ? _self.newerCursor
+          : newerCursor // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }

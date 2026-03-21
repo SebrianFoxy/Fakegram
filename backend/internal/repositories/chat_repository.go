@@ -41,19 +41,30 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
                 m.message_type,
                 m.is_edited,
                 m.is_deleted,
-                m.created_at,
-                ROW_NUMBER() OVER (PARTITION BY m.chat_id ORDER BY m.created_at DESC) as rn
+                m.created_at
             FROM messages m
             WHERE m.chat_id IN (SELECT chat_id FROM UserDialogs)
+            ORDER BY m.chat_id, m.created_at DESC
+        ),
+        LastReadTimePerChat AS (
+            SELECT 
+                m.chat_id,
+                MAX(m.created_at) as last_read_time
+            FROM message_read_status mrs
+            JOIN messages m ON m.id = mrs.message_id
+            WHERE mrs.user_id = $1
+            GROUP BY m.chat_id
         ),
         UnreadCounts AS (
             SELECT 
                 m.chat_id,
-                COUNT(CASE WHEN mrs.id IS NULL AND m.sender_id != $1 THEN 1 END) as unread_count
+                COUNT(*) as unread_count
             FROM messages m
-            LEFT JOIN message_read_status mrs ON m.id = mrs.message_id AND mrs.user_id = $1
+            LEFT JOIN LastReadTimePerChat lr ON m.chat_id = lr.chat_id
             WHERE m.chat_id IN (SELECT chat_id FROM UserDialogs)
+                AND m.sender_id != $1
                 AND NOT m.is_deleted
+                AND (lr.last_read_time IS NULL OR m.created_at > lr.last_read_time)
             GROUP BY m.chat_id
         )
         SELECT 
@@ -70,7 +81,6 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
             COALESCE(uc.unread_count, 0) as unread_count
         FROM LastMessages lm
         LEFT JOIN UnreadCounts uc ON lm.chat_id = uc.chat_id
-        WHERE lm.rn = 1
         ORDER BY lm.created_at DESC
     `
     
