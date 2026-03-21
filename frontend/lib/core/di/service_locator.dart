@@ -27,6 +27,7 @@ import '../network/dio_client.dart';
 import '../network/interceptors/logging_interceptor.dart';
 
 final getIt = GetIt.instance;
+const _baseUrl = 'http://127.0.0.1:8080/api/v1';
 
 Future<void> initDependencies() async {
   getIt.registerLazySingleton<FlutterSecureStorage>(
@@ -56,7 +57,7 @@ Future<void> initDependencies() async {
         () {
       final refreshDio = Dio(
         BaseOptions(
-          baseUrl: 'http://127.0.0.1:8080/api/v1',
+          baseUrl: _baseUrl,
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 30),
           sendTimeout: const Duration(seconds: 30),
@@ -91,7 +92,7 @@ Future<void> initDependencies() async {
   getIt.registerLazySingleton<DioClient>(
         () => DioClient(
       tokenService: getIt<TokenService>(),
-      baseUrl: 'http://127.0.0.1:8080/api/v1',
+      baseUrl: _baseUrl,
     ),
   );
 
@@ -99,21 +100,21 @@ Future<void> initDependencies() async {
   getIt.registerLazySingleton<AuthRemoteDatasource>(
         () => AuthRemoteDatasource(
       getIt<DioClient>().instance,
-      baseUrl: 'http://127.0.0.1:8080/api/v1',
+      baseUrl: _baseUrl,
     ),
   );
 
   getIt.registerLazySingleton<MessageRemoteDatasource>(
         () => MessageRemoteDatasource(
           getIt<DioClient>().instance,
-          baseUrl: 'http://127.0.0.1:8080/api/v1',
+          baseUrl: _baseUrl,
     ),
   );
 
   getIt.registerLazySingleton<ChatRemoteDatasource>(
         () => ChatRemoteDatasource(
       getIt<DioClient>().instance,
-      baseUrl: 'http://127.0.0.1:8080/api/v1',
+      baseUrl: _baseUrl,
     ),
   );
 

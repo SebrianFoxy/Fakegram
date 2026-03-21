@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'exceptions.dart';
 
 class ErrorHandler {
@@ -28,7 +27,6 @@ class ErrorHandler {
 
       case DioExceptionType.unknown:
         return NetworkException('Unknown network error');
-
       default:
         return NetworkException('Network error');
     }
