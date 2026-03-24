@@ -1,45 +1,59 @@
-part of 'widgets.dart';
+part of '../widgets/widgets.dart';
 
 class MessageArea extends ConsumerWidget {
-  const MessageArea({super.key});
+  const MessageArea({
+    super.key,
+    required this.chat,
+    this.onBackPressed,
+  });
+
+  final DirectChatEntity chat;
+  final VoidCallback? onBackPressed;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedChat = ref.watch(selectedChatProvider);
+    final isMobile = PlatformUtils.isMobile;
 
-    if (selectedChat == null) {
-      return _buildEmptyState(context);
-    }
-
-    return Expanded(
-      child: Column(
+    if (isMobile) {
+      return Column(
         children: [
-          ChatHeader(chat: selectedChat),
+          ChatHeader(
+            chat: chat,
+            showBackButton: true,
+            onBackPressed: onBackPressed,
+          ),
           Expanded(
             child: MessagesList(
-              chatId: selectedChat.id,
+              chatId: chat.id,
             ),
           ),
           MessageInput(
-            chatId: selectedChat.id,
-            receiverId: selectedChat.id,
+            chatId: chat.id,
+            receiverId: chat.id,
             onMessageSent: (newMessage) => _handleNewMessage(newMessage, ref),
           ),
         ],
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Center(
-        child: Text(
-          'Выберите чат для начала общения',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.6),
+    return Container(
+      child: Column(
+        children: [
+          ChatHeader(
+            chat: chat,
+            showBackButton: false,
           ),
-        ),
+          Expanded(
+            child: MessagesList(
+              chatId: chat.id,
+            ),
+          ),
+          MessageInput(
+            chatId: chat.id,
+            receiverId: chat.id,
+            onMessageSent: (newMessage) => _handleNewMessage(newMessage, ref),
+          ),
+        ],
       ),
     );
   }

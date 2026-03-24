@@ -59,14 +59,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     return Scaffold(
       body: GradientBackground(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Stack(
-            children: [
-              const DarkOverlay(),
-              if (authState is AuthStateLoading)
-                const Center(child: CircularProgressIndicator())
-              else
+        child: switch (authState) {
+          AuthStateInitial() => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Stack(
+              children: [
+                const DarkOverlay(),
                 GlassMorphismContainer(
                   child: LoginForm(
                     emailController: _emailController,
@@ -74,9 +72,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     onLogin: _handleLogin,
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
+          AuthStateLoading() => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          _ => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        },
       ),
     );
   }

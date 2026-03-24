@@ -2,8 +2,15 @@ part of 'widgets.dart';
 
 class ChatHeader extends ConsumerWidget {
   final DirectChatEntity chat;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
 
-  const ChatHeader({super.key, required this.chat});
+  const ChatHeader({
+    super.key,
+    required this.chat,
+    this.showBackButton = false,
+    this.onBackPressed,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,6 +24,15 @@ class ChatHeader extends ConsumerWidget {
       ),
       child: Row(
         children: [
+          if (showBackButton && onBackPressed != null)
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: onBackPressed,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          if (showBackButton && onBackPressed != null)
+            const SizedBox(width: 8),
           _buildAvatar(theme),
           const SizedBox(width: 12),
           _buildUserInfo(theme),
@@ -63,8 +79,8 @@ class ChatHeader extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            chat.title.length > 15
-                ? '${chat.title.substring(0, 15)}...'
+            chat.title.length > (showBackButton ? 12 : 15)
+                ? '${chat.title.substring(0, showBackButton ? 12 : 15)}...'
                 : chat.title,
             style: theme.textTheme.titleLarge,
             overflow: TextOverflow.ellipsis,

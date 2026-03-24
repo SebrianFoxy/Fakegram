@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
+import 'package:fakegram/core/utils/platform_utils.dart';
 import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource.dart';
 import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource_impl.dart';
 import 'package:fakegram/features/auth/domain/repositories/auth_repository.dart';
@@ -27,7 +30,7 @@ import '../network/dio_client.dart';
 import '../network/interceptors/logging_interceptor.dart';
 
 final getIt = GetIt.instance;
-const _baseUrl = 'http://127.0.0.1:8080/api/v1';
+const _baseUrl = 'http://127.0.0.1:8080/api/v1'; // 'http://10.0.2.2:8080/api/v1';
 
 Future<void> initDependencies() async {
   getIt.registerLazySingleton<FlutterSecureStorage>(
