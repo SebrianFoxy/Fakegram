@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:dio/dio.dart';
 import 'package:fakegram/core/utils/platform_utils.dart';
 import 'package:fakegram/features/auth/data/datasources/local/user_local_datasource.dart';

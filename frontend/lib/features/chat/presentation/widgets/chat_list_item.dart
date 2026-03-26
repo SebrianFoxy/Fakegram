@@ -73,30 +73,32 @@ class ChatListItem extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (chat.unreadCount > 0)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.all(4),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${chat.unreadCount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 28),
                     ],
                   ),
                 ],
               ),
             ),
-            if (chat.unreadCount > 0)
-              Container(
-                margin: const EdgeInsets.only(left: 8),
-                padding: const EdgeInsets.all(4),
-                constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${chat.unreadCount}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
           ],
         ),
       ),
