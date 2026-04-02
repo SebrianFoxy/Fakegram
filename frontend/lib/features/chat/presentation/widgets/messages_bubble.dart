@@ -2,16 +2,53 @@ part of 'widgets.dart';
 
 class MessageBubble extends ConsumerWidget {
   final MessageEntity message;
+  final VoidCallback? onReply;
+  final VoidCallback? onCopyMessage;
+  final VoidCallback? onDeleteMessage;
+  final VoidCallback? onEditMessage;
+  final VoidCallback? onForwardMessage;
+  final VoidCallback? onSelectMessage;
 
-  const MessageBubble({super.key, required this.message});
+  const MessageBubble({
+    super.key,
+    required this.message,
+    this.onReply,
+    this.onCopyMessage,
+    this.onDeleteMessage,
+    this.onEditMessage,
+    this.onForwardMessage,
+    this.onSelectMessage,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUserId = ref.watch(currentUserIdProvider).value;
+    final isSentByMe = message.senderId == currentUserId.toString();
 
-    return MessageBubbleView(
+    final bubbleView = MessageBubbleView(
       message: message,
       presenter: MessageBubblePresenter(currentUserId: currentUserId.toString()),
+    );
+
+    return bubbleView.withMessageContextMenu(
+      message: message,
+      isSentByMe: isSentByMe,
+      onCopy: onCopyMessage ?? () => _copyMessageText(context),
+      onReply: onReply,
+      onForward: onForwardMessage,
+      onDelete: onDeleteMessage,
+      onEdit: onEditMessage,
+      onSelect: onSelectMessage,
+    );
+  }
+
+  void _copyMessageText(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: message.messageText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Текст скопирован'),
+        duration: Duration(seconds: 1),
+      ),
     );
   }
 }

@@ -292,6 +292,12 @@ class _MessagesListState extends ConsumerState<MessagesList> {
                   if (isFirstUnread) _buildUnreadIndicator(),
                   MessageBubble(
                     message: message,
+                    onReply: () => _replyToMessage(message),
+                    onCopyMessage: () => _copyMessage(message),
+                    onDeleteMessage: () => _deleteMessage(message),
+                    onEditMessage: () => _editMessage(message),
+                    onForwardMessage: () => _forwardMessage(message),
+                    onSelectMessage: () => _selectMessage(message),
                   ),
                 ],
               );
@@ -489,5 +495,34 @@ class _MessagesListState extends ConsumerState<MessagesList> {
         ],
       ),
     );
+  }
+
+  void _replyToMessage(MessageEntity message) {
+    // TODO: Реализовать ответ на сообщение
+    print('Reply to: ${message.id}');
+  }
+
+  void _copyMessage(MessageEntity message) {
+    print('Copy message: ${message.id}');
+  }
+
+  void _deleteMessage(MessageEntity message) {
+    // TODO: Показать диалог подтверждения и удалить
+    print('Delete message: ${message.id}');
+  }
+
+  void _editMessage(MessageEntity message) {
+    // TODO: Открыть диалог редактирования
+    print('Edit message: ${message.id}');
+  }
+
+  void _forwardMessage(MessageEntity message) {
+    // TODO: Открыть выбор чата для пересылки
+    print('Forward message: ${message.id}');
+  }
+
+  void _selectMessage(MessageEntity message) {
+    // TODO: Включить режим выбора сообщений
+    print('Select message: ${message.id}');
   }
 }

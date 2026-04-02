@@ -148,7 +148,7 @@ class AppThemes {
       ),
 
       // Карточки
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: _surfaceColor,
         elevation: 4,
         shape: RoundedRectangleBorder(
@@ -158,7 +158,7 @@ class AppThemes {
       ),
 
       // Диалоги
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: _surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
