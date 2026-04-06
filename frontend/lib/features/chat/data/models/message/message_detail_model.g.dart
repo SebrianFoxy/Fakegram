@@ -23,6 +23,10 @@ _MessageDetailModel _$MessageDetailModelFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['read_at'] as String),
       sender: MessageUserDetailModel.fromJson(
           json['sender'] as Map<String, dynamic>),
+      replyToMessage: json['reply_to_message'] == null
+          ? null
+          : MessageDetailModel.fromJson(
+              json['reply_to_message'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$MessageDetailModelToJson(_MessageDetailModel instance) =>
@@ -39,4 +43,5 @@ Map<String, dynamic> _$MessageDetailModelToJson(_MessageDetailModel instance) =>
       'created_at': instance.createdAt.toIso8601String(),
       'read_at': instance.readAt?.toIso8601String(),
       'sender': instance.sender,
+      'reply_to_message': instance.replyToMessage,
     };

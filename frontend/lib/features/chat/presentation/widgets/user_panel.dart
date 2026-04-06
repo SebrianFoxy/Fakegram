@@ -45,7 +45,7 @@ class UserPanel extends ConsumerWidget {
         context.push('/profile');
         break;
       case 'logout':
-        ref.read(authNotifierProvider.notifier).logout();
+        ref.read(authProvider.notifier).logout();
         break;
     }
   }

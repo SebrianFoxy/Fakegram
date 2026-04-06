@@ -19,6 +19,7 @@ abstract class MessageEntity with _$MessageEntity {
     required String messageText,
     required String messageType,
     required String? replyToMessageId,
+    MessageEntity? replyToMessage,
     required bool isEdited,
     required bool isDeleted,
     required bool isRead,

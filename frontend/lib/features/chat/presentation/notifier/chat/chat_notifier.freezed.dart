@@ -1,6 +1,5 @@
-// dart format width=80
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -33,6 +32,220 @@ mixin _$ChatState {
 /// @nodoc
 class $ChatStateCopyWith<$Res> {
   $ChatStateCopyWith(ChatState _, $Res Function(ChatState) __);
+}
+
+/// Adds pattern-matching-related methods to [ChatState].
+extension ChatStatePatterns on ChatState {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(ChatStateInitial value)? initial,
+    TResult Function(ChatStateSuccessLoading value)? successLoading,
+    TResult Function(ChatStateLoading value)? loading,
+    TResult Function(ChatStateError value)? error,
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case ChatStateInitial() when initial != null:
+        return initial(_that);
+      case ChatStateSuccessLoading() when successLoading != null:
+        return successLoading(_that);
+      case ChatStateLoading() when loading != null:
+        return loading(_that);
+      case ChatStateError() when error != null:
+        return error(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(ChatStateInitial value) initial,
+    required TResult Function(ChatStateSuccessLoading value) successLoading,
+    required TResult Function(ChatStateLoading value) loading,
+    required TResult Function(ChatStateError value) error,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case ChatStateInitial():
+        return initial(_that);
+      case ChatStateSuccessLoading():
+        return successLoading(_that);
+      case ChatStateLoading():
+        return loading(_that);
+      case ChatStateError():
+        return error(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(ChatStateInitial value)? initial,
+    TResult? Function(ChatStateSuccessLoading value)? successLoading,
+    TResult? Function(ChatStateLoading value)? loading,
+    TResult? Function(ChatStateError value)? error,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case ChatStateInitial() when initial != null:
+        return initial(_that);
+      case ChatStateSuccessLoading() when successLoading != null:
+        return successLoading(_that);
+      case ChatStateLoading() when loading != null:
+        return loading(_that);
+      case ChatStateError() when error != null:
+        return error(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? initial,
+    TResult Function(List<DirectChatEntity> chats, String? error)?
+        successLoading,
+    TResult Function()? loading,
+    TResult Function(Object? error)? error,
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case ChatStateInitial() when initial != null:
+        return initial();
+      case ChatStateSuccessLoading() when successLoading != null:
+        return successLoading(_that.chats, _that.error);
+      case ChatStateLoading() when loading != null:
+        return loading();
+      case ChatStateError() when error != null:
+        return error(_that.error);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() initial,
+    required TResult Function(List<DirectChatEntity> chats, String? error)
+        successLoading,
+    required TResult Function() loading,
+    required TResult Function(Object? error) error,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case ChatStateInitial():
+        return initial();
+      case ChatStateSuccessLoading():
+        return successLoading(_that.chats, _that.error);
+      case ChatStateLoading():
+        return loading();
+      case ChatStateError():
+        return error(_that.error);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? initial,
+    TResult? Function(List<DirectChatEntity> chats, String? error)?
+        successLoading,
+    TResult? Function()? loading,
+    TResult? Function(Object? error)? error,
+  }) {
+    final _that = this;
+    switch (_that) {
+      case ChatStateInitial() when initial != null:
+        return initial();
+      case ChatStateSuccessLoading() when successLoading != null:
+        return successLoading(_that.chats, _that.error);
+      case ChatStateLoading() when loading != null:
+        return loading();
+      case ChatStateError() when error != null:
+        return error(_that.error);
+      case _:
+        return null;
+    }
+  }
 }
 
 /// @nodoc

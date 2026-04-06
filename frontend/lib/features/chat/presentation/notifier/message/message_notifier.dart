@@ -237,6 +237,7 @@ class MessageNotifier extends _$MessageNotifier {
   Future<void> sendMessage({
     required String messageText,
     required String messageType,
+    MessageEntity? replyToMessage,
     String? replyToMessageId,}) async {
     try {
       if (_currentChatId == null || _currentUserId == null) {
@@ -267,8 +268,10 @@ class MessageNotifier extends _$MessageNotifier {
         senderNickname: userData?.nickname ?? 'you',
         senderAvatarUrl: '',
         status: MessageStatus.sending,
+        replyToMessage: replyToMessage,
       );
 
+      clearReplyingMessage();
       _addTempMessage(tempMessage);
 
       final messageData = await _messageRepository.sendMessage(
@@ -371,6 +374,7 @@ class MessageNotifier extends _$MessageNotifier {
         senderNickname: messageData.senderNickname,
         senderAvatarUrl: '',
         status: MessageStatus.sent,
+        replyToMessage: messageData.replyToMessage
       );
 
       final filteredMessages = currentState.messages
@@ -493,7 +497,7 @@ class MessageNotifier extends _$MessageNotifier {
   void _sendReadReceipts(List<String> messageIds) {
     if (messageIds.isEmpty || _currentChatId == null) return;
 
-    final webSocketNotifier = ref.read(webSocketNotifierProvider.notifier);
+    final webSocketNotifier = ref.read(webSocketProvider.notifier);
 
     final lastMessageId = messageIds.last;
     webSocketNotifier.sendMessageRead(_currentChatId!, lastMessageId);
@@ -612,6 +616,18 @@ class MessageNotifier extends _$MessageNotifier {
         isLoadingNewer: _isLoadingNewer,
       );
     }
+  }
+
+  void setReplyingMessage(MessageEntity message) {
+    state = (state as MessageStateSuccess).copyWith(
+      replyingToMessage: message,
+    );
+  }
+
+  void clearReplyingMessage() {
+    state = (state as MessageStateSuccess).copyWith(
+      replyingToMessage: null,
+    );
   }
 
   void _resetPagination() {

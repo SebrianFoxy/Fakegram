@@ -10,7 +10,7 @@ class ChatList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final chatState = ref.watch(chatNotifierProvider);
+    final chatState = ref.watch(chatProvider);
     final selectedChat = ref.watch(selectedChatProvider);
     final isWebSocketConnected = ref.watch(isWebSocketConnectedProvider);
     final isMobile = PlatformUtils.isMobile;

@@ -26,54 +26,87 @@ class MessageContextMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ContextMenuWidget(
+    return GestureDetector(
+      onSecondaryTapDown: (details) {
+        _showContextMenu(context, details.globalPosition);
+      },
+      onLongPressDown: context.isMobile
+          ? (details) {
+        _showContextMenu(context, details.globalPosition);
+      } : null,
       child: child,
-      menuProvider: (_) => _buildMenu(context),
     );
   }
 
-  Menu _buildMenu(BuildContext context) {
-    return Menu(
-      children: [
-        if (onCopy != null)
-          MenuAction(
-            title: 'Копировать',
-            image: MenuImage.icon(Icons.copy_rounded),
-            callback: () => onCopy?.call(),
-          ),
-        if (onReply != null)
-          MenuAction(
-            title: 'Ответить',
-            image: MenuImage.icon(Icons.reply_rounded),
-            callback: () => onReply?.call(),
-          ),
-        if (onForward != null)
-          MenuAction(
-            title: 'Переслать',
-            image: MenuImage.icon(Icons.forward_rounded),
-            callback: () => onForward?.call(),
-          ),
-        if (onSelect != null)
-          MenuAction(
-            title: 'Выбрать',
-            image: MenuImage.icon(Icons.select_all_rounded),
-            callback: () => onSelect?.call(),
-          ),
-        if (onEdit != null && isSentByMe)
-          MenuAction(
-            title: 'Редактировать',
-            image: MenuImage.icon(Icons.edit_rounded),
-            callback: () => onEdit?.call(),
-          ),
-        if (onDelete != null)
-          MenuAction(
-            title: 'Удалить',
-            image: MenuImage.icon(Icons.delete_rounded),
-            attributes: const MenuActionAttributes(destructive: true),
-            callback: () => onDelete?.call(),
-          ),
-      ],
-    );
+  void _showContextMenu(BuildContext context, Offset position) {
+    final entries = <ContextMenuEntry>[];
+
+    if (onCopy != null) {
+      entries.add(
+        MenuItem(
+          label: const Text('Копировать'),
+          icon: const Icon(Icons.copy_rounded),
+          onSelected: (_) => onCopy?.call(),
+        ),
+      );
+    }
+
+    if (onReply != null) {
+      entries.add(
+        MenuItem(
+          label: const Text('Ответить'),
+          icon: const Icon(Icons.reply_rounded),
+          onSelected: (_) => onReply?.call(),
+        ),
+      );
+    }
+
+    if (onForward != null) {
+      entries.add(
+        MenuItem(
+          label: const Text('Переслать'),
+          icon: const Icon(Icons.forward_rounded),
+          onSelected: (_) => onForward?.call(),
+        ),
+      );
+    }
+
+    if (onSelect != null) {
+      entries.add(
+        MenuItem(
+          label: const Text('Выбрать'),
+          icon: const Icon(Icons.select_all_rounded),
+          onSelected: (_) => onSelect?.call(),
+        ),
+      );
+    }
+
+    if (onEdit != null && isSentByMe) {
+      entries.add(
+        MenuItem(
+          label: const Text('Редактировать'),
+          icon: const Icon(Icons.edit_rounded),
+          onSelected: (_) => onEdit?.call(),
+        ),
+      );
+    }
+
+    if (onDelete != null) {
+      entries.add(
+        MenuItem(
+          label: const Text('Удалить'),
+          icon: const Icon(Icons.delete_rounded),
+          onSelected: (_) => onDelete?.call(),
+        ),
+      );
+    }
+
+    if (entries.isNotEmpty) {
+      ContextMenu(
+        entries: entries,
+        position: position,
+      ).show(context);
+    }
   }
 }
 

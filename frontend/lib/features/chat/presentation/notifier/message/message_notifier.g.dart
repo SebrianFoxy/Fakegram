@@ -6,21 +6,55 @@ part of 'message_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$messageNotifierHash() => r'1f09a078864f413cf9d3c80de2c63f1a4212798c';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [MessageNotifier].
 @ProviderFor(MessageNotifier)
-final messageNotifierProvider =
-    AutoDisposeNotifierProvider<MessageNotifier, MessageState>.internal(
-  MessageNotifier.new,
-  name: r'messageNotifierProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$messageNotifierHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const messageProvider = MessageNotifierProvider._();
 
-typedef _$MessageNotifier = AutoDisposeNotifier<MessageState>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class MessageNotifierProvider
+    extends $NotifierProvider<MessageNotifier, MessageState> {
+  const MessageNotifierProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'messageProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageNotifierHash();
+
+  @$internal
+  @override
+  MessageNotifier create() => MessageNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(MessageState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<MessageState>(value),
+    );
+  }
+}
+
+String _$messageNotifierHash() => r'a365433295f24bb21cae47c3dfec5764c15d2459';
+
+abstract class _$MessageNotifier extends $Notifier<MessageState> {
+  MessageState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<MessageState, MessageState>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<MessageState, MessageState>,
+        MessageState,
+        Object?,
+        Object?>;
+    element.handleValue(ref, created);
+  }
+}

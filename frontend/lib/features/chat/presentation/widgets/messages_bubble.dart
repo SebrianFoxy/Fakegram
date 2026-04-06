@@ -33,22 +33,12 @@ class MessageBubble extends ConsumerWidget {
     return bubbleView.withMessageContextMenu(
       message: message,
       isSentByMe: isSentByMe,
-      onCopy: onCopyMessage ?? () => _copyMessageText(context),
+      onCopy: onCopyMessage,
       onReply: onReply,
       onForward: onForwardMessage,
       onDelete: onDeleteMessage,
       onEdit: onEditMessage,
       onSelect: onSelectMessage,
-    );
-  }
-
-  void _copyMessageText(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: message.messageText));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Текст скопирован'),
-        duration: Duration(seconds: 1),
-      ),
     );
   }
 }
@@ -105,60 +95,116 @@ class MessageBubbleView extends StatelessWidget {
       MessageBubbleViewModel viewModel,
       bool isSentByMe,
       ) {
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.75,
+    return IntrinsicWidth(
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSentByMe
+              ? theme.colorScheme.primary
+              : theme.colorScheme.surface,
+          borderRadius: viewModel.borderRadius,
+          border: Border.all(
+            color: isSentByMe
+                ? Colors.transparent
+                : theme.colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+          boxShadow: isSentByMe
+              ? [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.2),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (message.replyToMessage != null) ...[
+              _buildReplyPreview(context, theme, isSentByMe),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              message.messageText,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isSentByMe
+                    ? theme.colorScheme.onPrimary
+                    : theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  viewModel.formattedTime,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: isSentByMe
+                        ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                        : theme.colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                if (isSentByMe) ...[
+                  const SizedBox(width: 4),
+                  _buildStatusIndicator(viewModel.status),
+                ],
+              ],
+            ),
+          ],
+        ),
       ),
-      padding: const EdgeInsets.all(12),
+    );
+  }
+
+  Widget _buildReplyPreview(BuildContext context, ThemeData theme, bool isSentByMe) {
+    final replyMessage = message.replyToMessage!;
+    final isReplyingToSelf = replyMessage.senderId == message.senderId;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isSentByMe
-            ? theme.colorScheme.primary
-            : theme.colorScheme.surface,
-        borderRadius: viewModel.borderRadius,
-        border: Border.all(
-          color: isSentByMe
-              ? Colors.transparent
-              : theme.colorScheme.outline.withOpacity(0.1),
-          width: 1,
-        ),
-        boxShadow: isSentByMe
-            ? [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.2),
-            blurRadius: 4,
-            offset: Offset(0, 2),
+            ? Colors.blueAccent
+            : Colors.black12,
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: isSentByMe
+                ? theme.colorScheme.onPrimary.withOpacity(0.5)
+                : Colors.lightBlueAccent.withOpacity(0.7),
+            width: 3,
           ),
-        ]
-            : null,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            message.messageText,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            isReplyingToSelf ? 'You' : replyMessage.senderName,
+            style: theme.textTheme.labelSmall?.copyWith(
               color: isSentByMe
-                  ? theme.colorScheme.onPrimary
-                  : theme.colorScheme.onSurface,
+                  ? theme.colorScheme.onPrimary.withOpacity(0.9)
+                  : theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                viewModel.formattedTime,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: isSentByMe
-                      ? theme.colorScheme.onPrimary.withOpacity(0.8)
-                      : theme.colorScheme.onSurface.withOpacity(0.5),
-                ),
-              ),
-              if (isSentByMe) ...[
-                const SizedBox(width: 4),
-                _buildStatusIndicator(viewModel.status),
-              ],
-            ],
+          Text(
+            replyMessage.messageText,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: isSentByMe
+                  ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                  : theme.colorScheme.onSurface.withOpacity(0.7),
+            ),
           ),
         ],
       ),

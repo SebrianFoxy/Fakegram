@@ -1,6 +1,5 @@
-// dart format width=80
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -38,6 +37,8 @@ mixin _$MessageDetailModel {
   DateTime? get readAt;
   @JsonKey(name: 'sender')
   MessageUserDetailModel get sender;
+  @JsonKey(name: 'reply_to_message', defaultValue: null)
+  MessageDetailModel? get replyToMessage;
 
   /// Create a copy of MessageDetailModel
   /// with the given fields replaced by the non-null parameter values.
@@ -73,7 +74,9 @@ mixin _$MessageDetailModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
-            (identical(other.sender, sender) || other.sender == sender));
+            (identical(other.sender, sender) || other.sender == sender) &&
+            (identical(other.replyToMessage, replyToMessage) ||
+                other.replyToMessage == replyToMessage));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -91,11 +94,12 @@ mixin _$MessageDetailModel {
       isRead,
       createdAt,
       readAt,
-      sender);
+      sender,
+      replyToMessage);
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender, replyToMessage: $replyToMessage)';
   }
 }
 
@@ -118,9 +122,12 @@ abstract mixin class $MessageDetailModelCopyWith<$Res> {
       @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
-      @JsonKey(name: 'sender') MessageUserDetailModel sender});
+      @JsonKey(name: 'sender') MessageUserDetailModel sender,
+      @JsonKey(name: 'reply_to_message', defaultValue: null)
+      MessageDetailModel? replyToMessage});
 
   $MessageUserDetailModelCopyWith<$Res> get sender;
+  $MessageDetailModelCopyWith<$Res>? get replyToMessage;
 }
 
 /// @nodoc
@@ -148,6 +155,7 @@ class _$MessageDetailModelCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? readAt = freezed,
     Object? sender = null,
+    Object? replyToMessage = freezed,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -198,6 +206,10 @@ class _$MessageDetailModelCopyWithImpl<$Res>
           ? _self.sender
           : sender // ignore: cast_nullable_to_non_nullable
               as MessageUserDetailModel,
+      replyToMessage: freezed == replyToMessage
+          ? _self.replyToMessage
+          : replyToMessage // ignore: cast_nullable_to_non_nullable
+              as MessageDetailModel?,
     ));
   }
 
@@ -209,6 +221,264 @@ class _$MessageDetailModelCopyWithImpl<$Res>
     return $MessageUserDetailModelCopyWith<$Res>(_self.sender, (value) {
       return _then(_self.copyWith(sender: value));
     });
+  }
+
+  /// Create a copy of MessageDetailModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageDetailModelCopyWith<$Res>? get replyToMessage {
+    if (_self.replyToMessage == null) {
+      return null;
+    }
+
+    return $MessageDetailModelCopyWith<$Res>(_self.replyToMessage!, (value) {
+      return _then(_self.copyWith(replyToMessage: value));
+    });
+  }
+}
+
+/// Adds pattern-matching-related methods to [MessageDetailModel].
+extension MessageDetailModelPatterns on MessageDetailModel {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MessageDetailModel value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageDetailModel() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MessageDetailModel value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageDetailModel():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MessageDetailModel value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageDetailModel() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(
+            String id,
+            @JsonKey(name: 'chat_id') String chatId,
+            @JsonKey(name: 'sender_id') String senderId,
+            @JsonKey(name: 'message_text') String messageText,
+            @JsonKey(name: 'message_type') String messageType,
+            @JsonKey(name: 'reply_to_message_id', defaultValue: null)
+            String? replyToMessageId,
+            @JsonKey(name: 'is_edited', defaultValue: false) bool isEdited,
+            @JsonKey(name: 'is_deleted', defaultValue: false) bool isDeleted,
+            @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
+            @JsonKey(name: 'created_at') DateTime createdAt,
+            @JsonKey(name: 'read_at') DateTime? readAt,
+            @JsonKey(name: 'sender') MessageUserDetailModel sender,
+            @JsonKey(name: 'reply_to_message', defaultValue: null)
+            MessageDetailModel? replyToMessage)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageDetailModel() when $default != null:
+        return $default(
+            _that.id,
+            _that.chatId,
+            _that.senderId,
+            _that.messageText,
+            _that.messageType,
+            _that.replyToMessageId,
+            _that.isEdited,
+            _that.isDeleted,
+            _that.isRead,
+            _that.createdAt,
+            _that.readAt,
+            _that.sender,
+            _that.replyToMessage);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(
+            String id,
+            @JsonKey(name: 'chat_id') String chatId,
+            @JsonKey(name: 'sender_id') String senderId,
+            @JsonKey(name: 'message_text') String messageText,
+            @JsonKey(name: 'message_type') String messageType,
+            @JsonKey(name: 'reply_to_message_id', defaultValue: null)
+            String? replyToMessageId,
+            @JsonKey(name: 'is_edited', defaultValue: false) bool isEdited,
+            @JsonKey(name: 'is_deleted', defaultValue: false) bool isDeleted,
+            @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
+            @JsonKey(name: 'created_at') DateTime createdAt,
+            @JsonKey(name: 'read_at') DateTime? readAt,
+            @JsonKey(name: 'sender') MessageUserDetailModel sender,
+            @JsonKey(name: 'reply_to_message', defaultValue: null)
+            MessageDetailModel? replyToMessage)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageDetailModel():
+        return $default(
+            _that.id,
+            _that.chatId,
+            _that.senderId,
+            _that.messageText,
+            _that.messageType,
+            _that.replyToMessageId,
+            _that.isEdited,
+            _that.isDeleted,
+            _that.isRead,
+            _that.createdAt,
+            _that.readAt,
+            _that.sender,
+            _that.replyToMessage);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(
+            String id,
+            @JsonKey(name: 'chat_id') String chatId,
+            @JsonKey(name: 'sender_id') String senderId,
+            @JsonKey(name: 'message_text') String messageText,
+            @JsonKey(name: 'message_type') String messageType,
+            @JsonKey(name: 'reply_to_message_id', defaultValue: null)
+            String? replyToMessageId,
+            @JsonKey(name: 'is_edited', defaultValue: false) bool isEdited,
+            @JsonKey(name: 'is_deleted', defaultValue: false) bool isDeleted,
+            @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
+            @JsonKey(name: 'created_at') DateTime createdAt,
+            @JsonKey(name: 'read_at') DateTime? readAt,
+            @JsonKey(name: 'sender') MessageUserDetailModel sender,
+            @JsonKey(name: 'reply_to_message', defaultValue: null)
+            MessageDetailModel? replyToMessage)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageDetailModel() when $default != null:
+        return $default(
+            _that.id,
+            _that.chatId,
+            _that.senderId,
+            _that.messageText,
+            _that.messageType,
+            _that.replyToMessageId,
+            _that.isEdited,
+            _that.isDeleted,
+            _that.isRead,
+            _that.createdAt,
+            _that.readAt,
+            _that.sender,
+            _that.replyToMessage);
+      case _:
+        return null;
+    }
   }
 }
 
@@ -228,7 +498,9 @@ class _MessageDetailModel extends MessageDetailModel {
       @JsonKey(name: 'is_read', defaultValue: false) required this.isRead,
       @JsonKey(name: 'created_at') required this.createdAt,
       @JsonKey(name: 'read_at') required this.readAt,
-      @JsonKey(name: 'sender') required this.sender})
+      @JsonKey(name: 'sender') required this.sender,
+      @JsonKey(name: 'reply_to_message', defaultValue: null)
+      this.replyToMessage})
       : super._();
   factory _MessageDetailModel.fromJson(Map<String, dynamic> json) =>
       _$MessageDetailModelFromJson(json);
@@ -268,6 +540,9 @@ class _MessageDetailModel extends MessageDetailModel {
   @override
   @JsonKey(name: 'sender')
   final MessageUserDetailModel sender;
+  @override
+  @JsonKey(name: 'reply_to_message', defaultValue: null)
+  final MessageDetailModel? replyToMessage;
 
   /// Create a copy of MessageDetailModel
   /// with the given fields replaced by the non-null parameter values.
@@ -307,7 +582,9 @@ class _MessageDetailModel extends MessageDetailModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
-            (identical(other.sender, sender) || other.sender == sender));
+            (identical(other.sender, sender) || other.sender == sender) &&
+            (identical(other.replyToMessage, replyToMessage) ||
+                other.replyToMessage == replyToMessage));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -325,11 +602,12 @@ class _MessageDetailModel extends MessageDetailModel {
       isRead,
       createdAt,
       readAt,
-      sender);
+      sender,
+      replyToMessage);
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender, replyToMessage: $replyToMessage)';
   }
 }
 
@@ -354,10 +632,14 @@ abstract mixin class _$MessageDetailModelCopyWith<$Res>
       @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
-      @JsonKey(name: 'sender') MessageUserDetailModel sender});
+      @JsonKey(name: 'sender') MessageUserDetailModel sender,
+      @JsonKey(name: 'reply_to_message', defaultValue: null)
+      MessageDetailModel? replyToMessage});
 
   @override
   $MessageUserDetailModelCopyWith<$Res> get sender;
+  @override
+  $MessageDetailModelCopyWith<$Res>? get replyToMessage;
 }
 
 /// @nodoc
@@ -385,6 +667,7 @@ class __$MessageDetailModelCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? readAt = freezed,
     Object? sender = null,
+    Object? replyToMessage = freezed,
   }) {
     return _then(_MessageDetailModel(
       id: null == id
@@ -435,6 +718,10 @@ class __$MessageDetailModelCopyWithImpl<$Res>
           ? _self.sender
           : sender // ignore: cast_nullable_to_non_nullable
               as MessageUserDetailModel,
+      replyToMessage: freezed == replyToMessage
+          ? _self.replyToMessage
+          : replyToMessage // ignore: cast_nullable_to_non_nullable
+              as MessageDetailModel?,
     ));
   }
 
@@ -445,6 +732,20 @@ class __$MessageDetailModelCopyWithImpl<$Res>
   $MessageUserDetailModelCopyWith<$Res> get sender {
     return $MessageUserDetailModelCopyWith<$Res>(_self.sender, (value) {
       return _then(_self.copyWith(sender: value));
+    });
+  }
+
+  /// Create a copy of MessageDetailModel
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageDetailModelCopyWith<$Res>? get replyToMessage {
+    if (_self.replyToMessage == null) {
+      return null;
+    }
+
+    return $MessageDetailModelCopyWith<$Res>(_self.replyToMessage!, (value) {
+      return _then(_self.copyWith(replyToMessage: value));
     });
   }
 }

@@ -164,7 +164,7 @@ class WebSocketNotifier extends _$WebSocketNotifier {
 
       final currentChat = ref.read(selectedChatProvider);
       if (currentChat?.id == chatId) {
-        ref.read(messageNotifierProvider.notifier).handleMessageReadEvent(data);
+        ref.read(messageProvider.notifier).handleMessageReadEvent(data);
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -246,20 +246,20 @@ class WebSocketNotifier extends _$WebSocketNotifier {
 
 @riverpod
 bool isWebSocketConnected(ref) {
-  final state = ref.watch(webSocketNotifierProvider);
+  final state = ref.watch(webSocketProvider);
 
   return state is _Connected;
 }
 
 @riverpod
 Future<void> autoConnectWebSocket(ref) async {
-  final notifier = ref.read(webSocketNotifierProvider.notifier);
-  final isAuthenticated = ref.read(authNotifierProvider).isAuthenticated;
+  final notifier = ref.read(webSocketProvider.notifier);
+  final isAuthenticated = ref.read(authProvider).isAuthenticated;
 
   if (isAuthenticated) {
     await Future.delayed(const Duration(seconds: 2));
 
-    final state = ref.read(webSocketNotifierProvider);
+    final state = ref.read(webSocketProvider);
     if (state is! _Connected && state is! _Connecting) {
       await notifier.connect();
     }

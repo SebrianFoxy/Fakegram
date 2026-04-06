@@ -61,6 +61,7 @@ type MessageDetail struct {
     IsRead          bool         `json:"is_read"`
     ReadAt          *time.Time   `json:"read_at,omitempty"`
     Sender          *UserDetail  `json:"sender"`
+    ReplyToMessage  *MessageDetail `json:"reply_to_message,omitempty"`
 }
 
 type UserDetail struct {
