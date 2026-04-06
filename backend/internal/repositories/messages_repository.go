@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"fakegram-api/internal/models"
+
+	"github.com/lib/pq"
 )
 
 
@@ -151,7 +153,21 @@ func (r *MessageRepository) GetMessageDetailByID(ctx context.Context, messageID,
         AvatarURL: senderAvatarURL,
     }
     
-    return models.ToMessageDetail(msg, isRead, readAtPtr, sender), nil
+    msgDetail := models.ToMessageDetail(msg, isRead, readAtPtr, sender)
+    
+    if replyToMessageID != nil && *replyToMessageID != "" {
+        log.Printf("Loading reply message: %s", *replyToMessageID)
+        
+        replyMsgDetail, err := r.GetMessageDetailByID(ctx, *replyToMessageID, userID)
+        if err != nil {
+            log.Printf("Failed to load reply message: %v", err)
+        } else {
+            msgDetail.ReplyToMessage = replyMsgDetail
+            log.Printf("Reply message attached successfully")
+        }
+    }
+    
+    return msgDetail, nil
 }
 
 func (r *MessageRepository) GetMessagesByChat(ctx context.Context, userID, otherUserID string, cursor *time.Time, limit int, direction string) ([]*models.MessageDetail, bool, bool, int64, error) {
@@ -474,6 +490,7 @@ func (r *MessageRepository) getMessagesByTimeRange(ctx context.Context, userID, 
     if limit <= 0 {
         limit = 30
     }
+
     var query string
     var args []interface{}
 
@@ -571,6 +588,8 @@ func (r *MessageRepository) getMessagesByTimeRange(ctx context.Context, userID, 
     defer rows.Close()
     
     var messages []*models.MessageDetail
+    var replyIDs []string
+
     for rows.Next() {
         var message models.MessageDetail
         var replyToMessageID *string
@@ -640,8 +659,128 @@ func (r *MessageRepository) getMessagesByTimeRange(ctx context.Context, userID, 
             AvatarURL: senderAvatarURL,
         }
         
+        if replyToMessageID != nil && *replyToMessageID != "" {
+            replyIDs = append(replyIDs, *replyToMessageID)
+        }
+        
         messages = append(messages, &message)
+    }
+
+    if len(replyIDs) > 0 {
+        replyMap, err := r.getRepliedMessagesMap(ctx, replyIDs, userID)
+        if err != nil {
+            log.Printf("Warning: failed to load replied messages: %v", err)
+        } else {
+            for _, msg := range messages {
+                if msg.ReplyToMessageID != nil {
+                    if reply, exists := replyMap[*msg.ReplyToMessageID]; exists {
+                        msg.ReplyToMessage = reply
+                    }
+                }
+            }
+        }
     }
     
     return messages, nil
+}
+
+func (r *MessageRepository) getRepliedMessagesMap(ctx context.Context, messageIDs []string, userID string) (map[string]*models.MessageDetail, error) {
+    if len(messageIDs) == 0 {
+        return make(map[string]*models.MessageDetail), nil
+    }
+    
+    query := `
+        SELECT 
+            m.id,
+            m.chat_id,
+            m.sender_id,
+            m.message_text,
+            m.message_type,
+            m.reply_to_message_id,
+            m.is_edited,
+            m.is_deleted,
+            m.created_at,
+            u.name,
+            u.surname,
+            u.nickname,
+            u.avatar_url,
+            COALESCE(mrs.is_read, false) as is_read
+        FROM messages m
+        INNER JOIN users u ON m.sender_id = u.id
+        LEFT JOIN (
+            SELECT DISTINCT message_id, true as is_read
+            FROM message_read_status 
+            WHERE user_id = $2
+        ) mrs ON m.id = mrs.message_id
+        WHERE m.id = ANY($1) AND m.is_deleted = false
+    `
+    
+    rows, err := r.DB.QueryContext(ctx, query, pq.Array(messageIDs), userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get replied messages: %w", err)
+    }
+    defer rows.Close()
+    
+    result := make(map[string]*models.MessageDetail)
+    
+    for rows.Next() {
+        var id, chatID, senderID, messageText, messageType string
+        var replyToMessageID *string
+        var isEdited, isDeleted, isRead bool
+        var createdAt time.Time
+        var senderName, senderSurname, senderNickname string
+        var senderAvatarURL *string
+        
+        err := rows.Scan(
+            &id,
+            &chatID,
+            &senderID,
+            &messageText,
+            &messageType,
+            &replyToMessageID,
+            &isEdited,
+            &isDeleted,
+            &createdAt,
+            &senderName,
+            &senderSurname,
+            &senderNickname,
+            &senderAvatarURL,
+            &isRead,
+        )
+        if err != nil {
+            log.Printf("Scan error in getRepliedMessagesMap: %v", err)
+            continue
+        }
+        
+        msg := &models.Message{
+            ID:               id,
+            ChatID:           chatID,
+            SenderID:         senderID,
+            MessageText:      messageText,
+            MessageType:      models.MessageType(messageType),
+            ReplyToMessageID: replyToMessageID,
+            IsEdited:         isEdited,
+            IsDeleted:        isDeleted,
+            CreatedAt:        createdAt,
+        }
+        
+        sender := &models.UserDetail{
+            Name:      senderName,
+            Surname:   senderSurname,
+            Nickname:  senderNickname,
+            AvatarURL: senderAvatarURL,
+        }
+        
+        msgDetail := &models.MessageDetail{
+            Message: msg,
+            IsRead:  isRead,
+            Sender:  sender,
+        }
+        
+        result[id] = msgDetail
+        log.Printf("Loaded reply message: ID=%s, Text=%s", id, messageText)
+    }
+    
+    log.Printf("Total replied messages loaded: %d", len(result))
+    return result, nil
 }

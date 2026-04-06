@@ -43,14 +43,19 @@ class ChatHeader extends ConsumerWidget {
     );
   }
 
+  ImageProvider _getAvatarImage() {
+    if (chat.otherUser.avatarUrl != null) {
+      return NetworkImage(chat.otherUser.avatarUrl!);
+    }
+    return const AssetImage('assets/default-avatar.png');
+  }
+
   Widget _buildAvatar(ThemeData theme) {
     return Stack(
       children: [
         CircleAvatar(
           radius: 24,
-          backgroundImage: chat.otherUser.avatarUrl != null
-              ? NetworkImage(chat.otherUser.avatarUrl!)
-              : const AssetImage('assets/default-avatar.png') as ImageProvider,
+          backgroundImage: _getAvatarImage(),
         ),
         if (chat.otherUser.isOnline) _buildOnlineIndicator(theme),
       ],

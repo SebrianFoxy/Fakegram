@@ -34,7 +34,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
   }
 
   Future<void> _handleRegister() async {
-    await ref.read(authNotifierProvider.notifier).registration(
+    await ref.read(authProvider.notifier).registration(
       _emailController.text.trim(),
       _firstNameController.text,
       _lastNameController.text,
@@ -45,7 +45,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
+    final authState = ref.watch(authProvider);
 
     void _showError(String message) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -67,7 +67,7 @@ class _RegistrationPageState extends ConsumerState<RegistrationPage> {
       });
     }
 
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
       switch (next) {
         case AuthStateInitial(:final error):
           if (error != null && error.isNotEmpty) {

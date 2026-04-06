@@ -30,7 +30,7 @@ class AuthNotifier extends _$AuthNotifier {
 
       await Future.delayed(const Duration(milliseconds: 100));
 
-      ref.read(webSocketNotifierProvider.notifier).connect();
+      ref.read(webSocketProvider.notifier).connect();
     } on AppException catch(error) {
       debugPrint('Auth check failed: ${error.message}');
       state = AuthState.initial();
@@ -59,7 +59,7 @@ class AuthNotifier extends _$AuthNotifier {
       state = AuthState.authenticated();
 
       await Future.delayed(const Duration(milliseconds: 50));
-      ref.read(webSocketNotifierProvider.notifier).connect();
+      ref.read(webSocketProvider.notifier).connect();
     } on DioException catch(error) {
       final exception = ErrorHandler.handleDioError(error);
       state = AuthState.initial(error: exception.message);
@@ -98,7 +98,7 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<void> logout() async {
     try {
-      ref.read(webSocketNotifierProvider.notifier).disconnect();
+      ref.read(webSocketProvider.notifier).disconnect();
 
       await getIt<UserLocalDatasource>().deleteUserInfo();
       await getIt<AuthRepository>().logout();

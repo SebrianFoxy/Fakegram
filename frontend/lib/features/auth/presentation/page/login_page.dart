@@ -36,7 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    await ref.read(authNotifierProvider.notifier).login(
+    await ref.read(authProvider.notifier).login(
       _emailController.text.trim(),
       _passwordController.text,
     );
@@ -44,9 +44,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
+    final authState = ref.watch(authProvider);
 
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
       switch (next) {
         case AuthStateInitial(:final error):
           if (error != null && error.isNotEmpty) {

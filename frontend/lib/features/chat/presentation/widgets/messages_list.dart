@@ -56,7 +56,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    final messageState = ref.read(messageNotifierProvider);
+    final messageState = ref.read(messageProvider);
     if (messageState is! MessageStateSuccess) return;
 
     final firstVisibleIndex = positions
@@ -111,7 +111,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
     _readReceiptDebounce = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
-        ref.read(messageNotifierProvider.notifier).markMessagesAsReadOnView(
+        ref.read(messageProvider.notifier).markMessagesAsReadOnView(
           visibleMessageIds,
         );
       }
@@ -128,7 +128,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     });
 
     try {
-      await ref.read(messageNotifierProvider.notifier).loadOlderMessages();
+      await ref.read(messageProvider.notifier).loadOlderMessages();
 
       if (_initialScrollDone && mounted) {
         final newItemCount = _getCurrentMessageCount();
@@ -163,7 +163,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     });
 
     try {
-      await ref.read(messageNotifierProvider.notifier).loadNewerMessages();
+      await ref.read(messageProvider.notifier).loadNewerMessages();
 
       if (_initialScrollDone && mounted && currentFirstVisibleIndex != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -184,7 +184,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   int _getCurrentMessageCount() {
-    final messageState = ref.read(messageNotifierProvider);
+    final messageState = ref.read(messageProvider);
     if (messageState is MessageStateSuccess) {
       return messageState.messages.length;
     }
@@ -214,7 +214,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
   @override
   Widget build(BuildContext context) {
-    final messageState = ref.watch(messageNotifierProvider);
+    final messageState = ref.watch(messageProvider);
 
     if (messageState is MessageStateSuccess && !_initialScrollDone) {
       final targetIndex = messageState.firstUnreadIndex ??
@@ -292,6 +292,12 @@ class _MessagesListState extends ConsumerState<MessagesList> {
                   if (isFirstUnread) _buildUnreadIndicator(),
                   MessageBubble(
                     message: message,
+                    onReply: () => _replyToMessage(message),
+                    onCopyMessage: () => _copyMessage(message),
+                    onDeleteMessage: () => _deleteMessage(message),
+                    onEditMessage: () => _editMessage(message),
+                    onForwardMessage: () => _forwardMessage(message),
+                    onSelectMessage: () => _selectMessage(message),
                   ),
                 ],
               );
@@ -489,5 +495,35 @@ class _MessagesListState extends ConsumerState<MessagesList> {
         ],
       ),
     );
+  }
+
+  void _replyToMessage(MessageEntity message) {
+    // TODO: Реализовать ответ на сообщение
+    print('Reply to: ${message.id}');
+    ref.read(messageProvider.notifier).setReplyingMessage(message);
+  }
+
+  void _copyMessage(MessageEntity message) {
+    print('Copy message: ${message.id}');
+  }
+
+  void _deleteMessage(MessageEntity message) {
+    // TODO: Показать диалог подтверждения и удалить
+    print('Delete message: ${message.id}');
+  }
+
+  void _editMessage(MessageEntity message) {
+    // TODO: Открыть диалог редактирования
+    print('Edit message: ${message.id}');
+  }
+
+  void _forwardMessage(MessageEntity message) {
+    // TODO: Открыть выбор чата для пересылки
+    print('Forward message: ${message.id}');
+  }
+
+  void _selectMessage(MessageEntity message) {
+    // TODO: Включить режим выбора сообщений
+    print('Select message: ${message.id}');
   }
 }

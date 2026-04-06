@@ -22,7 +22,7 @@ GoRouter goRouter(Ref ref) {
     initialLocation: '/login',
     refreshListenable: refreshNotifier,
     redirect: (context, state) {
-      final authState = ref.read(authNotifierProvider);
+      final authState = ref.read(authProvider);
       final currentPath = state.uri.path;
       final publicRoutes = ['/login', '/registration'];
       final isPublicRoute = publicRoutes.contains(currentPath);
@@ -72,7 +72,7 @@ GoRouter goRouter(Ref ref) {
 class _GoRouterRefreshNotifier extends ChangeNotifier {
   _GoRouterRefreshNotifier(this.ref) {
     _subscription = ref.listen<AuthState>(
-      authNotifierProvider,
+      authProvider,
           (previous, next) {
         if (previous?.isAuthenticated == true &&
             next.isAuthenticated == false) {
@@ -88,7 +88,7 @@ class _GoRouterRefreshNotifier extends ChangeNotifier {
 
   void _resetRiverpodState() {
     ref.invalidate(selectedChatProvider);
-    ref.invalidate(chatNotifierProvider);
+    ref.invalidate(chatProvider);
   }
 
   @override

@@ -1,6 +1,5 @@
-// dart format width=80
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -171,6 +170,214 @@ class _$MessageResponseDTOCopyWithImpl<$Res>
     return $MessageCursorsModelCopyWith<$Res>(_self.cursors!, (value) {
       return _then(_self.copyWith(cursors: value));
     });
+  }
+}
+
+/// Adds pattern-matching-related methods to [MessageResponseDTO].
+extension MessageResponseDTOPatterns on MessageResponseDTO {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MessageResponseDTO value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseDTO() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MessageResponseDTO value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseDTO():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MessageResponseDTO value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseDTO() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(
+            @JsonKey(name: 'messages') List<MessageDetailModel> messages,
+            @JsonKey(name: 'count') int count,
+            @JsonKey(name: 'total_unread') int totalUnread,
+            @JsonKey(name: 'has_more_older') bool hasMoreOlder,
+            @JsonKey(name: 'has_more_newer') bool hasMoreNewer,
+            @JsonKey(name: 'first_msg_time') String? firstMsgTime,
+            @JsonKey(name: 'last_msg_time') String? lastMsgTime,
+            @JsonKey(name: 'cursors') MessageCursorsModel? cursors)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseDTO() when $default != null:
+        return $default(
+            _that.messages,
+            _that.count,
+            _that.totalUnread,
+            _that.hasMoreOlder,
+            _that.hasMoreNewer,
+            _that.firstMsgTime,
+            _that.lastMsgTime,
+            _that.cursors);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(
+            @JsonKey(name: 'messages') List<MessageDetailModel> messages,
+            @JsonKey(name: 'count') int count,
+            @JsonKey(name: 'total_unread') int totalUnread,
+            @JsonKey(name: 'has_more_older') bool hasMoreOlder,
+            @JsonKey(name: 'has_more_newer') bool hasMoreNewer,
+            @JsonKey(name: 'first_msg_time') String? firstMsgTime,
+            @JsonKey(name: 'last_msg_time') String? lastMsgTime,
+            @JsonKey(name: 'cursors') MessageCursorsModel? cursors)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseDTO():
+        return $default(
+            _that.messages,
+            _that.count,
+            _that.totalUnread,
+            _that.hasMoreOlder,
+            _that.hasMoreNewer,
+            _that.firstMsgTime,
+            _that.lastMsgTime,
+            _that.cursors);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(
+            @JsonKey(name: 'messages') List<MessageDetailModel> messages,
+            @JsonKey(name: 'count') int count,
+            @JsonKey(name: 'total_unread') int totalUnread,
+            @JsonKey(name: 'has_more_older') bool hasMoreOlder,
+            @JsonKey(name: 'has_more_newer') bool hasMoreNewer,
+            @JsonKey(name: 'first_msg_time') String? firstMsgTime,
+            @JsonKey(name: 'last_msg_time') String? lastMsgTime,
+            @JsonKey(name: 'cursors') MessageCursorsModel? cursors)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageResponseDTO() when $default != null:
+        return $default(
+            _that.messages,
+            _that.count,
+            _that.totalUnread,
+            _that.hasMoreOlder,
+            _that.hasMoreNewer,
+            _that.firstMsgTime,
+            _that.lastMsgTime,
+            _that.cursors);
+      case _:
+        return null;
+    }
   }
 }
 
