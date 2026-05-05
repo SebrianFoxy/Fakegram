@@ -7,7 +7,8 @@ const (
 )
 
 const (
-    EventMessageRead    = "message_read"   
+    EventMessageRead    = "message_read" 
+    EventMessageReadAll = "message_read_all"  
     EventMessageError   = "message_error"
     EventMessageSent    = "message_sent"
     EventMessageUpdated = "message_updated"

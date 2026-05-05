@@ -97,7 +97,7 @@ class ChatNotifier extends _$ChatNotifier {
 
       final chat = currentState.chats[chatIndex];
 
-      final currentUserId = ref.read(currentUserIdProvider).value;
+      final currentUserId = ref.read(currentUserIdProvider);
 
       if (userId == currentUserId) {
         debugPrint('👤 Текущий пользователь прочитал сообщения в чате $chatId');

@@ -284,6 +284,29 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
     }
   }
 
+  @override
+  void sendMessageAllRead(String chatId) {
+    if (_connectionStatus) {
+      try {
+        final message = WebSocketMessageEntity(
+          type: 'message_read_all',
+          payload: {
+            'chat_id': chatId,
+          },
+        );
+        _webSocketService.sendMessage(message);
+
+        if (kDebugMode) {
+          print('📤 Sent read receipt: chat=$chatId');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to send message_read_all: $e');
+        }
+      }
+    }
+  }
+
   void dispose() {
     _reconnectTimer?.cancel();
     _reconnectTimer = null;

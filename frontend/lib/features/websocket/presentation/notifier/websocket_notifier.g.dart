@@ -41,7 +41,7 @@ final class WebSocketNotifierProvider
   }
 }
 
-String _$webSocketNotifierHash() => r'dafa0cdba41c0b63dcb85ed78c7dedfbac13f7c2';
+String _$webSocketNotifierHash() => r'8baf0a9d63f304d3434fe4c2642544ff95dafe1f';
 
 abstract class _$WebSocketNotifier extends $Notifier<WebSocketState> {
   WebSocketState build();
@@ -132,4 +132,4 @@ final class AutoConnectWebSocketProvider
 }
 
 String _$autoConnectWebSocketHash() =>
-    r'f3d14f0f2c1ceff77a8950b97adf2bead63f9b0a';
+    r'be5d54b73ac9bcffd85afa7fdf607e7519961dc7';

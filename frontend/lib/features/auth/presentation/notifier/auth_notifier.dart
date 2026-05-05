@@ -7,8 +7,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/network/error_handling/error_handler.dart';
 import '../../../../core/network/error_handling/exceptions.dart';
+import '../../../chat/presentation/notifier/chat/chat_notifier.dart';
+import '../../../chat/presentation/notifier/message/message_notifier.dart';
 import '../../../websocket/presentation/notifier/websocket_notifier.dart';
-
+import '../providers/user_providers.dart';
 
 part 'auth_notifier.freezed.dart';
 part 'auth_notifier.g.dart';
@@ -53,8 +55,9 @@ class AuthNotifier extends _$AuthNotifier {
     state = const AuthState.loading();
     try {
       final authRepository = getIt<AuthRepository>();
+      final result = await authRepository.login(email: email, password: password);
 
-      await authRepository.login(email: email, password: password);
+      ref.read(currentUserIdProvider.notifier).setUserId(result.user.id);
 
       state = AuthState.authenticated();
 
@@ -98,10 +101,12 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<void> logout() async {
     try {
-      ref.read(webSocketProvider.notifier).disconnect();
+      await ref.read(webSocketProvider.notifier).disconnect();
 
       await getIt<UserLocalDatasource>().deleteUserInfo();
       await getIt<AuthRepository>().logout();
+
+      ref.read(currentUserIdProvider.notifier).clear();
 
       state = const AuthState.initial();
     } catch (error) {

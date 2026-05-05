@@ -413,6 +413,56 @@ abstract class _$MessageRead extends $Notifier<Map<String, dynamic>?> {
   }
 }
 
+@ProviderFor(MessageReadAll)
+const messageReadAllProvider = MessageReadAllProvider._();
+
+final class MessageReadAllProvider
+    extends $NotifierProvider<MessageReadAll, Map<String, dynamic>?> {
+  const MessageReadAllProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'messageReadAllProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageReadAllHash();
+
+  @$internal
+  @override
+  MessageReadAll create() => MessageReadAll();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, dynamic>? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, dynamic>?>(value),
+    );
+  }
+}
+
+String _$messageReadAllHash() => r'afc5bd6ae91dbdca48d793f69cae2f6dbfa706f2';
+
+abstract class _$MessageReadAll extends $Notifier<Map<String, dynamic>?> {
+  Map<String, dynamic>? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<Map<String, dynamic>?, Map<String, dynamic>?>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<Map<String, dynamic>?, Map<String, dynamic>?>,
+        Map<String, dynamic>?,
+        Object?,
+        Object?>;
+    element.handleValue(ref, created);
+  }
+}
+
 @ProviderFor(MessageReadStatus)
 const messageReadStatusProvider = MessageReadStatusFamily._();
 

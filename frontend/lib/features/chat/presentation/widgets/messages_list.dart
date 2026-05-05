@@ -17,6 +17,9 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   bool _isLoadingNewer = false;
   bool _initialScrollDone = false;
   bool _positionListenerEnabled = false;
+  bool _isNavigatingToMessage = false;
+  bool _isHandlingScrollAction = false;
+  bool _blockAutoLoad = false;
   int? _lastFirstVisibleIndex;
   Timer? _readReceiptDebounce;
   final Set<String> _processedMessageIds = {};
@@ -45,6 +48,9 @@ class _MessagesListState extends ConsumerState<MessagesList> {
       _positionListenerEnabled = false;
       _isLoadingOlder = false;
       _isLoadingNewer = false;
+      _isNavigatingToMessage = false;
+      _blockAutoLoad = false;
+      _isHandlingScrollAction = false;
       _lastFirstVisibleIndex = null;
       _processedMessageIds.clear();
     }
@@ -52,6 +58,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
   void _onPositionChange() {
     if (!_positionListenerEnabled) return;
+    if (_isNavigatingToMessage || _blockAutoLoad) return;
 
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
@@ -68,21 +75,23 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
     _lastFirstVisibleIndex = firstVisibleIndex;
 
-    if (firstVisibleIndex <= 5 &&
-        messageState.hasMoreOlder &&
-        !_isLoadingOlder) {
-      _loadOlderMessages();
-    }
-
     final lastVisibleIndex = positions
         .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
         .map((p) => p.index)
         .fold<int?>(null, (max, index) => max == null ? index : (index > max ? index : max));
 
+    if (firstVisibleIndex <= 5 &&
+        messageState.hasMoreOlder &&
+        !_isLoadingOlder &&
+        !_isNavigatingToMessage) {
+      _loadOlderMessages();
+    }
+
     if (lastVisibleIndex != null &&
         lastVisibleIndex >= messageState.messages.length - 5 &&
         messageState.hasMoreNewer &&
-        !_isLoadingNewer) {
+        !_isLoadingNewer &&
+        !_isNavigatingToMessage) {
       _loadNewerMessages();
     }
 
@@ -193,19 +202,29 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
   void _scrollToPosition(int index) {
     if (!_initialScrollDone && mounted) {
+      _isNavigatingToMessage = true;
+      _blockAutoLoad = true;
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_itemScrollController.isAttached) {
-          _itemScrollController.jumpTo(
-            index: index,
-          );
+          _itemScrollController.jumpTo(index: index);
 
           Future.delayed(const Duration(milliseconds: 300), () {
             if (mounted) {
               setState(() {
                 _initialScrollDone = true;
                 _positionListenerEnabled = true;
+                _isNavigatingToMessage = false;
+                _blockAutoLoad = false;
               });
             }
+          });
+        } else {
+          setState(() {
+            _initialScrollDone = true;
+            _positionListenerEnabled = true;
+            _isNavigatingToMessage = false;
+            _blockAutoLoad = false;
           });
         }
       });
@@ -215,6 +234,15 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   @override
   Widget build(BuildContext context) {
     final messageState = ref.watch(messageProvider);
+
+    ref.listen<({String messageId, String messageDate})?>(
+      scrollToSentMessageActionProvider,
+          (previous, next) {
+        if (next != null && !_isHandlingScrollAction) {
+          _handleScrollToSentMessage(next.messageId, next.messageDate);
+        }
+      },
+    );
 
     if (messageState is MessageStateSuccess && !_initialScrollDone) {
       final targetIndex = messageState.firstUnreadIndex ??
@@ -283,7 +311,8 @@ class _MessagesListState extends ConsumerState<MessagesList> {
             itemBuilder: (context, index) {
               final message = messages[index];
               final showDate = _shouldShowDate(index, messages);
-              final isFirstUnread = index == firstUnreadIndex;
+              final isFirstUnread = firstUnreadIndex != null &&
+                  index == firstUnreadIndex;
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
@@ -498,9 +527,13 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   void _replyToMessage(MessageEntity message) {
-    // TODO: Реализовать ответ на сообщение
-    print('Reply to: ${message.id}');
+    debugPrint('Reply to: ${message.id}');
     ref.read(messageProvider.notifier).setReplyingMessage(message);
+
+    final focusNode = ref.read(messageInputFocusProvider);
+    if (focusNode != null) {
+      focusNode.requestFocus();
+    }
   }
 
   void _copyMessage(MessageEntity message) {
@@ -525,5 +558,100 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   void _selectMessage(MessageEntity message) {
     // TODO: Включить режим выбора сообщений
     print('Select message: ${message.id}');
+  }
+
+  Future<void> _handleScrollToSentMessage(String messageId, String messageDate) async {
+    if (_isHandlingScrollAction) return;
+    _isHandlingScrollAction = true;
+    _blockAutoLoad = true;
+
+    try {
+      final messageState = ref.read(messageProvider);
+      if (messageState is! MessageStateSuccess) return;
+
+      final messages = messageState.messages;
+      if (messages.isEmpty) return;
+
+      final bool isLastFiveVisible = _checkIfLastMessagesVisible(5);
+
+      if (isLastFiveVisible) {
+        _scrollToBottom();
+      } else {
+        await ref.read(messageProvider.notifier).jumpToMessage(
+          messageId: messageId,
+          messageDate: messageDate,
+        );
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToMessageById(messageId);
+        });
+      }
+    } finally {
+      ref.read(scrollToSentMessageActionProvider.notifier).state = null;
+      _isHandlingScrollAction = false;
+
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _blockAutoLoad = false;
+        }
+      });
+    }
+  }
+
+  void _scrollToBottom() {
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return;
+
+    final messages = messageState.messages;
+    if (messages.isEmpty) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_itemScrollController.isAttached && mounted) {
+        _itemScrollController.scrollTo(
+          index: messages.length - 1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          alignment: 0.7,
+        );
+      }
+    });
+  }
+
+  void _scrollToMessageById(String messageId) {
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return;
+
+    final messages = messageState.messages;
+    final targetIndex = messages.indexWhere((m) => m.id == messageId);
+
+    if (targetIndex != -1 && _itemScrollController.isAttached) {
+      _itemScrollController.scrollTo(
+        index: targetIndex,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        alignment: 0.3,
+      );
+    }
+  }
+
+  bool _checkIfLastMessagesVisible(int count) {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return false;
+
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return false;
+
+    final messages = messageState.messages;
+    final messagesLength = messages.length;
+
+    if (messagesLength < count) return true;
+
+    final maxVisibleIndex = positions
+        .map((pos) => pos.index)
+        .reduce((max, index) => index > max ? index : max);
+
+    final lastMessagesStartIndex = messagesLength - count;
+
+    return maxVisibleIndex >= lastMessagesStartIndex;
   }
 }

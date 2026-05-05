@@ -22,7 +22,7 @@ class MessageBubble extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentUserId = ref.watch(currentUserIdProvider).value;
+    final currentUserId = ref.watch(currentUserIdProvider);
     final isSentByMe = message.senderId == currentUserId.toString();
 
     final bubbleView = MessageBubbleView(

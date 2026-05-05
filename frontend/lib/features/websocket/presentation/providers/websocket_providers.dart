@@ -84,6 +84,16 @@ class MessageRead extends _$MessageRead {
 }
 
 @riverpod
+class MessageReadAll extends _$MessageReadAll {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
 class MessageReadStatus extends _$MessageReadStatus {
   @override
   Map<String, DateTime>? build(String chatId) => null;

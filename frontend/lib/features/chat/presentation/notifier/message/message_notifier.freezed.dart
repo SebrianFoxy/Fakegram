@@ -13,12 +13,7 @@ part of 'message_notifier.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$MessageState implements DiagnosticableTreeMixin {
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties..add(DiagnosticsProperty('type', 'MessageState'));
-  }
-
+mixin _$MessageState {
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
@@ -29,7 +24,7 @@ mixin _$MessageState implements DiagnosticableTreeMixin {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+  String toString() {
     return 'MessageState()';
   }
 }
@@ -166,6 +161,7 @@ extension MessageStatePatterns on MessageState {
             bool isLoadingMore,
             bool isLoadingNewer,
             MessageEntity? replyingToMessage,
+            String? jumpToMessageId,
             String? olderCursor,
             String? newerCursor,
             int? totalUnread,
@@ -189,6 +185,7 @@ extension MessageStatePatterns on MessageState {
             _that.isLoadingMore,
             _that.isLoadingNewer,
             _that.replyingToMessage,
+            _that.jumpToMessageId,
             _that.olderCursor,
             _that.newerCursor,
             _that.totalUnread,
@@ -225,6 +222,7 @@ extension MessageStatePatterns on MessageState {
             bool isLoadingMore,
             bool isLoadingNewer,
             MessageEntity? replyingToMessage,
+            String? jumpToMessageId,
             String? olderCursor,
             String? newerCursor,
             int? totalUnread,
@@ -247,6 +245,7 @@ extension MessageStatePatterns on MessageState {
             _that.isLoadingMore,
             _that.isLoadingNewer,
             _that.replyingToMessage,
+            _that.jumpToMessageId,
             _that.olderCursor,
             _that.newerCursor,
             _that.totalUnread,
@@ -280,6 +279,7 @@ extension MessageStatePatterns on MessageState {
             bool isLoadingMore,
             bool isLoadingNewer,
             MessageEntity? replyingToMessage,
+            String? jumpToMessageId,
             String? olderCursor,
             String? newerCursor,
             int? totalUnread,
@@ -302,6 +302,7 @@ extension MessageStatePatterns on MessageState {
             _that.isLoadingMore,
             _that.isLoadingNewer,
             _that.replyingToMessage,
+            _that.jumpToMessageId,
             _that.olderCursor,
             _that.newerCursor,
             _that.totalUnread,
@@ -317,13 +318,8 @@ extension MessageStatePatterns on MessageState {
 
 /// @nodoc
 
-class MessageStateInitial with DiagnosticableTreeMixin implements MessageState {
+class MessageStateInitial implements MessageState {
   const MessageStateInitial();
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties..add(DiagnosticsProperty('type', 'MessageState.initial'));
-  }
 
   @override
   bool operator ==(Object other) {
@@ -335,20 +331,15 @@ class MessageStateInitial with DiagnosticableTreeMixin implements MessageState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+  String toString() {
     return 'MessageState.initial()';
   }
 }
 
 /// @nodoc
 
-class MessageStateLoading with DiagnosticableTreeMixin implements MessageState {
+class MessageStateLoading implements MessageState {
   const MessageStateLoading();
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties..add(DiagnosticsProperty('type', 'MessageState.loading'));
-  }
 
   @override
   bool operator ==(Object other) {
@@ -360,14 +351,14 @@ class MessageStateLoading with DiagnosticableTreeMixin implements MessageState {
   int get hashCode => runtimeType.hashCode;
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+  String toString() {
     return 'MessageState.loading()';
   }
 }
 
 /// @nodoc
 
-class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
+class MessageStateSuccess implements MessageState {
   const MessageStateSuccess(
       {required final List<MessageEntity> messages,
       required this.hasMoreOlder,
@@ -375,6 +366,7 @@ class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
       required this.isLoadingMore,
       required this.isLoadingNewer,
       this.replyingToMessage,
+      this.jumpToMessageId,
       this.olderCursor,
       this.newerCursor,
       this.totalUnread,
@@ -394,6 +386,7 @@ class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
   final bool isLoadingMore;
   final bool isLoadingNewer;
   final MessageEntity? replyingToMessage;
+  final String? jumpToMessageId;
   final String? olderCursor;
   final String? newerCursor;
   final int? totalUnread;
@@ -406,23 +399,6 @@ class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
   @pragma('vm:prefer-inline')
   $MessageStateSuccessCopyWith<MessageStateSuccess> get copyWith =>
       _$MessageStateSuccessCopyWithImpl<MessageStateSuccess>(this, _$identity);
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties
-      ..add(DiagnosticsProperty('type', 'MessageState.success'))
-      ..add(DiagnosticsProperty('messages', messages))
-      ..add(DiagnosticsProperty('hasMoreOlder', hasMoreOlder))
-      ..add(DiagnosticsProperty('hasMoreNewer', hasMoreNewer))
-      ..add(DiagnosticsProperty('isLoadingMore', isLoadingMore))
-      ..add(DiagnosticsProperty('isLoadingNewer', isLoadingNewer))
-      ..add(DiagnosticsProperty('replyingToMessage', replyingToMessage))
-      ..add(DiagnosticsProperty('olderCursor', olderCursor))
-      ..add(DiagnosticsProperty('newerCursor', newerCursor))
-      ..add(DiagnosticsProperty('totalUnread', totalUnread))
-      ..add(DiagnosticsProperty('firstUnreadIndex', firstUnreadIndex))
-      ..add(DiagnosticsProperty('error', error));
-  }
 
   @override
   bool operator ==(Object other) {
@@ -440,6 +416,8 @@ class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
                 other.isLoadingNewer == isLoadingNewer) &&
             (identical(other.replyingToMessage, replyingToMessage) ||
                 other.replyingToMessage == replyingToMessage) &&
+            (identical(other.jumpToMessageId, jumpToMessageId) ||
+                other.jumpToMessageId == jumpToMessageId) &&
             (identical(other.olderCursor, olderCursor) ||
                 other.olderCursor == olderCursor) &&
             (identical(other.newerCursor, newerCursor) ||
@@ -460,6 +438,7 @@ class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
       isLoadingMore,
       isLoadingNewer,
       replyingToMessage,
+      jumpToMessageId,
       olderCursor,
       newerCursor,
       totalUnread,
@@ -467,8 +446,8 @@ class MessageStateSuccess with DiagnosticableTreeMixin implements MessageState {
       error);
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'MessageState.success(messages: $messages, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, isLoadingMore: $isLoadingMore, isLoadingNewer: $isLoadingNewer, replyingToMessage: $replyingToMessage, olderCursor: $olderCursor, newerCursor: $newerCursor, totalUnread: $totalUnread, firstUnreadIndex: $firstUnreadIndex, error: $error)';
+  String toString() {
+    return 'MessageState.success(messages: $messages, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, isLoadingMore: $isLoadingMore, isLoadingNewer: $isLoadingNewer, replyingToMessage: $replyingToMessage, jumpToMessageId: $jumpToMessageId, olderCursor: $olderCursor, newerCursor: $newerCursor, totalUnread: $totalUnread, firstUnreadIndex: $firstUnreadIndex, error: $error)';
   }
 }
 
@@ -486,6 +465,7 @@ abstract mixin class $MessageStateSuccessCopyWith<$Res>
       bool isLoadingMore,
       bool isLoadingNewer,
       MessageEntity? replyingToMessage,
+      String? jumpToMessageId,
       String? olderCursor,
       String? newerCursor,
       int? totalUnread,
@@ -513,6 +493,7 @@ class _$MessageStateSuccessCopyWithImpl<$Res>
     Object? isLoadingMore = null,
     Object? isLoadingNewer = null,
     Object? replyingToMessage = freezed,
+    Object? jumpToMessageId = freezed,
     Object? olderCursor = freezed,
     Object? newerCursor = freezed,
     Object? totalUnread = freezed,
@@ -544,6 +525,10 @@ class _$MessageStateSuccessCopyWithImpl<$Res>
           ? _self.replyingToMessage
           : replyingToMessage // ignore: cast_nullable_to_non_nullable
               as MessageEntity?,
+      jumpToMessageId: freezed == jumpToMessageId
+          ? _self.jumpToMessageId
+          : jumpToMessageId // ignore: cast_nullable_to_non_nullable
+              as String?,
       olderCursor: freezed == olderCursor
           ? _self.olderCursor
           : olderCursor // ignore: cast_nullable_to_non_nullable
@@ -584,7 +569,7 @@ class _$MessageStateSuccessCopyWithImpl<$Res>
 
 /// @nodoc
 
-class MessageStateError with DiagnosticableTreeMixin implements MessageState {
+class MessageStateError implements MessageState {
   const MessageStateError({required this.error});
 
   final Object error;
@@ -595,13 +580,6 @@ class MessageStateError with DiagnosticableTreeMixin implements MessageState {
   @pragma('vm:prefer-inline')
   $MessageStateErrorCopyWith<MessageStateError> get copyWith =>
       _$MessageStateErrorCopyWithImpl<MessageStateError>(this, _$identity);
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties
-      ..add(DiagnosticsProperty('type', 'MessageState.error'))
-      ..add(DiagnosticsProperty('error', error));
-  }
 
   @override
   bool operator ==(Object other) {
@@ -616,7 +594,7 @@ class MessageStateError with DiagnosticableTreeMixin implements MessageState {
       Object.hash(runtimeType, const DeepCollectionEquality().hash(error));
 
   @override
-  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
+  String toString() {
     return 'MessageState.error(error: $error)';
   }
 }

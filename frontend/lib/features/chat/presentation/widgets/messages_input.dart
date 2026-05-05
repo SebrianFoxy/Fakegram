@@ -22,9 +22,18 @@ class _MessageInputState extends ConsumerState<MessageInput> {
   bool _isSending = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(messageInputFocusProvider.notifier).state = _focusNode;
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _focusNode.dispose();
+
     super.dispose();
   }
 
