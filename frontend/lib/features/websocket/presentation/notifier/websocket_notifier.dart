@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:fakegram/features/auth/presentation/notifier/auth_notifier.dart';
+import 'package:fakegram/features/chat/domain/entities/message_read_all_entity.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:fakegram/core/di/service_locator.dart';
@@ -36,6 +37,13 @@ class WebSocketNotifier extends _$WebSocketNotifier {
         }
       },
     );
+
+    Future.microtask(() async {
+      if (await _repository.isConnected && state is! _Connected) {
+        state = const WebSocketState.connected();
+        _subscribeToEvents();
+      }
+    });
 
     ref.onDispose(() {
       _dispose();
@@ -104,34 +112,44 @@ class WebSocketNotifier extends _$WebSocketNotifier {
       print('📨 WebSocket event: ${event.event}');
     }
 
-    switch (event.event) {
-      case 'chat_list_update':
-        ref.read(chatUpdateProvider.notifier).update(event.data);
-        break;
-      case 'new_chat_created':
-        ref.read(newChatProvider.notifier).update(event.data);
-        break;
-      case 'message_list_update':
-        _handleMessageListUpdate(event.data);
-        break;
-      case 'message_sent':
-        ref.read(newMessageProvider.notifier).update(event.data);
-        break;
-      case 'message_read':
-        _handleMessageRead(event.data);
-        break;
-      case 'user_typing':
-        ref.read(typingStatusProvider.notifier).update(event.data);
-        break;
-      case 'unread_count_update':
-        ref.read(unreadCountUpdateProvider.notifier).update(event.data);
-        break;
-      case 'user_online':
-        ref.read(userOnlineStatusProvider.notifier).update(event.data);
-        break;
-      case 'user_offline':
-        ref.read(userOnlineStatusProvider.notifier).update(event.data);
-        break;
+    try {
+      switch (event.event) {
+        case 'chat_list_update':
+          ref.read(chatUpdateProvider.notifier).update(event.data);
+          break;
+        case 'new_chat_created':
+          ref.read(newChatProvider.notifier).update(event.data);
+          break;
+        case 'message_list_update':
+          _handleMessageListUpdate(event.data);
+          break;
+        case 'message_sent':
+          ref.read(newMessageProvider.notifier).update(event.data);
+          break;
+        case 'message_read':
+          _handleMessageRead(event.data);
+          break;
+        case 'message_read_all':
+          _handleMessageAllRead(event.data);
+          break;
+        case 'user_typing':
+          ref.read(typingStatusProvider.notifier).update(event.data);
+          break;
+        case 'unread_count_update':
+          ref.read(unreadCountUpdateProvider.notifier).update(event.data);
+          break;
+        case 'user_online':
+          ref.read(userOnlineStatusProvider.notifier).update(event.data);
+          break;
+        case 'user_offline':
+          ref.read(userOnlineStatusProvider.notifier).update(event.data);
+          break;
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('❌ Error handling WebSocket event ${event.event}: $e');
+        print(stackTrace);
+      }
     }
   }
 
@@ -164,11 +182,32 @@ class WebSocketNotifier extends _$WebSocketNotifier {
 
       final currentChat = ref.read(selectedChatProvider);
       if (currentChat?.id == chatId) {
-        ref.read(messageNotifierProvider.notifier).handleMessageReadEvent(data);
+        ref.read(messageProvider.notifier).handleMessageReadEvent(data);
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Error handling message_read event: $e');
+        print(stackTrace);
+      }
+    }
+  }
+
+  void _handleMessageAllRead(Map<String, dynamic> data) {
+    try {
+      final readEntity = MessageReadAllEntity.fromJson(data);
+      final chatId = readEntity.chatId;
+      final currentChat = ref.read(selectedChatProvider);
+
+      if (kDebugMode) {
+        print('All messages read in chat ${readEntity.chatId} by user ${readEntity.userId}');
+      }
+
+      if (currentChat?.id == chatId) {
+        ref.read(messageProvider.notifier).handleMessageReadAllEvent(data);
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('Error handling message_read_all event: $e');
         print(stackTrace);
       }
     }
@@ -237,6 +276,12 @@ class WebSocketNotifier extends _$WebSocketNotifier {
     }
   }
 
+  void sendMessageAllRead(String chatId) {
+    if (state is _Connected) {
+      _repository.sendMessageAllRead(chatId);
+    }
+  }
+
   bool get isConnected => state is _Connected;
   bool get isConnecting => state is _Connecting;
   bool get isDisconnected => state is _Disconnected;
@@ -246,22 +291,29 @@ class WebSocketNotifier extends _$WebSocketNotifier {
 
 @riverpod
 bool isWebSocketConnected(ref) {
-  final state = ref.watch(webSocketNotifierProvider);
+  final state = ref.watch(webSocketProvider);
 
   return state is _Connected;
 }
 
 @riverpod
 Future<void> autoConnectWebSocket(ref) async {
-  final notifier = ref.read(webSocketNotifierProvider.notifier);
-  final isAuthenticated = ref.read(authNotifierProvider).isAuthenticated;
+  final notifier = ref.read(webSocketProvider.notifier);
 
-  if (isAuthenticated) {
-    await Future.delayed(const Duration(seconds: 2));
+  try {
+    final isAuthenticated = ref.read(authProvider).isAuthenticated;
 
-    final state = ref.read(webSocketNotifierProvider);
-    if (state is! _Connected && state is! _Connecting) {
-      await notifier.connect();
+    if (isAuthenticated) {
+      await Future.delayed(const Duration(seconds: 2));
+
+      final state = ref.read(webSocketProvider);
+      if (state is! _Connected && state is! _Connecting) {
+        await notifier.connect();
+      }
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('⚠️ autoConnectWebSocket error: $e');
     }
   }
 }

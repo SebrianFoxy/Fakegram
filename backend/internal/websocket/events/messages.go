@@ -185,9 +185,81 @@ func (h *MessageHandlers) HandleMessageRead(clientID string, payload json.RawMes
     return nil
 }
 
+func (h *MessageHandlers) HandleMessageReadAll(clientID string, payload json.RawMessage) error {
+    var data struct {
+        ChatID            string `json:"chat_id"`
+    }
+    
+    if err := utils.SafeUnmarshal(payload, &data); err != nil {
+        return fmt.Errorf("failed to unmarshal read receipt: %w", err)
+    }
+
+    if data.ChatID == "" {
+        return fmt.Errorf("chat_id is required")
+    }
+
+    ctx := context.Background()
+    err := h.messageRepo.MarkAllMessagesAsReadInChat(ctx, clientID, data.ChatID)
+    if err != nil {
+        return fmt.Errorf("failed to mark messages as read: %w", err)
+    }
+
+    user1, user2, err := models.ExtractUsersFromChatID(data.ChatID)
+    if err != nil {
+        return fmt.Errorf("error extracting users: %w", err)
+    }
+
+    var otherUserID string
+    if user1 == clientID {
+        otherUserID = user2
+    } else {
+        otherUserID = user1
+    }
+
+    readReceiptEvent := types.WSEvent{
+        Event: types.EventMessageReadAll,
+        Data: map[string]interface{}{
+            "user_id":            clientID,
+            "chat_id":            data.ChatID,
+            "read_at":            time.Now().Format(time.RFC3339),
+        },
+    }
+
+    if err := h.pool.SendToUser(otherUserID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(readReceiptEvent),
+    }); err != nil {
+        log.Printf("Failed to notify user %s about read receipt: %v", otherUserID, err)
+    }
+
+    unreadEvent := types.WSEvent{
+        Event: types.EventUnreadCountUpdate,
+        Data: map[string]interface{}{
+            "chat_id":      data.ChatID,
+            "unread_count": 0,
+            "user_id":      clientID,
+        },
+    }
+
+    if err := h.pool.SendToUser(clientID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(unreadEvent),
+    }); err != nil {
+        log.Printf("Failed to update unread count for user %s: %v", clientID, err)
+    }
+    
+    return nil
+}
+
 func (h *MessageHandlers) CreateMessageReadHandler() types.EventHandler {
     return types.EventHandlerFunc(func(clientID string, eventType string, payload json.RawMessage) error {
         return h.HandleMessageRead(clientID, payload)
+    })
+}
+
+func (h *MessageHandlers) CreateMessageReadAllHandler() types.EventHandler {
+    return types.EventHandlerFunc(func(clientID string, eventType string, payload json.RawMessage) error {
+        return h.HandleMessageReadAll(clientID, payload)
     })
 }
 

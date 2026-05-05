@@ -7,8 +7,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/network/error_handling/error_handler.dart';
 import '../../../../core/network/error_handling/exceptions.dart';
+import '../../../chat/presentation/notifier/chat/chat_notifier.dart';
+import '../../../chat/presentation/notifier/message/message_notifier.dart';
 import '../../../websocket/presentation/notifier/websocket_notifier.dart';
-
+import '../providers/user_providers.dart';
 
 part 'auth_notifier.freezed.dart';
 part 'auth_notifier.g.dart';
@@ -30,7 +32,7 @@ class AuthNotifier extends _$AuthNotifier {
 
       await Future.delayed(const Duration(milliseconds: 100));
 
-      ref.read(webSocketNotifierProvider.notifier).connect();
+      ref.read(webSocketProvider.notifier).connect();
     } on AppException catch(error) {
       debugPrint('Auth check failed: ${error.message}');
       state = AuthState.initial();
@@ -53,13 +55,14 @@ class AuthNotifier extends _$AuthNotifier {
     state = const AuthState.loading();
     try {
       final authRepository = getIt<AuthRepository>();
+      final result = await authRepository.login(email: email, password: password);
 
-      await authRepository.login(email: email, password: password);
+      ref.read(currentUserIdProvider.notifier).setUserId(result.user.id);
 
       state = AuthState.authenticated();
 
       await Future.delayed(const Duration(milliseconds: 50));
-      ref.read(webSocketNotifierProvider.notifier).connect();
+      ref.read(webSocketProvider.notifier).connect();
     } on DioException catch(error) {
       final exception = ErrorHandler.handleDioError(error);
       state = AuthState.initial(error: exception.message);
@@ -98,10 +101,12 @@ class AuthNotifier extends _$AuthNotifier {
 
   Future<void> logout() async {
     try {
-      ref.read(webSocketNotifierProvider.notifier).disconnect();
+      await ref.read(webSocketProvider.notifier).disconnect();
 
       await getIt<UserLocalDatasource>().deleteUserInfo();
       await getIt<AuthRepository>().logout();
+
+      ref.read(currentUserIdProvider.notifier).clear();
 
       state = const AuthState.initial();
     } catch (error) {

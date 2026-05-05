@@ -1,14 +1,17 @@
 import 'dart:async';
-
+import 'package:fakegram/core/utils/platform_utils.dart';
 import 'package:fakegram/features/chat/domain/entities/direct_chat_entity.dart';
 import 'package:fakegram/features/chat/domain/entities/message_entity.dart';
 import 'package:fakegram/features/chat/presentation/notifier/message/message_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:visibility_detector/visibility_detector.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../auth/presentation/notifier/auth_notifier.dart';
 import '../../../auth/presentation/providers/user_providers.dart';
 import '../../../websocket/presentation/notifier/websocket_notifier.dart';
@@ -22,7 +25,7 @@ part 'chat_list_item.dart';
 part 'message_area.dart';
 part 'messages_bubble.dart';
 part 'messages_input.dart';
+part 'message_context_menu.dart';
 part 'messages_list.dart';
 part 'user_panel.dart';
-
 part '../page/chat_page.dart';

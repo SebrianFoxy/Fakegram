@@ -20,6 +20,7 @@ abstract class MessageDetailModel with _$MessageDetailModel {
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'read_at') required DateTime? readAt,
     @JsonKey(name: 'sender') required MessageUserDetailModel sender,
+    @JsonKey(name: 'reply_to_message', defaultValue: null) MessageDetailModel? replyToMessage,
   }) = _MessageDetailModel;
 
   const MessageDetailModel._();
@@ -34,6 +35,7 @@ abstract class MessageDetailModel with _$MessageDetailModel {
     messageText: messageText,
     messageType: messageType,
     replyToMessageId: replyToMessageId,
+    replyToMessage: replyToMessage?.toEntity(),
     isEdited: isEdited,
     isRead: isRead,
     isDeleted: isDeleted,

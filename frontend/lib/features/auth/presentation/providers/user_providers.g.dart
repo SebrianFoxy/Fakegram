@@ -6,22 +6,52 @@ part of 'user_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$currentUserIdHash() => r'0fb406094e3b474f00c8bdf2eb6e4b168814f55a';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [currentUserId].
-@ProviderFor(currentUserId)
-final currentUserIdProvider = AutoDisposeFutureProvider<String?>.internal(
-  currentUserId,
-  name: r'currentUserIdProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$currentUserIdHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+@ProviderFor(CurrentUserId)
+const currentUserIdProvider = CurrentUserIdProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef CurrentUserIdRef = AutoDisposeFutureProviderRef<String?>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class CurrentUserIdProvider
+    extends $NotifierProvider<CurrentUserId, String?> {
+  const CurrentUserIdProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'currentUserIdProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentUserIdHash();
+
+  @$internal
+  @override
+  CurrentUserId create() => CurrentUserId();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$currentUserIdHash() => r'a473af7650101063482e0081d4d89bd4b3fd6b3f';
+
+abstract class _$CurrentUserId extends $Notifier<String?> {
+  String? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<String?, String?>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<String?, String?>, String?, Object?, Object?>;
+    element.handleValue(ref, created);
+  }
+}

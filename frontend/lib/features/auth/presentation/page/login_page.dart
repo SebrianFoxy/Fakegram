@@ -36,7 +36,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    await ref.read(authNotifierProvider.notifier).login(
+    await ref.read(authProvider.notifier).login(
       _emailController.text.trim(),
       _passwordController.text,
     );
@@ -44,9 +44,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authNotifierProvider);
+    final authState = ref.watch(authProvider);
 
-    ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+    ref.listen<AuthState>(authProvider, (previous, next) {
       switch (next) {
         case AuthStateInitial(:final error):
           if (error != null && error.isNotEmpty) {
@@ -59,14 +59,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     return Scaffold(
       body: GradientBackground(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Stack(
-            children: [
-              const DarkOverlay(),
-              if (authState is AuthStateLoading)
-                const Center(child: CircularProgressIndicator())
-              else
+        child: switch (authState) {
+          AuthStateInitial() => Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Stack(
+              children: [
+                const DarkOverlay(),
                 GlassMorphismContainer(
                   child: LoginForm(
                     emailController: _emailController,
@@ -74,9 +72,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     onLogin: _handleLogin,
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
+          AuthStateLoading() => const Center(
+            child: CircularProgressIndicator(),
+          ),
+          _ => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        },
       ),
     );
   }

@@ -21,12 +21,13 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<PaginationMessagesEntity> getInitialMessages({
     required String userId,
+    String? cursor,
     required int limit,
   }) async {
     return _getMessages(
       userId: userId,
       direction: 'around',
-      cursor: null,
+      cursor: cursor,
       limit: limit,
     );
   }

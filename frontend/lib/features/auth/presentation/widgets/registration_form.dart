@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:animated_snack_bar/animated_snack_bar.dart';
-import '../notifier/auth_notifier.dart';
 import 'auth_field.dart';
 import 'auth_button.dart';
 import 'auth_header.dart';

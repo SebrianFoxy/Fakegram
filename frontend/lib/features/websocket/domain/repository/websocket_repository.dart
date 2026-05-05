@@ -10,4 +10,5 @@ abstract class WebSocketRepository {
   void sendTypingStart(String chatId);
   void sendTypingStop(String chatId);
   void sendMessageRead(String chatId, String messageId);
+  void sendMessageAllRead(String chatId);
 }

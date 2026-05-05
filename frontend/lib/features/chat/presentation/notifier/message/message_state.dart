@@ -10,6 +10,8 @@ sealed class MessageState with _$MessageState {
     required bool hasMoreNewer,
     required bool isLoadingMore,
     required bool isLoadingNewer,
+    MessageEntity? replyingToMessage,
+    String? jumpToMessageId,
     String? olderCursor,
     String? newerCursor,
     int? totalUnread,

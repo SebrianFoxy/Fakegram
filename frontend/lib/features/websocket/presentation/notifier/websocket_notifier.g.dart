@@ -6,57 +6,130 @@ part of 'websocket_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$isWebSocketConnectedHash() =>
-    r'eca40270265bc8bbb1801eecefccf4c4ee3dc0be';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [isWebSocketConnected].
-@ProviderFor(isWebSocketConnected)
-final isWebSocketConnectedProvider = AutoDisposeProvider<bool>.internal(
-  isWebSocketConnected,
-  name: r'isWebSocketConnectedProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$isWebSocketConnectedHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef IsWebSocketConnectedRef = AutoDisposeProviderRef<bool>;
-String _$autoConnectWebSocketHash() =>
-    r'2b451173f1c79c99e2517dde6ca1aa04e9022b51';
-
-/// See also [autoConnectWebSocket].
-@ProviderFor(autoConnectWebSocket)
-final autoConnectWebSocketProvider = AutoDisposeFutureProvider<void>.internal(
-  autoConnectWebSocket,
-  name: r'autoConnectWebSocketProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$autoConnectWebSocketHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AutoConnectWebSocketRef = AutoDisposeFutureProviderRef<void>;
-String _$webSocketNotifierHash() => r'46533ce13e6ee07374ec31991a422a5af950a394';
-
-/// See also [WebSocketNotifier].
 @ProviderFor(WebSocketNotifier)
-final webSocketNotifierProvider =
-    AutoDisposeNotifierProvider<WebSocketNotifier, WebSocketState>.internal(
-  WebSocketNotifier.new,
-  name: r'webSocketNotifierProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$webSocketNotifierHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const webSocketProvider = WebSocketNotifierProvider._();
 
-typedef _$WebSocketNotifier = AutoDisposeNotifier<WebSocketState>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class WebSocketNotifierProvider
+    extends $NotifierProvider<WebSocketNotifier, WebSocketState> {
+  const WebSocketNotifierProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'webSocketProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$webSocketNotifierHash();
+
+  @$internal
+  @override
+  WebSocketNotifier create() => WebSocketNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WebSocketState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WebSocketState>(value),
+    );
+  }
+}
+
+String _$webSocketNotifierHash() => r'8baf0a9d63f304d3434fe4c2642544ff95dafe1f';
+
+abstract class _$WebSocketNotifier extends $Notifier<WebSocketState> {
+  WebSocketState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<WebSocketState, WebSocketState>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<WebSocketState, WebSocketState>,
+        WebSocketState,
+        Object?,
+        Object?>;
+    element.handleValue(ref, created);
+  }
+}
+
+@ProviderFor(isWebSocketConnected)
+const isWebSocketConnectedProvider = IsWebSocketConnectedProvider._();
+
+final class IsWebSocketConnectedProvider
+    extends $FunctionalProvider<bool, bool, bool> with $Provider<bool> {
+  const IsWebSocketConnectedProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'isWebSocketConnectedProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$isWebSocketConnectedHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return isWebSocketConnected(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$isWebSocketConnectedHash() =>
+    r'b1c59a6730b495d77658d0bc29a451c93b2cc22b';
+
+@ProviderFor(autoConnectWebSocket)
+const autoConnectWebSocketProvider = AutoConnectWebSocketProvider._();
+
+final class AutoConnectWebSocketProvider
+    extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
+    with $FutureModifier<void>, $FutureProvider<void> {
+  const AutoConnectWebSocketProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'autoConnectWebSocketProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$autoConnectWebSocketHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<void> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<void> create(Ref ref) {
+    return autoConnectWebSocket(ref);
+  }
+}
+
+String _$autoConnectWebSocketHash() =>
+    r'be5d54b73ac9bcffd85afa7fdf607e7519961dc7';

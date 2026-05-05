@@ -6,20 +6,52 @@ part of 'chat_notifier.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatNotifierHash() => r'9b50f11a5ab4e35463c6378bfea9fba6d1169835';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [ChatNotifier].
 @ProviderFor(ChatNotifier)
-final chatNotifierProvider =
-    AutoDisposeNotifierProvider<ChatNotifier, ChatState>.internal(
-  ChatNotifier.new,
-  name: r'chatNotifierProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$chatNotifierHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const chatProvider = ChatNotifierProvider._();
 
-typedef _$ChatNotifier = AutoDisposeNotifier<ChatState>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class ChatNotifierProvider
+    extends $NotifierProvider<ChatNotifier, ChatState> {
+  const ChatNotifierProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'chatProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatNotifierHash();
+
+  @$internal
+  @override
+  ChatNotifier create() => ChatNotifier();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ChatState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ChatState>(value),
+    );
+  }
+}
+
+String _$chatNotifierHash() => r'8675845c06c821b50baa3d16ba72c2fd162ed70f';
+
+abstract class _$ChatNotifier extends $Notifier<ChatState> {
+  ChatState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<ChatState, ChatState>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<ChatState, ChatState>, ChatState, Object?, Object?>;
+    element.handleValue(ref, created);
+  }
+}

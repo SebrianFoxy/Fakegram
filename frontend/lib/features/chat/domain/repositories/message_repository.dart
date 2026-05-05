@@ -1,9 +1,11 @@
 import 'package:fakegram/features/chat/domain/entities/message_entity.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import '../entities/pagination_messages_entity.dart';
 
 abstract class MessageRepository {
   Future<PaginationMessagesEntity> getInitialMessages({
     required String userId,
+    @Default(null) String? cursor,
     required int limit,
   });
 

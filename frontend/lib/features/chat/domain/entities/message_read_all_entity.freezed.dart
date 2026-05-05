@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'send_message_response_dto.dart';
+part of 'message_read_all_entity.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -13,96 +13,93 @@ part of 'send_message_response_dto.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
-mixin _$SendMessageResponseDTO {
+mixin _$MessageReadAllEntity {
+  @JsonKey(name: 'user_id')
+  String get userId;
   @JsonKey(name: 'chat_id')
   String get chatId;
-  @JsonKey(name: 'message')
-  MessageDetailModel get message;
+  @JsonKey(name: 'read_at')
+  DateTime get readAt;
 
-  /// Create a copy of SendMessageResponseDTO
+  /// Create a copy of MessageReadAllEntity
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  $SendMessageResponseDTOCopyWith<SendMessageResponseDTO> get copyWith =>
-      _$SendMessageResponseDTOCopyWithImpl<SendMessageResponseDTO>(
-          this as SendMessageResponseDTO, _$identity);
+  $MessageReadAllEntityCopyWith<MessageReadAllEntity> get copyWith =>
+      _$MessageReadAllEntityCopyWithImpl<MessageReadAllEntity>(
+          this as MessageReadAllEntity, _$identity);
 
-  /// Serializes this SendMessageResponseDTO to a JSON map.
+  /// Serializes this MessageReadAllEntity to a JSON map.
   Map<String, dynamic> toJson();
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is SendMessageResponseDTO &&
+            other is MessageReadAllEntity &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.chatId, chatId) || other.chatId == chatId) &&
-            (identical(other.message, message) || other.message == message));
+            (identical(other.readAt, readAt) || other.readAt == readAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, chatId, message);
+  int get hashCode => Object.hash(runtimeType, userId, chatId, readAt);
 
   @override
   String toString() {
-    return 'SendMessageResponseDTO(chatId: $chatId, message: $message)';
+    return 'MessageReadAllEntity(userId: $userId, chatId: $chatId, readAt: $readAt)';
   }
 }
 
 /// @nodoc
-abstract mixin class $SendMessageResponseDTOCopyWith<$Res> {
-  factory $SendMessageResponseDTOCopyWith(SendMessageResponseDTO value,
-          $Res Function(SendMessageResponseDTO) _then) =
-      _$SendMessageResponseDTOCopyWithImpl;
+abstract mixin class $MessageReadAllEntityCopyWith<$Res> {
+  factory $MessageReadAllEntityCopyWith(MessageReadAllEntity value,
+          $Res Function(MessageReadAllEntity) _then) =
+      _$MessageReadAllEntityCopyWithImpl;
   @useResult
   $Res call(
-      {@JsonKey(name: 'chat_id') String chatId,
-      @JsonKey(name: 'message') MessageDetailModel message});
-
-  $MessageDetailModelCopyWith<$Res> get message;
+      {@JsonKey(name: 'user_id') String userId,
+      @JsonKey(name: 'chat_id') String chatId,
+      @JsonKey(name: 'read_at') DateTime readAt});
 }
 
 /// @nodoc
-class _$SendMessageResponseDTOCopyWithImpl<$Res>
-    implements $SendMessageResponseDTOCopyWith<$Res> {
-  _$SendMessageResponseDTOCopyWithImpl(this._self, this._then);
+class _$MessageReadAllEntityCopyWithImpl<$Res>
+    implements $MessageReadAllEntityCopyWith<$Res> {
+  _$MessageReadAllEntityCopyWithImpl(this._self, this._then);
 
-  final SendMessageResponseDTO _self;
-  final $Res Function(SendMessageResponseDTO) _then;
+  final MessageReadAllEntity _self;
+  final $Res Function(MessageReadAllEntity) _then;
 
-  /// Create a copy of SendMessageResponseDTO
+  /// Create a copy of MessageReadAllEntity
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? userId = null,
     Object? chatId = null,
-    Object? message = null,
+    Object? readAt = null,
   }) {
     return _then(_self.copyWith(
+      userId: null == userId
+          ? _self.userId
+          : userId // ignore: cast_nullable_to_non_nullable
+              as String,
       chatId: null == chatId
           ? _self.chatId
           : chatId // ignore: cast_nullable_to_non_nullable
               as String,
-      message: null == message
-          ? _self.message
-          : message // ignore: cast_nullable_to_non_nullable
-              as MessageDetailModel,
+      readAt: null == readAt
+          ? _self.readAt
+          : readAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
     ));
-  }
-
-  /// Create a copy of SendMessageResponseDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $MessageDetailModelCopyWith<$Res> get message {
-    return $MessageDetailModelCopyWith<$Res>(_self.message, (value) {
-      return _then(_self.copyWith(message: value));
-    });
   }
 }
 
-/// Adds pattern-matching-related methods to [SendMessageResponseDTO].
-extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
+/// Adds pattern-matching-related methods to [MessageReadAllEntity].
+extension MessageReadAllEntityPatterns on MessageReadAllEntity {
   /// A variant of `map` that fallback to returning `orElse`.
   ///
   /// It is equivalent to doing:
@@ -117,12 +114,12 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>(
-    TResult Function(_SendMessageResponseDTO value)? $default, {
+    TResult Function(_MessageReadAllEntity value)? $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
-      case _SendMessageResponseDTO() when $default != null:
+      case _MessageReadAllEntity() when $default != null:
         return $default(_that);
       case _:
         return orElse();
@@ -144,11 +141,11 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
   @optionalTypeArgs
   TResult map<TResult extends Object?>(
-    TResult Function(_SendMessageResponseDTO value) $default,
+    TResult Function(_MessageReadAllEntity value) $default,
   ) {
     final _that = this;
     switch (_that) {
-      case _SendMessageResponseDTO():
+      case _MessageReadAllEntity():
         return $default(_that);
       case _:
         throw StateError('Unexpected subclass');
@@ -169,11 +166,11 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>(
-    TResult? Function(_SendMessageResponseDTO value)? $default,
+    TResult? Function(_MessageReadAllEntity value)? $default,
   ) {
     final _that = this;
     switch (_that) {
-      case _SendMessageResponseDTO() when $default != null:
+      case _MessageReadAllEntity() when $default != null:
         return $default(_that);
       case _:
         return null;
@@ -194,15 +191,17 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
-    TResult Function(@JsonKey(name: 'chat_id') String chatId,
-            @JsonKey(name: 'message') MessageDetailModel message)?
+    TResult Function(
+            @JsonKey(name: 'user_id') String userId,
+            @JsonKey(name: 'chat_id') String chatId,
+            @JsonKey(name: 'read_at') DateTime readAt)?
         $default, {
     required TResult orElse(),
   }) {
     final _that = this;
     switch (_that) {
-      case _SendMessageResponseDTO() when $default != null:
-        return $default(_that.chatId, _that.message);
+      case _MessageReadAllEntity() when $default != null:
+        return $default(_that.userId, _that.chatId, _that.readAt);
       case _:
         return orElse();
     }
@@ -223,14 +222,16 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
-    TResult Function(@JsonKey(name: 'chat_id') String chatId,
-            @JsonKey(name: 'message') MessageDetailModel message)
+    TResult Function(
+            @JsonKey(name: 'user_id') String userId,
+            @JsonKey(name: 'chat_id') String chatId,
+            @JsonKey(name: 'read_at') DateTime readAt)
         $default,
   ) {
     final _that = this;
     switch (_that) {
-      case _SendMessageResponseDTO():
-        return $default(_that.chatId, _that.message);
+      case _MessageReadAllEntity():
+        return $default(_that.userId, _that.chatId, _that.readAt);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -250,14 +251,16 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
-    TResult? Function(@JsonKey(name: 'chat_id') String chatId,
-            @JsonKey(name: 'message') MessageDetailModel message)?
+    TResult? Function(
+            @JsonKey(name: 'user_id') String userId,
+            @JsonKey(name: 'chat_id') String chatId,
+            @JsonKey(name: 'read_at') DateTime readAt)?
         $default,
   ) {
     final _that = this;
     switch (_that) {
-      case _SendMessageResponseDTO() when $default != null:
-        return $default(_that.chatId, _that.message);
+      case _MessageReadAllEntity() when $default != null:
+        return $default(_that.userId, _that.chatId, _that.readAt);
       case _:
         return null;
     }
@@ -266,32 +269,36 @@ extension SendMessageResponseDTOPatterns on SendMessageResponseDTO {
 
 /// @nodoc
 @JsonSerializable()
-class _SendMessageResponseDTO implements SendMessageResponseDTO {
-  const _SendMessageResponseDTO(
-      {@JsonKey(name: 'chat_id') required this.chatId,
-      @JsonKey(name: 'message') required this.message});
-  factory _SendMessageResponseDTO.fromJson(Map<String, dynamic> json) =>
-      _$SendMessageResponseDTOFromJson(json);
+class _MessageReadAllEntity implements MessageReadAllEntity {
+  const _MessageReadAllEntity(
+      {@JsonKey(name: 'user_id') required this.userId,
+      @JsonKey(name: 'chat_id') required this.chatId,
+      @JsonKey(name: 'read_at') required this.readAt});
+  factory _MessageReadAllEntity.fromJson(Map<String, dynamic> json) =>
+      _$MessageReadAllEntityFromJson(json);
 
+  @override
+  @JsonKey(name: 'user_id')
+  final String userId;
   @override
   @JsonKey(name: 'chat_id')
   final String chatId;
   @override
-  @JsonKey(name: 'message')
-  final MessageDetailModel message;
+  @JsonKey(name: 'read_at')
+  final DateTime readAt;
 
-  /// Create a copy of SendMessageResponseDTO
+  /// Create a copy of MessageReadAllEntity
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   @pragma('vm:prefer-inline')
-  _$SendMessageResponseDTOCopyWith<_SendMessageResponseDTO> get copyWith =>
-      __$SendMessageResponseDTOCopyWithImpl<_SendMessageResponseDTO>(
+  _$MessageReadAllEntityCopyWith<_MessageReadAllEntity> get copyWith =>
+      __$MessageReadAllEntityCopyWithImpl<_MessageReadAllEntity>(
           this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$SendMessageResponseDTOToJson(
+    return _$MessageReadAllEntityToJson(
       this,
     );
   }
@@ -300,73 +307,67 @@ class _SendMessageResponseDTO implements SendMessageResponseDTO {
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _SendMessageResponseDTO &&
+            other is _MessageReadAllEntity &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.chatId, chatId) || other.chatId == chatId) &&
-            (identical(other.message, message) || other.message == message));
+            (identical(other.readAt, readAt) || other.readAt == readAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, chatId, message);
+  int get hashCode => Object.hash(runtimeType, userId, chatId, readAt);
 
   @override
   String toString() {
-    return 'SendMessageResponseDTO(chatId: $chatId, message: $message)';
+    return 'MessageReadAllEntity(userId: $userId, chatId: $chatId, readAt: $readAt)';
   }
 }
 
 /// @nodoc
-abstract mixin class _$SendMessageResponseDTOCopyWith<$Res>
-    implements $SendMessageResponseDTOCopyWith<$Res> {
-  factory _$SendMessageResponseDTOCopyWith(_SendMessageResponseDTO value,
-          $Res Function(_SendMessageResponseDTO) _then) =
-      __$SendMessageResponseDTOCopyWithImpl;
+abstract mixin class _$MessageReadAllEntityCopyWith<$Res>
+    implements $MessageReadAllEntityCopyWith<$Res> {
+  factory _$MessageReadAllEntityCopyWith(_MessageReadAllEntity value,
+          $Res Function(_MessageReadAllEntity) _then) =
+      __$MessageReadAllEntityCopyWithImpl;
   @override
   @useResult
   $Res call(
-      {@JsonKey(name: 'chat_id') String chatId,
-      @JsonKey(name: 'message') MessageDetailModel message});
-
-  @override
-  $MessageDetailModelCopyWith<$Res> get message;
+      {@JsonKey(name: 'user_id') String userId,
+      @JsonKey(name: 'chat_id') String chatId,
+      @JsonKey(name: 'read_at') DateTime readAt});
 }
 
 /// @nodoc
-class __$SendMessageResponseDTOCopyWithImpl<$Res>
-    implements _$SendMessageResponseDTOCopyWith<$Res> {
-  __$SendMessageResponseDTOCopyWithImpl(this._self, this._then);
+class __$MessageReadAllEntityCopyWithImpl<$Res>
+    implements _$MessageReadAllEntityCopyWith<$Res> {
+  __$MessageReadAllEntityCopyWithImpl(this._self, this._then);
 
-  final _SendMessageResponseDTO _self;
-  final $Res Function(_SendMessageResponseDTO) _then;
+  final _MessageReadAllEntity _self;
+  final $Res Function(_MessageReadAllEntity) _then;
 
-  /// Create a copy of SendMessageResponseDTO
+  /// Create a copy of MessageReadAllEntity
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
   $Res call({
+    Object? userId = null,
     Object? chatId = null,
-    Object? message = null,
+    Object? readAt = null,
   }) {
-    return _then(_SendMessageResponseDTO(
+    return _then(_MessageReadAllEntity(
+      userId: null == userId
+          ? _self.userId
+          : userId // ignore: cast_nullable_to_non_nullable
+              as String,
       chatId: null == chatId
           ? _self.chatId
           : chatId // ignore: cast_nullable_to_non_nullable
               as String,
-      message: null == message
-          ? _self.message
-          : message // ignore: cast_nullable_to_non_nullable
-              as MessageDetailModel,
+      readAt: null == readAt
+          ? _self.readAt
+          : readAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
     ));
-  }
-
-  /// Create a copy of SendMessageResponseDTO
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $MessageDetailModelCopyWith<$Res> get message {
-    return $MessageDetailModelCopyWith<$Res>(_self.message, (value) {
-      return _then(_self.copyWith(message: value));
-    });
   }
 }
 

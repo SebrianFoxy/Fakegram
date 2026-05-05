@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"fakegram-api/internal/models"
+
+	"github.com/lib/pq"
 )
 
 
@@ -151,7 +153,21 @@ func (r *MessageRepository) GetMessageDetailByID(ctx context.Context, messageID,
         AvatarURL: senderAvatarURL,
     }
     
-    return models.ToMessageDetail(msg, isRead, readAtPtr, sender), nil
+    msgDetail := models.ToMessageDetail(msg, isRead, readAtPtr, sender)
+    
+    if replyToMessageID != nil && *replyToMessageID != "" {
+        log.Printf("Loading reply message: %s", *replyToMessageID)
+        
+        replyMsgDetail, err := r.GetMessageDetailByID(ctx, *replyToMessageID, userID)
+        if err != nil {
+            log.Printf("Failed to load reply message: %v", err)
+        } else {
+            msgDetail.ReplyToMessage = replyMsgDetail
+            log.Printf("Reply message attached successfully")
+        }
+    }
+    
+    return msgDetail, nil
 }
 
 func (r *MessageRepository) GetMessagesByChat(ctx context.Context, userID, otherUserID string, cursor *time.Time, limit int, direction string) ([]*models.MessageDetail, bool, bool, int64, error) {
@@ -169,7 +185,7 @@ func (r *MessageRepository) GetMessagesByChat(ctx context.Context, userID, other
     
     switch direction {
     case "around":
-        return r.getInitialMessages(ctx, userID, otherUserID, chatID, limit)
+        return r.getInitialMessages(ctx, userID, otherUserID, chatID, cursor, limit)
     case "older":
         return r.getOlderMessages(ctx, userID, otherUserID, chatID, *cursor, limit)
     case "newer":
@@ -231,6 +247,36 @@ func (r *MessageRepository) MarkMessagesAsRead(ctx context.Context, userID, chat
     return nil
 }
 
+func (r *MessageRepository) MarkAllMessagesAsReadInChat(ctx context.Context, userID, chatID string) error {
+    unreadCount, err := r.GetUnreadCount(ctx, chatID, userID)
+    if err != nil {
+        return fmt.Errorf("failed to check unread count: %w", err)
+    }
+    
+    if unreadCount == 0 {
+        log.Printf("No unread messages for user %s in chat %s", userID, chatID)
+        return nil
+    }
+
+    var lastMessageID string
+    err = r.DB.QueryRowContext(ctx, `
+        SELECT id 
+        FROM messages 
+        WHERE chat_id = $1 AND is_deleted = false AND sender_id != $2
+        ORDER BY created_at DESC 
+        LIMIT 1
+    `, chatID, userID).Scan(&lastMessageID)
+    
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil
+        }
+        return fmt.Errorf("failed to get last message ID: %w", err)
+    }
+
+    return r.MarkMessagesAsRead(ctx, userID, chatID, lastMessageID)
+}
+
 func (r *MessageRepository) GetLastReadMessage(ctx context.Context, userID, chatID string) (string, error) {
     query := `
         SELECT m.id
@@ -279,23 +325,49 @@ func (r *MessageRepository) GetUnreadCount(ctx context.Context, chatID, userID s
     return count, nil
 }
 
-func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, otherUserID, chatID string, limit int) ([]*models.MessageDetail, bool, bool, int64, error) {
-    var lastReadTime sql.NullTime
-    lastReadQuery := `
-        SELECT MAX(m.created_at)
-        FROM messages m
-        JOIN message_read_status mrs ON m.id = mrs.message_id
-        WHERE m.chat_id = $1 AND mrs.user_id = $2
-    `
-    err := r.DB.QueryRowContext(ctx, lastReadQuery, chatID, userID).Scan(&lastReadTime)
-    if err != nil && err != sql.ErrNoRows {
-        return nil, false, false, 0, fmt.Errorf("failed to get last read time: %w", err)
-    }
-
+func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, otherUserID, chatID string, cursor *time.Time, limit int) ([]*models.MessageDetail, bool, bool, int64, error) {
     var anchorTime time.Time
     var hasUnread bool
-    
-    if lastReadTime.Valid {
+
+    if cursor != nil {
+        anchorTime = *cursor
+        log.Printf("DEBUG getInitialMessages: using provided cursor time: %v", anchorTime)
+        
+        var unreadExists bool
+        err := r.DB.QueryRowContext(ctx, `
+            SELECT EXISTS(
+                SELECT 1
+                FROM messages m
+                LEFT JOIN message_read_status mrs ON m.id = mrs.message_id AND mrs.user_id = $2
+                WHERE m.chat_id = $1 
+                  AND m.is_deleted = false
+                  AND m.sender_id != $4  
+                  AND mrs.message_id IS NULL  
+                  AND m.created_at > $3
+            )
+        `, chatID, otherUserID, anchorTime, userID).Scan(&unreadExists)
+        if err != nil {
+            return nil, false, false, 0, fmt.Errorf("failed to check unread messages: %w", err)
+        }
+        hasUnread = unreadExists
+    } else {
+        var lastReadTime sql.NullTime
+        lastReadQuery := `
+            SELECT MAX(m.created_at)
+            FROM messages m
+            JOIN message_read_status mrs ON m.id = mrs.message_id
+            WHERE m.chat_id = $1 AND mrs.user_id = $2
+        `
+        err := r.DB.QueryRowContext(ctx, lastReadQuery, chatID, userID).Scan(&lastReadTime)
+        if err != nil && err != sql.ErrNoRows {
+            return nil, false, false, 0, fmt.Errorf("failed to get last read time: %w", err)
+        }
+
+        baseTime := time.Time{}
+        if lastReadTime.Valid {
+            baseTime = lastReadTime.Time
+        }
+
         var firstUnreadTime sql.NullTime
         firstUnreadQuery := `
             SELECT MIN(m.created_at)
@@ -307,32 +379,32 @@ func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, othe
             AND mrs.message_id IS NULL  
             AND m.created_at > $3
         `
-
-        err := r.DB.QueryRowContext(ctx, firstUnreadQuery, chatID, otherUserID, lastReadTime.Time, userID).Scan(&firstUnreadTime)
+        err = r.DB.QueryRowContext(ctx, firstUnreadQuery, chatID, otherUserID, baseTime, userID).Scan(&firstUnreadTime)
         if err != nil && err != sql.ErrNoRows {
             return nil, false, false, 0, fmt.Errorf("failed to get first unread: %w", err)
         }
-        
+
         if firstUnreadTime.Valid {
             anchorTime = firstUnreadTime.Time
             hasUnread = true
         } else {
-            anchorTime = lastReadTime.Time
-        }
-    } else {
-        var oldestMessageTime sql.NullTime
-        err := r.DB.QueryRowContext(ctx, `
-            SELECT MIN(created_at) FROM messages 
-            WHERE chat_id = $1 AND is_deleted = false
-        `, chatID).Scan(&oldestMessageTime)
-        if err != nil {
-            return nil, false, false, 0, fmt.Errorf("failed to get oldest message time: %w", err)
-        }
-        
-        if oldestMessageTime.Valid {
-            anchorTime = oldestMessageTime.Time
-        } else {
-            return []*models.MessageDetail{}, false, false, 0, nil
+            if lastReadTime.Valid {
+                anchorTime = lastReadTime.Time
+            } else {
+                var oldestMessageTime sql.NullTime
+                err := r.DB.QueryRowContext(ctx, `
+                    SELECT MIN(created_at) FROM messages 
+                    WHERE chat_id = $1 AND is_deleted = false
+                `, chatID).Scan(&oldestMessageTime)
+                if err != nil {
+                    return nil, false, false, 0, fmt.Errorf("failed to get oldest message time: %w", err)
+                }
+                if oldestMessageTime.Valid {
+                    anchorTime = oldestMessageTime.Time
+                } else {
+                    return []*models.MessageDetail{}, false, false, 0, nil
+                }
+            }
         }
     }
     
@@ -396,19 +468,14 @@ func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, othe
     }
     
     var totalUnread int64
+    log.Print("hasUnread: ", hasUnread)
     if hasUnread {
-        err = r.DB.QueryRowContext(ctx, `
-            SELECT COUNT(*)
-            FROM messages m
-            LEFT JOIN message_read_status mrs ON m.id = mrs.message_id AND mrs.user_id = $2
-            WHERE m.chat_id = $1 
-              AND m.is_deleted = false
-              AND m.sender_id != $2
-              AND mrs.message_id IS NULL
-        `, chatID, otherUserID).Scan(&totalUnread)
+        unreadCount, err := r.GetUnreadCount(ctx, chatID, userID)
+        log.Print("unreadCount: ", unreadCount)
         if err != nil {
-            return nil, false, false, 0, err
+            return nil, false, false, 0, fmt.Errorf("failed to get unread count: %w", err)
         }
+        totalUnread = int64(unreadCount)
     }
     
     return allMessages, hasMoreOlder, hasMoreNewer, totalUnread, nil
@@ -474,6 +541,7 @@ func (r *MessageRepository) getMessagesByTimeRange(ctx context.Context, userID, 
     if limit <= 0 {
         limit = 30
     }
+
     var query string
     var args []interface{}
 
@@ -571,6 +639,8 @@ func (r *MessageRepository) getMessagesByTimeRange(ctx context.Context, userID, 
     defer rows.Close()
     
     var messages []*models.MessageDetail
+    var replyIDs []string
+
     for rows.Next() {
         var message models.MessageDetail
         var replyToMessageID *string
@@ -640,8 +710,128 @@ func (r *MessageRepository) getMessagesByTimeRange(ctx context.Context, userID, 
             AvatarURL: senderAvatarURL,
         }
         
+        if replyToMessageID != nil && *replyToMessageID != "" {
+            replyIDs = append(replyIDs, *replyToMessageID)
+        }
+        
         messages = append(messages, &message)
+    }
+
+    if len(replyIDs) > 0 {
+        replyMap, err := r.getRepliedMessagesMap(ctx, replyIDs, userID)
+        if err != nil {
+            log.Printf("Warning: failed to load replied messages: %v", err)
+        } else {
+            for _, msg := range messages {
+                if msg.ReplyToMessageID != nil {
+                    if reply, exists := replyMap[*msg.ReplyToMessageID]; exists {
+                        msg.ReplyToMessage = reply
+                    }
+                }
+            }
+        }
     }
     
     return messages, nil
+}
+
+func (r *MessageRepository) getRepliedMessagesMap(ctx context.Context, messageIDs []string, userID string) (map[string]*models.MessageDetail, error) {
+    if len(messageIDs) == 0 {
+        return make(map[string]*models.MessageDetail), nil
+    }
+    
+    query := `
+        SELECT 
+            m.id,
+            m.chat_id,
+            m.sender_id,
+            m.message_text,
+            m.message_type,
+            m.reply_to_message_id,
+            m.is_edited,
+            m.is_deleted,
+            m.created_at,
+            u.name,
+            u.surname,
+            u.nickname,
+            u.avatar_url,
+            COALESCE(mrs.is_read, false) as is_read
+        FROM messages m
+        INNER JOIN users u ON m.sender_id = u.id
+        LEFT JOIN (
+            SELECT DISTINCT message_id, true as is_read
+            FROM message_read_status 
+            WHERE user_id = $2
+        ) mrs ON m.id = mrs.message_id
+        WHERE m.id = ANY($1) AND m.is_deleted = false
+    `
+    
+    rows, err := r.DB.QueryContext(ctx, query, pq.Array(messageIDs), userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get replied messages: %w", err)
+    }
+    defer rows.Close()
+    
+    result := make(map[string]*models.MessageDetail)
+    
+    for rows.Next() {
+        var id, chatID, senderID, messageText, messageType string
+        var replyToMessageID *string
+        var isEdited, isDeleted, isRead bool
+        var createdAt time.Time
+        var senderName, senderSurname, senderNickname string
+        var senderAvatarURL *string
+        
+        err := rows.Scan(
+            &id,
+            &chatID,
+            &senderID,
+            &messageText,
+            &messageType,
+            &replyToMessageID,
+            &isEdited,
+            &isDeleted,
+            &createdAt,
+            &senderName,
+            &senderSurname,
+            &senderNickname,
+            &senderAvatarURL,
+            &isRead,
+        )
+        if err != nil {
+            log.Printf("Scan error in getRepliedMessagesMap: %v", err)
+            continue
+        }
+        
+        msg := &models.Message{
+            ID:               id,
+            ChatID:           chatID,
+            SenderID:         senderID,
+            MessageText:      messageText,
+            MessageType:      models.MessageType(messageType),
+            ReplyToMessageID: replyToMessageID,
+            IsEdited:         isEdited,
+            IsDeleted:        isDeleted,
+            CreatedAt:        createdAt,
+        }
+        
+        sender := &models.UserDetail{
+            Name:      senderName,
+            Surname:   senderSurname,
+            Nickname:  senderNickname,
+            AvatarURL: senderAvatarURL,
+        }
+        
+        msgDetail := &models.MessageDetail{
+            Message: msg,
+            IsRead:  isRead,
+            Sender:  sender,
+        }
+        
+        result[id] = msgDetail
+        log.Printf("Loaded reply message: ID=%s, Text=%s", id, messageText)
+    }
+    
+    log.Printf("Total replied messages loaded: %d", len(result))
+    return result, nil
 }

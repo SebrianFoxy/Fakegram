@@ -17,7 +17,9 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   bool _isLoadingNewer = false;
   bool _initialScrollDone = false;
   bool _positionListenerEnabled = false;
-  bool _isLoadingMoreLocked = false;
+  bool _isNavigatingToMessage = false;
+  bool _isHandlingScrollAction = false;
+  bool _blockAutoLoad = false;
   int? _lastFirstVisibleIndex;
   Timer? _readReceiptDebounce;
   final Set<String> _processedMessageIds = {};
@@ -46,19 +48,22 @@ class _MessagesListState extends ConsumerState<MessagesList> {
       _positionListenerEnabled = false;
       _isLoadingOlder = false;
       _isLoadingNewer = false;
-      _isLoadingMoreLocked = false;
+      _isNavigatingToMessage = false;
+      _blockAutoLoad = false;
+      _isHandlingScrollAction = false;
       _lastFirstVisibleIndex = null;
       _processedMessageIds.clear();
     }
   }
 
   void _onPositionChange() {
-    if (!_positionListenerEnabled || _isLoadingMoreLocked) return;
+    if (!_positionListenerEnabled) return;
+    if (_isNavigatingToMessage || _blockAutoLoad) return;
 
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    final messageState = ref.read(messageNotifierProvider);
+    final messageState = ref.read(messageProvider);
     if (messageState is! MessageStateSuccess) return;
 
     final firstVisibleIndex = positions
@@ -70,23 +75,23 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
     _lastFirstVisibleIndex = firstVisibleIndex;
 
-    if (firstVisibleIndex <= 2 &&
-        messageState.hasMoreOlder &&
-        !_isLoadingOlder &&
-        !_isLoadingMoreLocked) {
-      _loadOlderMessages();
-    }
-
     final lastVisibleIndex = positions
         .where((p) => p.itemTrailingEdge > 0 && p.itemLeadingEdge < 1)
         .map((p) => p.index)
         .fold<int?>(null, (max, index) => max == null ? index : (index > max ? index : max));
 
+    if (firstVisibleIndex <= 5 &&
+        messageState.hasMoreOlder &&
+        !_isLoadingOlder &&
+        !_isNavigatingToMessage) {
+      _loadOlderMessages();
+    }
+
     if (lastVisibleIndex != null &&
-        lastVisibleIndex >= messageState.messages.length - 2 &&
+        lastVisibleIndex >= messageState.messages.length - 5 &&
         messageState.hasMoreNewer &&
         !_isLoadingNewer &&
-        !_isLoadingMoreLocked) {
+        !_isNavigatingToMessage) {
       _loadNewerMessages();
     }
 
@@ -115,7 +120,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
     _readReceiptDebounce = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
-        ref.read(messageNotifierProvider.notifier).markMessagesAsReadOnView(
+        ref.read(messageProvider.notifier).markMessagesAsReadOnView(
           visibleMessageIds,
         );
       }
@@ -125,53 +130,33 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   Future<void> _loadOlderMessages() async {
     if (_isLoadingOlder) return;
 
+    final currentItemCount = _getCurrentMessageCount();
+
     setState(() {
       _isLoadingOlder = true;
-      _isLoadingMoreLocked = true;
     });
 
     try {
-      final oldMessageState = ref.read(messageNotifierProvider);
-      final oldMessageCount = oldMessageState is MessageStateSuccess
-          ? oldMessageState.messages.length
-          : 0;
-      final oldFirstUnreadIndex = oldMessageState is MessageStateSuccess
-          ? oldMessageState.firstUnreadIndex
-          : null;
-
-      await ref.read(messageNotifierProvider.notifier).loadOlderMessages();
+      await ref.read(messageProvider.notifier).loadOlderMessages();
 
       if (_initialScrollDone && mounted) {
-        final newMessageState = ref.read(messageNotifierProvider);
-        if (newMessageState is MessageStateSuccess) {
-          final newMessageCount = newMessageState.messages.length - oldMessageCount;
+        final newItemCount = _getCurrentMessageCount();
+        final addedCount = newItemCount - currentItemCount;
 
-          if (oldFirstUnreadIndex != null && newMessageCount > 0) {
-            final notifier = ref.read(messageNotifierProvider.notifier);
-            notifier.updateFirstUnreadIndex(oldFirstUnreadIndex + newMessageCount);
-          }
-
-          if (newMessageCount > 0 && _itemScrollController.isAttached) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_itemScrollController.isAttached) {
-                final targetIndex = newMessageCount + (_lastFirstVisibleIndex ?? 0);
-                _itemScrollController.jumpTo(
-                  index: targetIndex,
-                );
-              }
-            });
-          }
+        if (addedCount > 0 && _itemScrollController.isAttached) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_itemScrollController.isAttached) {
+              _itemScrollController.jumpTo(
+                index: addedCount,
+              );
+            }
+          });
         }
       }
     } finally {
       if (mounted) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            setState(() {
-              _isLoadingOlder = false;
-              _isLoadingMoreLocked = false;
-            });
-          }
+        setState(() {
+          _isLoadingOlder = false;
         });
       }
     }
@@ -180,54 +165,66 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   Future<void> _loadNewerMessages() async {
     if (_isLoadingNewer) return;
 
-    final currentPosition = _lastFirstVisibleIndex;
+    final currentFirstVisibleIndex = _lastFirstVisibleIndex;
 
     setState(() {
       _isLoadingNewer = true;
-      _isLoadingMoreLocked = true;
     });
 
     try {
-      await ref.read(messageNotifierProvider.notifier).loadNewerMessages();
+      await ref.read(messageProvider.notifier).loadNewerMessages();
 
-      if (_initialScrollDone && mounted && currentPosition != null) {
+      if (_initialScrollDone && mounted && currentFirstVisibleIndex != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_itemScrollController.isAttached) {
             _itemScrollController.jumpTo(
-              index: currentPosition,
+              index: currentFirstVisibleIndex,
             );
           }
         });
       }
     } finally {
       if (mounted) {
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            setState(() {
-              _isLoadingNewer = false;
-              _isLoadingMoreLocked = false;
-            });
-          }
+        setState(() {
+          _isLoadingNewer = false;
         });
       }
     }
   }
 
+  int _getCurrentMessageCount() {
+    final messageState = ref.read(messageProvider);
+    if (messageState is MessageStateSuccess) {
+      return messageState.messages.length;
+    }
+    return 0;
+  }
+
   void _scrollToPosition(int index) {
     if (!_initialScrollDone && mounted) {
+      _isNavigatingToMessage = true;
+      _blockAutoLoad = true;
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_itemScrollController.isAttached) {
-          _itemScrollController.jumpTo(
-            index: index,
-          );
+          _itemScrollController.jumpTo(index: index);
 
-          Future.delayed(const Duration(milliseconds: 500), () {
+          Future.delayed(const Duration(milliseconds: 300), () {
             if (mounted) {
               setState(() {
                 _initialScrollDone = true;
                 _positionListenerEnabled = true;
+                _isNavigatingToMessage = false;
+                _blockAutoLoad = false;
               });
             }
+          });
+        } else {
+          setState(() {
+            _initialScrollDone = true;
+            _positionListenerEnabled = true;
+            _isNavigatingToMessage = false;
+            _blockAutoLoad = false;
           });
         }
       });
@@ -236,7 +233,16 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
   @override
   Widget build(BuildContext context) {
-    final messageState = ref.watch(messageNotifierProvider);
+    final messageState = ref.watch(messageProvider);
+
+    ref.listen<({String messageId, String messageDate})?>(
+      scrollToSentMessageActionProvider,
+          (previous, next) {
+        if (next != null && !_isHandlingScrollAction) {
+          _handleScrollToSentMessage(next.messageId, next.messageDate);
+        }
+      },
+    );
 
     if (messageState is MessageStateSuccess && !_initialScrollDone) {
       final targetIndex = messageState.firstUnreadIndex ??
@@ -294,20 +300,33 @@ class _MessagesListState extends ConsumerState<MessagesList> {
             key: ValueKey('messages_list_${widget.chatId}'),
             itemScrollController: _itemScrollController,
             itemPositionsListener: _itemPositionsListener,
-            physics: const AlwaysScrollableScrollPhysics(),
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             padding: const EdgeInsets.only(bottom: 16),
             itemCount: messages.length,
+            addAutomaticKeepAlives: true,
+            addRepaintBoundaries: true,
+            addSemanticIndexes: true,
             itemBuilder: (context, index) {
               final message = messages[index];
               final showDate = _shouldShowDate(index, messages);
-              final isFirstUnread = index == firstUnreadIndex;
+              final isFirstUnread = firstUnreadIndex != null &&
+                  index == firstUnreadIndex;
 
               return Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (showDate) _buildDateSeparator(message.createdAt),
                   if (isFirstUnread) _buildUnreadIndicator(),
                   MessageBubble(
                     message: message,
+                    onReply: () => _replyToMessage(message),
+                    onCopyMessage: () => _copyMessage(message),
+                    onDeleteMessage: () => _deleteMessage(message),
+                    onEditMessage: () => _editMessage(message),
+                    onForwardMessage: () => _forwardMessage(message),
+                    onSelectMessage: () => _selectMessage(message),
                   ),
                 ],
               );
@@ -355,12 +374,15 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
   Widget _buildLoadMoreIndicator() {
     return const Padding(
-      padding: EdgeInsets.all(16.0),
+      padding: EdgeInsets.symmetric(vertical: 16.0),
       child: Center(
         child: SizedBox(
           width: 24,
           height: 24,
-          child: CircularProgressIndicator(strokeWidth: 2),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            strokeCap: StrokeCap.round,
+          ),
         ),
       ),
     );
@@ -369,18 +391,20 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   Widget _buildDateSeparator(DateTime date) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          _formatDate(date),
-          style: TextStyle(
-            color: Colors.grey[700],
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            _formatDate(date),
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),
@@ -500,5 +524,134 @@ class _MessagesListState extends ConsumerState<MessagesList> {
         ],
       ),
     );
+  }
+
+  void _replyToMessage(MessageEntity message) {
+    debugPrint('Reply to: ${message.id}');
+    ref.read(messageProvider.notifier).setReplyingMessage(message);
+
+    final focusNode = ref.read(messageInputFocusProvider);
+    if (focusNode != null) {
+      focusNode.requestFocus();
+    }
+  }
+
+  void _copyMessage(MessageEntity message) {
+    print('Copy message: ${message.id}');
+  }
+
+  void _deleteMessage(MessageEntity message) {
+    // TODO: Показать диалог подтверждения и удалить
+    print('Delete message: ${message.id}');
+  }
+
+  void _editMessage(MessageEntity message) {
+    // TODO: Открыть диалог редактирования
+    print('Edit message: ${message.id}');
+  }
+
+  void _forwardMessage(MessageEntity message) {
+    // TODO: Открыть выбор чата для пересылки
+    print('Forward message: ${message.id}');
+  }
+
+  void _selectMessage(MessageEntity message) {
+    // TODO: Включить режим выбора сообщений
+    print('Select message: ${message.id}');
+  }
+
+  Future<void> _handleScrollToSentMessage(String messageId, String messageDate) async {
+    if (_isHandlingScrollAction) return;
+    _isHandlingScrollAction = true;
+    _blockAutoLoad = true;
+
+    try {
+      final messageState = ref.read(messageProvider);
+      if (messageState is! MessageStateSuccess) return;
+
+      final messages = messageState.messages;
+      if (messages.isEmpty) return;
+
+      final bool isLastFiveVisible = _checkIfLastMessagesVisible(5);
+
+      if (isLastFiveVisible) {
+        _scrollToBottom();
+      } else {
+        await ref.read(messageProvider.notifier).jumpToMessage(
+          messageId: messageId,
+          messageDate: messageDate,
+        );
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToMessageById(messageId);
+        });
+      }
+    } finally {
+      ref.read(scrollToSentMessageActionProvider.notifier).state = null;
+      _isHandlingScrollAction = false;
+
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _blockAutoLoad = false;
+        }
+      });
+    }
+  }
+
+  void _scrollToBottom() {
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return;
+
+    final messages = messageState.messages;
+    if (messages.isEmpty) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_itemScrollController.isAttached && mounted) {
+        _itemScrollController.scrollTo(
+          index: messages.length - 1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+          alignment: 0.7,
+        );
+      }
+    });
+  }
+
+  void _scrollToMessageById(String messageId) {
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return;
+
+    final messages = messageState.messages;
+    final targetIndex = messages.indexWhere((m) => m.id == messageId);
+
+    if (targetIndex != -1 && _itemScrollController.isAttached) {
+      _itemScrollController.scrollTo(
+        index: targetIndex,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        alignment: 0.3,
+      );
+    }
+  }
+
+  bool _checkIfLastMessagesVisible(int count) {
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return false;
+
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return false;
+
+    final messages = messageState.messages;
+    final messagesLength = messages.length;
+
+    if (messagesLength < count) return true;
+
+    final maxVisibleIndex = positions
+        .map((pos) => pos.index)
+        .reduce((max, index) => index > max ? index : max);
+
+    final lastMessagesStartIndex = messagesLength - count;
+
+    return maxVisibleIndex >= lastMessagesStartIndex;
   }
 }

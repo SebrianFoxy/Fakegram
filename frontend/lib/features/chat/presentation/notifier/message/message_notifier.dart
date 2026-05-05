@@ -3,7 +3,9 @@ import 'package:fakegram/features/auth/presentation/providers/user_providers.dar
 import 'package:fakegram/features/chat/data/models/message/message_detail_model.dart';
 import 'package:fakegram/features/chat/domain/entities/message_entity.dart';
 import 'package:fakegram/features/chat/domain/repositories/message_repository.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../../core/di/service_locator.dart';
@@ -39,7 +41,7 @@ class MessageNotifier extends _$MessageNotifier {
   @override
   MessageState build() {
     final selectedChat = ref.watch(selectedChatProvider);
-    final userId = ref.watch(currentUserIdProvider).value;
+    final userId = ref.watch(currentUserIdProvider);
 
     _messageRepository = getIt<MessageRepository>();
     _userService = getIt<UserService>();
@@ -58,6 +60,15 @@ class MessageNotifier extends _$MessageNotifier {
           (previous, next) {
         if (next != null) {
           handleMessageReadEvent(next);
+        }
+      },
+    );
+
+    ref.listen<Map<String, dynamic>?>(
+      messageReadAllProvider,
+          (previous, next) {
+        if (next != null) {
+          handleMessageReadAllEvent(next);
         }
       },
     );
@@ -142,7 +153,7 @@ class MessageNotifier extends _$MessageNotifier {
 
       final result = await _messageRepository.getOlderMessages(
         userId: selectedChat.otherUser.id,
-        cursor: _olderCursor ?? DateTime.now().toIso8601String(),
+        cursor: _olderCursor ?? DateTime.now().toUtc().toIso8601String(),
         limit: _messagesPerPage,
       );
 
@@ -234,10 +245,67 @@ class MessageNotifier extends _$MessageNotifier {
     }
   }
 
+  Future<void> jumpToMessage({
+    required String messageId,
+    required String messageDate,
+  }) async {
+    try {
+      if (_currentChatId == null || _currentUserId == null) {
+        return;
+      }
+
+      final selectedChat = ref.read(selectedChatProvider);
+      if (selectedChat == null) return;
+
+      _loadedMessageIds.clear();
+      _resetPagination();
+
+      state = const MessageState.loading();
+
+      final result = await _messageRepository.getInitialMessages(
+        userId: selectedChat.otherUser.id,
+        cursor: messageDate,
+        limit: _messagesPerPage,
+      );
+
+      _updatePaginationState(result);
+      _totalUnread = result.totalUnread;
+
+      final sortedMessages = _sortMessagesByDate(result.messages);
+
+      _loadedMessageIds.addAll(sortedMessages.map((m) => m.id));
+
+      final updatedMessages = sortedMessages.map((message) {
+        return _updateMessageStatus(message);
+      }).toList();
+
+      _recalculateFirstUnreadIndex(updatedMessages);
+
+      state = MessageState.success(
+        messages: updatedMessages,
+        hasMoreOlder: result.hasMoreOlder,
+        hasMoreNewer: result.hasMoreNewer,
+        isLoadingMore: false,
+        isLoadingNewer: false,
+        olderCursor: result.olderCursor,
+        newerCursor: result.newerCursor,
+        totalUnread: result.totalUnread,
+        firstUnreadIndex: _firstUnreadIndex,
+        jumpToMessageId: messageId,
+      );
+    } catch (error) {
+      debugPrint('JumpToMessageError: ${error.toString()}');
+      final exception = ErrorHandler.handleError(error);
+      state = MessageState.error(error: exception);
+    }
+  }
+
   Future<void> sendMessage({
     required String messageText,
     required String messageType,
-    String? replyToMessageId,}) async {
+    MessageEntity? replyToMessage,
+    String? replyToMessageId,
+  }) async {
     try {
       if (_currentChatId == null || _currentUserId == null) {
         return;
@@ -267,8 +335,10 @@ class MessageNotifier extends _$MessageNotifier {
         senderNickname: userData?.nickname ?? 'you',
         senderAvatarUrl: '',
         status: MessageStatus.sending,
+        replyToMessage: replyToMessage,
       );
 
+      clearReplyingMessage();
       _addTempMessage(tempMessage);
 
       final messageData = await _messageRepository.sendMessage(
@@ -279,6 +349,16 @@ class MessageNotifier extends _$MessageNotifier {
       );
 
       _replaceTempMessage(tempId, messageData);
+
+      if (_totalUnread > 0) {
+        _sendReadAllReceipts();
+      }
+
+      ref.read(scrollToSentMessageActionProvider.notifier).state = (
+        messageId: messageData.id,
+        messageDate: messageData.createdAt.toUtc().toIso8601String(),
+      );
+
     } catch (error) {
       _handleSendError(error, messageText);
     }
@@ -371,6 +451,7 @@ class MessageNotifier extends _$MessageNotifier {
         senderNickname: messageData.senderNickname,
         senderAvatarUrl: '',
         status: MessageStatus.sent,
+        replyToMessage: messageData.replyToMessage
       );
 
       final filteredMessages = currentState.messages
@@ -381,7 +462,9 @@ class MessageNotifier extends _$MessageNotifier {
 
       final sortedMessages = _sortMessagesByDate(filteredMessages);
 
-      state = currentState.copyWith(messages: sortedMessages);
+      state = currentState.copyWith(
+        messages: sortedMessages,
+      );
     }
   }
 
@@ -473,33 +556,53 @@ class MessageNotifier extends _$MessageNotifier {
       return;
     }
 
-    final unreadMessageIds = messageIds.where((id) {
-      if (state is! MessageStateSuccess) return false;
-      final currentState = state as MessageStateSuccess;
-      final message = currentState.messages.firstWhere(
-            (m) => m.id == id,
-        orElse: () => throw Exception(),
-      );
-      return !message.isRead && message.senderId != _currentUserId;
-    }).toList();
+    if (state is! MessageStateSuccess) return;
+    final currentState = state as MessageStateSuccess;
+
+    final messagesMap = <String, MessageEntity>{};
+    for (final message in currentState.messages) {
+      messagesMap[message.id] = message;
+    }
+
+    final unreadMessageIds = <String>[];
+
+    for (final id in messageIds) {
+      final message = messagesMap[id];
+      if (message != null &&
+          !message.isRead &&
+          message.senderId != _currentUserId) {
+        unreadMessageIds.add(id);
+      }
+    }
 
     if (unreadMessageIds.isEmpty) return;
 
     _sendReadReceipts(unreadMessageIds);
-
     _markMessagesAsRead(unreadMessageIds);
   }
 
   void _sendReadReceipts(List<String> messageIds) {
     if (messageIds.isEmpty || _currentChatId == null) return;
 
-    final webSocketNotifier = ref.read(webSocketNotifierProvider.notifier);
+    final webSocketNotifier = ref.read(webSocketProvider.notifier);
 
     final lastMessageId = messageIds.last;
     webSocketNotifier.sendMessageRead(_currentChatId!, lastMessageId);
 
     if (kDebugMode) {
       print('📤 Отправлено подтверждение о прочтении для сообщения: $lastMessageId');
+    }
+  }
+
+  void _sendReadAllReceipts() {
+    if (_currentChatId == null) return;
+
+    final webSocketNotifier = ref.read(webSocketProvider.notifier);
+
+    webSocketNotifier.sendMessageAllRead(_currentChatId!);
+
+    if (kDebugMode) {
+      print('📤 Отправлено подтверждение о прочтении всех сообщение после sendMessage');
     }
   }
 
@@ -574,10 +677,53 @@ class MessageNotifier extends _$MessageNotifier {
       }).toList();
 
       state = currentState.copyWith(messages: updatedMessages);
-
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Error handling message_read event: $e');
+        print(stackTrace);
+      }
+    }
+  }
+
+  void handleMessageReadAllEvent(Map<String, dynamic> data) {
+    try {
+      final chatId = data['chat_id'] as String?;
+      final userId = data['user_id'] as String?;
+
+      if (chatId != _currentChatId) return;
+      if (userId == _currentUserId) return;
+
+      if (kDebugMode) {
+        print('📖 Все сообщения в чате прочитаны пользователем $userId');
+      }
+
+      if (state is! MessageStateSuccess) return;
+      final currentState = state as MessageStateSuccess;
+
+      final now = DateTime.now();
+      final updatedMessages = currentState.messages.map((message) {
+        if (message.senderId == _currentUserId && message.status != MessageStatus.read) {
+          if (kDebugMode) {
+            print('   ✅ Отмечаем как прочитанное: ${message.id} (${message.messageText})');
+          }
+          return message.copyWith(
+            isRead: true,
+            readAt: now,
+            status: MessageStatus.read,
+          );
+        }
+        return message;
+      }).toList();
+
+      _recalculateFirstUnreadIndex(updatedMessages);
+
+      state = currentState.copyWith(
+        messages: updatedMessages,
+        firstUnreadIndex: _firstUnreadIndex,
+      );
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('Error in handleMessageReadAllEvent: $e');
         print(stackTrace);
       }
     }
@@ -614,6 +760,18 @@ class MessageNotifier extends _$MessageNotifier {
     }
   }
 
+  void setReplyingMessage(MessageEntity message) {
+    state = (state as MessageStateSuccess).copyWith(
+      replyingToMessage: message,
+    );
+  }
+
+  void clearReplyingMessage() {
+    state = (state as MessageStateSuccess).copyWith(
+      replyingToMessage: null,
+    );
+  }
+
   void _resetPagination() {
     _olderCursor = null;
     _newerCursor = null;
@@ -621,8 +779,12 @@ class MessageNotifier extends _$MessageNotifier {
     _hasMoreNewer = true;
     _isLoadingMore = false;
     _isLoadingNewer = false;
-    _totalUnread = 0;
+      _totalUnread = 0;
     _hasUnread = false;
     _loadedMessageIds.clear();
   }
 }
+
+final messageInputFocusProvider = StateProvider<FocusNode?>((ref) => null);
+
+final scrollToSentMessageActionProvider = StateProvider<({String messageId, String messageDate})?>((ref) => null);

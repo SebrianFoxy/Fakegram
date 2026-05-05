@@ -11,6 +11,7 @@ import '../../../../../core/network/error_handling/error_handler.dart';
 import '../../../../auth/presentation/providers/user_providers.dart';
 import '../../../../websocket/presentation/providers/websocket_providers.dart';
 import '../../../data/models/chat/direct_chat_model.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 part 'chat_notifier.freezed.dart';
 part 'chat_notifier.g.dart';
@@ -38,15 +39,6 @@ class ChatNotifier extends _$ChatNotifier {
       },
       fireImmediately: true,
     );
-
-    // ref.listen(
-    //   messageReadProvider,
-    //       (previous, next) {
-    //     if (next != null) {
-    //       _handleMessageReadEvent(next);
-    //     }
-    //   },
-    // );
 
     ref.listen(
       unreadCountUpdateProvider,
@@ -105,7 +97,7 @@ class ChatNotifier extends _$ChatNotifier {
 
       final chat = currentState.chats[chatIndex];
 
-      final currentUserId = ref.read(currentUserIdProvider).value;
+      final currentUserId = ref.read(currentUserIdProvider);
 
       if (userId == currentUserId) {
         debugPrint('👤 Текущий пользователь прочитал сообщения в чате $chatId');

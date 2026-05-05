@@ -1,6 +1,5 @@
-// dart format width=80
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -21,6 +20,7 @@ mixin _$MessageEntity {
   String get messageText;
   String get messageType;
   String? get replyToMessageId;
+  MessageEntity? get replyToMessage;
   bool get isEdited;
   bool get isDeleted;
   bool get isRead;
@@ -55,6 +55,8 @@ mixin _$MessageEntity {
                 other.messageType == messageType) &&
             (identical(other.replyToMessageId, replyToMessageId) ||
                 other.replyToMessageId == replyToMessageId) &&
+            (identical(other.replyToMessage, replyToMessage) ||
+                other.replyToMessage == replyToMessage) &&
             (identical(other.isEdited, isEdited) ||
                 other.isEdited == isEdited) &&
             (identical(other.isDeleted, isDeleted) ||
@@ -83,6 +85,7 @@ mixin _$MessageEntity {
       messageText,
       messageType,
       replyToMessageId,
+      replyToMessage,
       isEdited,
       isDeleted,
       isRead,
@@ -96,7 +99,7 @@ mixin _$MessageEntity {
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
+    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, replyToMessage: $replyToMessage, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
   }
 }
 
@@ -113,6 +116,7 @@ abstract mixin class $MessageEntityCopyWith<$Res> {
       String messageText,
       String messageType,
       String? replyToMessageId,
+      MessageEntity? replyToMessage,
       bool isEdited,
       bool isDeleted,
       bool isRead,
@@ -123,6 +127,8 @@ abstract mixin class $MessageEntityCopyWith<$Res> {
       String senderNickname,
       String? senderAvatarUrl,
       MessageStatus status});
+
+  $MessageEntityCopyWith<$Res>? get replyToMessage;
 }
 
 /// @nodoc
@@ -144,6 +150,7 @@ class _$MessageEntityCopyWithImpl<$Res>
     Object? messageText = null,
     Object? messageType = null,
     Object? replyToMessageId = freezed,
+    Object? replyToMessage = freezed,
     Object? isEdited = null,
     Object? isDeleted = null,
     Object? isRead = null,
@@ -180,6 +187,10 @@ class _$MessageEntityCopyWithImpl<$Res>
           ? _self.replyToMessageId
           : replyToMessageId // ignore: cast_nullable_to_non_nullable
               as String?,
+      replyToMessage: freezed == replyToMessage
+          ? _self.replyToMessage
+          : replyToMessage // ignore: cast_nullable_to_non_nullable
+              as MessageEntity?,
       isEdited: null == isEdited
           ? _self.isEdited
           : isEdited // ignore: cast_nullable_to_non_nullable
@@ -222,6 +233,282 @@ class _$MessageEntityCopyWithImpl<$Res>
               as MessageStatus,
     ));
   }
+
+  /// Create a copy of MessageEntity
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageEntityCopyWith<$Res>? get replyToMessage {
+    if (_self.replyToMessage == null) {
+      return null;
+    }
+
+    return $MessageEntityCopyWith<$Res>(_self.replyToMessage!, (value) {
+      return _then(_self.copyWith(replyToMessage: value));
+    });
+  }
+}
+
+/// Adds pattern-matching-related methods to [MessageEntity].
+extension MessageEntityPatterns on MessageEntity {
+  /// A variant of `map` that fallback to returning `orElse`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>(
+    TResult Function(_MessageEntity value)? $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageEntity() when $default != null:
+        return $default(_that);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// Callbacks receives the raw object, upcasted.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case final Subclass2 value:
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>(
+    TResult Function(_MessageEntity value) $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageEntity():
+        return $default(_that);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `map` that fallback to returning `null`.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case final Subclass value:
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>(
+    TResult? Function(_MessageEntity value)? $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageEntity() when $default != null:
+        return $default(_that);
+      case _:
+        return null;
+    }
+  }
+
+  /// A variant of `when` that fallback to an `orElse` callback.
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return orElse();
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>(
+    TResult Function(
+            String id,
+            String chatId,
+            String senderId,
+            String messageText,
+            String messageType,
+            String? replyToMessageId,
+            MessageEntity? replyToMessage,
+            bool isEdited,
+            bool isDeleted,
+            bool isRead,
+            DateTime createdAt,
+            DateTime? readAt,
+            String senderName,
+            String senderSurname,
+            String senderNickname,
+            String? senderAvatarUrl,
+            MessageStatus status)?
+        $default, {
+    required TResult orElse(),
+  }) {
+    final _that = this;
+    switch (_that) {
+      case _MessageEntity() when $default != null:
+        return $default(
+            _that.id,
+            _that.chatId,
+            _that.senderId,
+            _that.messageText,
+            _that.messageType,
+            _that.replyToMessageId,
+            _that.replyToMessage,
+            _that.isEdited,
+            _that.isDeleted,
+            _that.isRead,
+            _that.createdAt,
+            _that.readAt,
+            _that.senderName,
+            _that.senderSurname,
+            _that.senderNickname,
+            _that.senderAvatarUrl,
+            _that.status);
+      case _:
+        return orElse();
+    }
+  }
+
+  /// A `switch`-like method, using callbacks.
+  ///
+  /// As opposed to `map`, this offers destructuring.
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case Subclass2(:final field2):
+  ///     return ...;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>(
+    TResult Function(
+            String id,
+            String chatId,
+            String senderId,
+            String messageText,
+            String messageType,
+            String? replyToMessageId,
+            MessageEntity? replyToMessage,
+            bool isEdited,
+            bool isDeleted,
+            bool isRead,
+            DateTime createdAt,
+            DateTime? readAt,
+            String senderName,
+            String senderSurname,
+            String senderNickname,
+            String? senderAvatarUrl,
+            MessageStatus status)
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageEntity():
+        return $default(
+            _that.id,
+            _that.chatId,
+            _that.senderId,
+            _that.messageText,
+            _that.messageType,
+            _that.replyToMessageId,
+            _that.replyToMessage,
+            _that.isEdited,
+            _that.isDeleted,
+            _that.isRead,
+            _that.createdAt,
+            _that.readAt,
+            _that.senderName,
+            _that.senderSurname,
+            _that.senderNickname,
+            _that.senderAvatarUrl,
+            _that.status);
+      case _:
+        throw StateError('Unexpected subclass');
+    }
+  }
+
+  /// A variant of `when` that fallback to returning `null`
+  ///
+  /// It is equivalent to doing:
+  /// ```dart
+  /// switch (sealedClass) {
+  ///   case Subclass(:final field):
+  ///     return ...;
+  ///   case _:
+  ///     return null;
+  /// }
+  /// ```
+
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>(
+    TResult? Function(
+            String id,
+            String chatId,
+            String senderId,
+            String messageText,
+            String messageType,
+            String? replyToMessageId,
+            MessageEntity? replyToMessage,
+            bool isEdited,
+            bool isDeleted,
+            bool isRead,
+            DateTime createdAt,
+            DateTime? readAt,
+            String senderName,
+            String senderSurname,
+            String senderNickname,
+            String? senderAvatarUrl,
+            MessageStatus status)?
+        $default,
+  ) {
+    final _that = this;
+    switch (_that) {
+      case _MessageEntity() when $default != null:
+        return $default(
+            _that.id,
+            _that.chatId,
+            _that.senderId,
+            _that.messageText,
+            _that.messageType,
+            _that.replyToMessageId,
+            _that.replyToMessage,
+            _that.isEdited,
+            _that.isDeleted,
+            _that.isRead,
+            _that.createdAt,
+            _that.readAt,
+            _that.senderName,
+            _that.senderSurname,
+            _that.senderNickname,
+            _that.senderAvatarUrl,
+            _that.status);
+      case _:
+        return null;
+    }
+  }
 }
 
 /// @nodoc
@@ -234,6 +521,7 @@ class _MessageEntity extends MessageEntity {
       required this.messageText,
       required this.messageType,
       required this.replyToMessageId,
+      this.replyToMessage,
       required this.isEdited,
       required this.isDeleted,
       required this.isRead,
@@ -258,6 +546,8 @@ class _MessageEntity extends MessageEntity {
   final String messageType;
   @override
   final String? replyToMessageId;
+  @override
+  final MessageEntity? replyToMessage;
   @override
   final bool isEdited;
   @override
@@ -303,6 +593,8 @@ class _MessageEntity extends MessageEntity {
                 other.messageType == messageType) &&
             (identical(other.replyToMessageId, replyToMessageId) ||
                 other.replyToMessageId == replyToMessageId) &&
+            (identical(other.replyToMessage, replyToMessage) ||
+                other.replyToMessage == replyToMessage) &&
             (identical(other.isEdited, isEdited) ||
                 other.isEdited == isEdited) &&
             (identical(other.isDeleted, isDeleted) ||
@@ -331,6 +623,7 @@ class _MessageEntity extends MessageEntity {
       messageText,
       messageType,
       replyToMessageId,
+      replyToMessage,
       isEdited,
       isDeleted,
       isRead,
@@ -344,7 +637,7 @@ class _MessageEntity extends MessageEntity {
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
+    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, replyToMessage: $replyToMessage, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
   }
 }
 
@@ -363,6 +656,7 @@ abstract mixin class _$MessageEntityCopyWith<$Res>
       String messageText,
       String messageType,
       String? replyToMessageId,
+      MessageEntity? replyToMessage,
       bool isEdited,
       bool isDeleted,
       bool isRead,
@@ -373,6 +667,9 @@ abstract mixin class _$MessageEntityCopyWith<$Res>
       String senderNickname,
       String? senderAvatarUrl,
       MessageStatus status});
+
+  @override
+  $MessageEntityCopyWith<$Res>? get replyToMessage;
 }
 
 /// @nodoc
@@ -394,6 +691,7 @@ class __$MessageEntityCopyWithImpl<$Res>
     Object? messageText = null,
     Object? messageType = null,
     Object? replyToMessageId = freezed,
+    Object? replyToMessage = freezed,
     Object? isEdited = null,
     Object? isDeleted = null,
     Object? isRead = null,
@@ -430,6 +728,10 @@ class __$MessageEntityCopyWithImpl<$Res>
           ? _self.replyToMessageId
           : replyToMessageId // ignore: cast_nullable_to_non_nullable
               as String?,
+      replyToMessage: freezed == replyToMessage
+          ? _self.replyToMessage
+          : replyToMessage // ignore: cast_nullable_to_non_nullable
+              as MessageEntity?,
       isEdited: null == isEdited
           ? _self.isEdited
           : isEdited // ignore: cast_nullable_to_non_nullable
@@ -471,6 +773,20 @@ class __$MessageEntityCopyWithImpl<$Res>
           : status // ignore: cast_nullable_to_non_nullable
               as MessageStatus,
     ));
+  }
+
+  /// Create a copy of MessageEntity
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageEntityCopyWith<$Res>? get replyToMessage {
+    if (_self.replyToMessage == null) {
+      return null;
+    }
+
+    return $MessageEntityCopyWith<$Res>(_self.replyToMessage!, (value) {
+      return _then(_self.copyWith(replyToMessage: value));
+    });
   }
 }
 

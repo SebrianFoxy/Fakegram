@@ -1,6 +1,6 @@
-part of 'widgets.dart';
+part of '../widgets/widgets.dart';
 
-class ChatListItem extends ConsumerWidget {
+class ChatListItem extends StatelessWidget {
   final DirectChatEntity chat;
   final bool isSelected;
   final VoidCallback onTap;
@@ -13,114 +13,129 @@ class ChatListItem extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Container(
-      color: isSelected ? colorScheme.secondaryContainer : Colors.transparent,
-      child: ListTile(
-        leading: _buildAvatar(theme),
-        title: _buildTitle(theme),
-        subtitle: _buildSubtitle(theme),
-        trailing: _buildTrailing(theme),
-        onTap: onTap,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primaryContainer.withOpacity(0.3)
+              : null,
+          border: Border(
+            bottom: BorderSide(
+              color: colorScheme.outline.withOpacity(0.1),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            _buildAvatar(context),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          chat.title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        _formatTime(),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          chat.lastMessage.messageText,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurface.withOpacity(0.7),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (chat.unreadCount > 0)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.all(4),
+                          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${chat.unreadCount}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      else
+                        const SizedBox(width: 28),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildAvatar(ThemeData theme) {
+  String _formatTime() {
+    return DateFormat.Hm().format(chat.lastMessage.createdAt);
+  }
+
+  Widget _buildAvatar(BuildContext context) {
     return Stack(
       children: [
         CircleAvatar(
-          radius: 24,
+          radius: 28,
           backgroundImage: chat.otherUser.avatarUrl != null
               ? NetworkImage(chat.otherUser.avatarUrl!)
               : const AssetImage('assets/default-avatar.png') as ImageProvider,
         ),
-        if (chat.otherUser.isOnline) _buildOnlineIndicator(theme),
+        if (chat.otherUser.isOnline)
+          Positioned(
+            right: 2,
+            bottom: 2,
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
       ],
-    );
-  }
-
-  Widget _buildOnlineIndicator(ThemeData theme) {
-    return Positioned(
-      right: 0,
-      bottom: 0,
-      child: Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-          color: Colors.green,
-          shape: BoxShape.circle,
-          border: Border.all(color: theme.colorScheme.surface, width: 2),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTitle(ThemeData theme) {
-    final maxLength = 15;
-    final displayText = chat.title.length > maxLength
-        ? '${chat.title.substring(0, maxLength)}...'
-        : chat.title;
-
-    return Text(
-      displayText,
-      style: theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.bold,
-        color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-      ),
-    );
-  }
-
-  Widget _buildSubtitle(ThemeData theme) {
-    return Text(
-      chat.lastMessage.messageText.toString(),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: isSelected
-            ? theme.colorScheme.primary.withOpacity(0.8)
-            : theme.colorScheme.onSurface.withOpacity(0.6),
-      ),
-    );
-  }
-
-  Widget _buildTrailing(ThemeData theme) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        _buildTime(theme),
-        if (chat.unreadCount > 0) _buildUnreadCounter(theme),
-      ],
-    );
-  }
-
-  Widget _buildTime(ThemeData theme) {
-    return Text(
-      DateFormat.Hm().format(chat.lastMessage.createdAt),
-      style: theme.textTheme.labelSmall?.copyWith(
-        color: theme.colorScheme.onSurface.withOpacity(0.5),
-      ),
-    );
-  }
-
-  Widget _buildUnreadCounter(ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        chat.unreadCount.toString(),
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onPrimary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
     );
   }
 }

@@ -29,6 +29,7 @@ func NewWebSocketManager(
     typingHandlers := events.NewTypingHandlers(p)
     
     r.Register("message_read", messageHandlers.CreateMessageReadHandler())
+    r.Register("message_read_all", messageHandlers.CreateMessageReadAllHandler())
     r.Register("typing_start", typingHandlers.CreateTypingStartHandler())
     r.Register("typing_stop", typingHandlers.CreateTypingStopHandler())
     r.Register("new_message", messageHandlers.CreateNewMessageHandler())
