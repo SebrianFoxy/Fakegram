@@ -779,7 +779,7 @@ class MessageNotifier extends _$MessageNotifier {
     _hasMoreNewer = true;
     _isLoadingMore = false;
     _isLoadingNewer = false;
-      _totalUnread = 0;
+    _totalUnread = 0;
     _hasUnread = false;
     _loadedMessageIds.clear();
   }
