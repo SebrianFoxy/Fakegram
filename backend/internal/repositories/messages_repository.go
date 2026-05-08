@@ -388,19 +388,30 @@ func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, othe
             anchorTime = firstUnreadTime.Time
             hasUnread = true
         } else {
-            if lastReadTime.Valid {
+            var lastUserMessageTime sql.NullTime
+            err := r.DB.QueryRowContext(ctx, `
+                SELECT MAX(created_at) FROM messages 
+                WHERE chat_id = $1 AND is_deleted = false AND sender_id = $2
+            `, chatID, userID).Scan(&lastUserMessageTime)
+            if err != nil && err != sql.ErrNoRows {
+                return nil, false, false, 0, fmt.Errorf("failed to get last user message time: %w", err)
+            }
+
+            if lastUserMessageTime.Valid && lastUserMessageTime.Time.After(baseTime) {
+                anchorTime = lastUserMessageTime.Time
+            } else if lastReadTime.Valid {
                 anchorTime = lastReadTime.Time
             } else {
-                var oldestMessageTime sql.NullTime
+                var lastMessageTime sql.NullTime
                 err := r.DB.QueryRowContext(ctx, `
-                    SELECT MIN(created_at) FROM messages 
+                    SELECT MAX(created_at) FROM messages 
                     WHERE chat_id = $1 AND is_deleted = false
-                `, chatID).Scan(&oldestMessageTime)
+                `, chatID).Scan(&lastMessageTime)
                 if err != nil {
-                    return nil, false, false, 0, fmt.Errorf("failed to get oldest message time: %w", err)
+                    return nil, false, false, 0, fmt.Errorf("failed to get last message time: %w", err)
                 }
-                if oldestMessageTime.Valid {
-                    anchorTime = oldestMessageTime.Time
+                if lastMessageTime.Valid {
+                    anchorTime = lastMessageTime.Time
                 } else {
                     return []*models.MessageDetail{}, false, false, 0, nil
                 }
