@@ -44,6 +44,7 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
                 m.created_at
             FROM messages m
             WHERE m.chat_id IN (SELECT chat_id FROM UserDialogs)
+                AND NOT m.is_deleted
             ORDER BY m.chat_id, m.created_at DESC
         ),
         LastReadTimePerChat AS (

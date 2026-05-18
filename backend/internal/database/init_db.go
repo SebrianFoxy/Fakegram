@@ -141,7 +141,8 @@ func CreateTableMessages(db *sql.DB) error {
         reply_to_message_id UUID REFERENCES messages(id) ON DELETE SET NULL,
         is_edited BOOLEAN DEFAULT FALSE,
         is_deleted BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
     
     CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages(chat_id, created_at);
@@ -153,6 +154,29 @@ func CreateTableMessages(db *sql.DB) error {
     if err != nil {
         return fmt.Errorf("failed to create messages table: %v", err)
     }
+
+    triggerQuery := `
+    CREATE OR REPLACE FUNCTION update_messages_updated_at()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    DROP TRIGGER IF EXISTS trigger_messages_updated_at ON messages;
+    
+    CREATE TRIGGER trigger_messages_updated_at
+        BEFORE UPDATE ON messages
+        FOR EACH ROW
+        EXECUTE FUNCTION update_messages_updated_at();
+    `
+
+    _, err = db.Exec(triggerQuery)
+    if err != nil {
+        return fmt.Errorf("failed to create trigger: %v", err)
+    }
+
 
     log.Println("Messages table created successfully!")
     return nil

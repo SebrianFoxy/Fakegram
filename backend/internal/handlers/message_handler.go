@@ -174,3 +174,68 @@ func (h *MessageHandler) GetMessagesByChat(c echo.Context) error {
     
     return c.JSON(http.StatusOK, response)
 }
+
+// DeleteMessage удаляет сообщение пользователя
+// @Summary      Удалить сообщение
+// @Description  Удаление сообщения. Только отправитель может удалить свое сообщение
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        message_id path string true "ID сообщения для удаления"
+// @Success      200 {object} map[string]interface{} "Сообщение успешно удалено"
+// @Failure      400 {object} map[string]string "Неверные параметры запроса"
+// @Failure      401 {object} map[string]string "Неавторизован"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Failure      404 {object} map[string]string "Сообщение не найдено"
+// @Failure      500 {object} map[string]string "Ошибка сервера"
+// @Security     BearerAuth
+// @Router       /api/v1/messages/{message_id} [delete]
+func (h *MessageHandler) DeleteMessage(c echo.Context) error {
+	ctx := c.Request().Context()
+	
+	userID, ok := c.Get("userID").(string)
+	if !ok || userID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"error": "User not authenticated",
+		})
+	}
+
+	messageID := c.Param("message_id")
+	if messageID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Message ID is required",
+		})
+	}
+
+	err := h.messageService.DeleteMessage(ctx, userID, messageID)
+	if err != nil {
+		switch err {
+		case services.ErrAccessDenied:
+			return c.JSON(http.StatusForbidden, map[string]interface{}{
+				"error": "You can only delete your own messages",
+			})
+		case services.ErrMessageNotFound:
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"error": "Message not found",
+			})
+		default:
+			if strings.Contains(err.Error(), "not a participant") {
+				return c.JSON(http.StatusForbidden, map[string]interface{}{
+					"error": "You are not a participant of this chat",
+				})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to delete message: " + err.Error(),
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Message deleted successfully",
+		"data": map[string]interface{}{
+			"message_id": messageID,
+			"deleted_by": userID,
+		},
+	})
+}

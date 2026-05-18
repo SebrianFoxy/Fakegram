@@ -27,4 +27,8 @@ abstract class MessageRepository {
     required String messageType,
     required String replyToMessageId,
   });
+
+  Future<void> deleteMessage({
+    required String messageId
+  });
 }
