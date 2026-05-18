@@ -68,7 +68,7 @@ class MessageBubbleView extends StatelessWidget {
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
-            if (!isSentByMe) _buildSenderName(theme, viewModel),
+            if (!isSentByMe && !message.isDeleted) _buildSenderName(theme, viewModel),
             _buildMessageBubble(context, theme, viewModel, isSentByMe),
           ],
         ),
@@ -102,9 +102,13 @@ class MessageBubbleView extends StatelessWidget {
         ),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSentByMe
+          color: message.isDeleted
+              ? (isSentByMe
+              ? theme.colorScheme.primary.withOpacity(0.4)
+              : theme.colorScheme.surface.withOpacity(0.6))
+              : (isSentByMe
               ? theme.colorScheme.primary
-              : theme.colorScheme.surface,
+              : theme.colorScheme.surface),
           borderRadius: viewModel.borderRadius,
           border: Border.all(
             color: isSentByMe
@@ -112,7 +116,7 @@ class MessageBubbleView extends StatelessWidget {
                 : theme.colorScheme.outline.withOpacity(0.1),
             width: 1,
           ),
-          boxShadow: isSentByMe
+          boxShadow: isSentByMe && !message.isDeleted
               ? [
             BoxShadow(
               color: theme.colorScheme.primary.withOpacity(0.2),
@@ -130,14 +134,25 @@ class MessageBubbleView extends StatelessWidget {
               _buildReplyPreview(context, theme, isSentByMe),
               const SizedBox(height: 8),
             ],
-            Text(
-              message.messageText,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: isSentByMe
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.onSurface,
+            if (message.isDeleted)
+              Text(
+                'Сообщение удалено',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: isSentByMe
+                      ? theme.colorScheme.onPrimary.withOpacity(0.6)
+                      : theme.colorScheme.onSurface.withOpacity(0.5),
+                ),
+              )
+            else
+              Text(
+                message.messageText,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isSentByMe
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onSurface,
+                ),
               ),
-            ),
             const SizedBox(height: 4),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -146,11 +161,11 @@ class MessageBubbleView extends StatelessWidget {
                   viewModel.formattedTime,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: isSentByMe
-                        ? theme.colorScheme.onPrimary.withOpacity(0.8)
-                        : theme.colorScheme.onSurface.withOpacity(0.5),
+                        ? theme.colorScheme.onPrimary.withOpacity(message.isDeleted ? 0.5 : 0.8)
+                        : theme.colorScheme.onSurface.withOpacity(message.isDeleted ? 0.4 : 0.5),
                   ),
                 ),
-                if (isSentByMe) ...[
+                if (isSentByMe && !message.isDeleted) ...[
                   const SizedBox(width: 4),
                   _buildStatusIndicator(viewModel.status),
                 ],
@@ -186,26 +201,38 @@ class MessageBubbleView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            isReplyingToSelf ? 'You' : replyMessage.senderName,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isSentByMe
-                  ? theme.colorScheme.onPrimary.withOpacity(0.9)
-                  : theme.colorScheme.primary,
-              fontWeight: FontWeight.bold,
+          if (replyMessage.isDeleted)
+            Text(
+              'Сообщение удалено',
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: isSentByMe
+                    ? theme.colorScheme.onPrimary.withOpacity(0.6)
+                    : theme.colorScheme.onSurface.withOpacity(0.5),
+              ),
+            )
+          else ...[
+            Text(
+              isReplyingToSelf ? 'You' : replyMessage.senderName,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: isSentByMe
+                    ? theme.colorScheme.onPrimary.withOpacity(0.9)
+                    : theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            replyMessage.messageText,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: isSentByMe
-                  ? theme.colorScheme.onPrimary.withOpacity(0.8)
-                  : theme.colorScheme.onSurface.withOpacity(0.7),
+            const SizedBox(height: 4),
+            Text(
+              replyMessage.messageText,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isSentByMe
+                    ? theme.colorScheme.onPrimary.withOpacity(0.8)
+                    : theme.colorScheme.onSurface.withOpacity(0.7),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

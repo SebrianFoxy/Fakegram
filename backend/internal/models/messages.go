@@ -23,6 +23,7 @@ type Message struct {
     IsEdited         bool      `json:"is_edited" db:"is_edited"`
     IsDeleted        bool      `json:"is_deleted" db:"is_deleted"`
     CreatedAt        time.Time `json:"created_at" db:"created_at"`
+    UpdateAt         time.Time `json:"update_at" db:"update_at"`
 }
 
 type CreateMessageRequest struct {

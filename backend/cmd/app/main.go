@@ -10,6 +10,7 @@ import (
 	"fakegram-api/internal/routes"
 	"fakegram-api/internal/services"
 	"fakegram-api/internal/websocket" 
+	"fakegram-api/internal/database/migrations"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -72,6 +73,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create tokens table: %v", err)
 	}
+
+	if err := migrations.RunMigrations(db); err != nil {
+        log.Fatalf("Failed to run migrations: %v", err)
+    }
 	
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(db)

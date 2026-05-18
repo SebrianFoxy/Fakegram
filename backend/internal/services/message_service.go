@@ -102,7 +102,7 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
     
     s.notifyReceiverAboutNewMessage(chatID, message, senderID)
 
-    s.notifyChatParticipantsAboutNewMessage(chatID, message, senderID)
+    s.notifyChatParticipantsAboutNewMessage(chatID, senderID)
     
     log.Printf("Message sent by user %s in chat %s", senderID, chatID)
     return message, nil
@@ -188,7 +188,56 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
     return response, nil
 }
 
+func (s *MessageService) DeleteMessage(ctx context.Context, userID, messageID string) error {
+    messageDetail, err := s.messageRepo.GetMessageDetailByID(ctx, messageID, userID)
+    if err != nil {
+        if err.Error() == "message not found" {
+            return ErrMessageNotFound
+        }
+        return fmt.Errorf("failed to get message details: %w", err)
+    }
+    
+    if messageDetail.SenderID != userID {
+        return ErrAccessDenied
+    }
+    
+    if err := s.messageRepo.DeleteMessage(ctx, userID, messageDetail.ChatID, messageID); err != nil {
+        return fmt.Errorf("failed to delete message: %w", err)
+    }
+
+    s.broadcastMessageDeleted(messageDetail.ChatID, messageID, userID)
+    s.notifyMessageDeletion(messageDetail.ChatID, messageID, userID)
+    
+    log.Printf("Message %s deleted by user %s in chat %s", messageID, userID, messageDetail.ChatID)
+    return nil
+}
+
+func (s *MessageService) broadcastMessageDeleted(chatID, messageID, userID string) {
+    if s.wsPool == nil {
+        return
+    }
+
+    event := types.WSEvent{
+        Event: types.EventMessageDeleted,
+        Data: map[string]interface{}{
+            "message_id": messageID,
+            "chat_id":    chatID,
+            "deleted_by": userID,
+            "deleted_at": time.Now().Format(time.RFC3339),
+        },
+    }
+
+    s.wsPool.BroadcastToChat(chatID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(event),
+    }, userID)
+}
+
 func (s *MessageService) broadcastNewMessage(message *models.MessageDetail) {
+    if s.wsPool == nil {
+        return
+    }
+
     event := types.WSEvent{
         Event: types.EventMessageSent,
         Data:  message,
@@ -268,7 +317,7 @@ func (s *MessageService) notifyReceiverAboutNewMessage(chatID string, message *m
     }
 }
 
-func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, message *models.MessageDetail, excludeUserID string) {
+func (s *MessageService) notifyChatParticipantsUpdate(chatID string, excludeUserID string, action string) {
     if s.wsPool == nil {
         return
     }
@@ -281,15 +330,15 @@ func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, me
 
     participants := []string{user1, user2}
 
-    log.Printf("🟢 Notifying participants about new message: %v, exclude: %s", participants, excludeUserID)
+    log.Printf("🟢 Notifying participants about %s: %v, exclude: %s", action, participants, excludeUserID)
 
     for _, participantID := range participants {
         if participantID == excludeUserID {
-            log.Printf("🟡 Skipping WebSocket notification for message sender: %s", participantID)
+            log.Printf("🟡 Skipping WebSocket notification for excluded user: %s", participantID)
             continue
         }
 
-        log.Printf("🟢 Sending WebSocket update to receiver: %s", participantID)
+        log.Printf("🟢 Sending WebSocket update to user: %s", participantID)
 
         chats, err := s.chatRepo.GetUserChats(context.Background(), participantID)
         if err != nil {
@@ -312,4 +361,74 @@ func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, me
             log.Printf("❌ Chat not found for user %s", participantID)
         }
     }
+}
+
+func (s *MessageService) notifyChatParticipantsAboutNewMessage(chatID string, excludeUserID string) {
+    s.notifyChatParticipantsUpdate(chatID, excludeUserID, "new message")
+}
+
+func (s *MessageService) notifyChatParticipantsAboutMessageDeletion(chatID string, excludeUserID string) {
+    s.notifyChatParticipantsUpdate(chatID, excludeUserID, "message deletion")
+}
+
+func (s *MessageService) notifyMessageDeletion(chatID, messageID, userID string) {
+    if s.wsPool == nil {
+        return
+    }
+
+    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+    if err != nil {
+        log.Printf("Error extracting users from chat ID: %v", err)
+        return
+    }
+
+    var receiverID string
+    if user1 == userID {
+        receiverID = user2
+    } else {
+        receiverID = user1
+    }
+
+    receiverEvent := types.WSEvent{
+        Event: types.EventMessageListUpdate,
+        Data: map[string]interface{}{
+            "action":     "message_deleted",
+            "message_id": messageID,
+            "chat_id":    chatID,
+            "deleted_by": userID,
+            "timestamp":  time.Now().Format(time.RFC3339),
+        },
+    }
+
+    if err := s.wsPool.SendToUser(receiverID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(receiverEvent),
+    }); err != nil {
+        log.Printf("❌ Failed to notify receiver %s about message deletion: %v", receiverID, err)
+    } else {
+        log.Printf("✅ Receiver %s notified about message deletion", receiverID)
+    }
+
+    senderEvent := types.WSEvent{
+        Event: types.EventMessageListUpdate,
+        Data: map[string]interface{}{
+            "action":     "message_deleted_confirm",
+            "message_id": messageID,
+            "chat_id":    chatID,
+            "status":     "deleted",
+            "deleted_by": userID,
+            "timestamp":  time.Now().Format(time.RFC3339),
+        },
+    }
+
+    if err := s.wsPool.SendToUser(userID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(senderEvent),
+    }); err != nil {
+        log.Printf("❌ Failed to send deletion confirmation to sender %s: %v", userID, err)
+    } else {
+        log.Printf("✅ Deletion confirmation sent to sender %s", userID)
+    }
+
+    s.notifyChatParticipantsAboutMessageDeletion(chatID, receiverID);
 }

@@ -139,4 +139,27 @@ class MessageRepositoryImpl implements MessageRepository {
       throw ErrorHandler.handleError(error);
     }
   }
+
+  @override
+  Future<void> deleteMessage({
+    required String messageId
+  }) async {
+    try {
+      final accessToken = await _tokenService.getAccessToken();
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('Access token is missing');
+      }
+
+      await _remoteDataSource.deleteMessage(
+        messageId,
+        'application/json',
+        'Bearer $accessToken',
+      );
+    } on DioException catch (error) {
+      throw ErrorHandler.handleDioError(error);
+    } catch (error) {
+      throw ErrorHandler.handleError(error);
+    }
+  }
 }

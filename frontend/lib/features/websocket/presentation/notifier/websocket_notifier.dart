@@ -162,7 +162,7 @@ class WebSocketNotifier extends _$WebSocketNotifier {
       ref.read(messageSentConfirmationProvider.notifier).update(data);
     } else if (action == 'message_status_update') {
       ref.read(messageStatusUpdateProvider.notifier).update(data);
-    } else if (action == 'message_deleted') {
+    } else if (action == 'message_deleted' || action == 'message_deleted_confirm') {
       ref.read(messageDeletedProvider.notifier).update(data);
     }
   }

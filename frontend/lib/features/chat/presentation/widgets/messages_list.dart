@@ -309,10 +309,10 @@ class _MessagesListState extends ConsumerState<MessagesList> {
             addRepaintBoundaries: true,
             addSemanticIndexes: true,
             itemBuilder: (context, index) {
+              final currentUser = ref.watch(currentUserIdProvider);
               final message = messages[index];
               final showDate = _shouldShowDate(index, messages);
-              final isFirstUnread = firstUnreadIndex != null &&
-                  index == firstUnreadIndex;
+              final isFirstUnread = firstUnreadIndex != null && index == firstUnreadIndex;
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
@@ -323,7 +323,9 @@ class _MessagesListState extends ConsumerState<MessagesList> {
                     message: message,
                     onReply: () => _replyToMessage(message),
                     onCopyMessage: () => _copyMessage(message),
-                    onDeleteMessage: () => _deleteMessage(message),
+                    onDeleteMessage: message.senderId == currentUser
+                        ? () => _deleteMessage(message)
+                        : null,
                     onEditMessage: () => _editMessage(message),
                     onForwardMessage: () => _forwardMessage(message),
                     onSelectMessage: () => _selectMessage(message),
@@ -540,9 +542,13 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     print('Copy message: ${message.id}');
   }
 
-  void _deleteMessage(MessageEntity message) {
-    // TODO: Показать диалог подтверждения и удалить
+  void _deleteMessage(MessageEntity message) async {
     print('Delete message: ${message.id}');
+    final confirmed = await DeleteMessageDialog.show(context);
+
+    if (confirmed == true && mounted) {
+      ref.read(messageProvider.notifier).deleteMessage(messageId: message.id);
+    }
   }
 
   void _editMessage(MessageEntity message) {

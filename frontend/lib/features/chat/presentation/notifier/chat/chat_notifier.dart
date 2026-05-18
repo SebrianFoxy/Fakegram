@@ -12,6 +12,7 @@ import '../../../../auth/presentation/providers/user_providers.dart';
 import '../../../../websocket/presentation/providers/websocket_providers.dart';
 import '../../../data/models/chat/direct_chat_model.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../../../domain/entities/last_message_entity.dart';
 
 part 'chat_notifier.freezed.dart';
 part 'chat_notifier.g.dart';
@@ -165,6 +166,39 @@ class ChatNotifier extends _$ChatNotifier {
     }
   }
 
+  void updateLastMessage({
+    required String chatId,
+    required LastMessageEntity message,
+  }) {
+    final currentState = state;
+    if (currentState is! ChatStateSuccessLoading) return;
+
+    final chatIndex = currentState.chats.indexWhere(
+          (chat) => chat.id == chatId,
+    );
+
+    if (chatIndex == -1) {
+      debugPrint('⚠️ Чат $chatId не найден в списке');
+      return;
+    }
+
+    final chat = currentState.chats[chatIndex];
+
+    final updatedChat = chat.copyWith(
+      lastMessage: message,
+      updatedAt: DateTime.now(),
+    );
+
+    final updatedChats = List<DirectChatEntity>.from(currentState.chats);
+    updatedChats[chatIndex] = updatedChat;
+
+    updatedChats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+    state = currentState.copyWith(chats: updatedChats);
+
+    debugPrint('📝 Обновлено последнее сообщение в чате $chatId: ${message.messageText}');
+  }
+
   void _handleChatUpdate(Map<String, dynamic> chatData) {
     debugPrint('🎯 WebSocket: Получено обновление чата: $chatData');
 
@@ -176,7 +210,6 @@ class ChatNotifier extends _$ChatNotifier {
 
           final updatedChat = DirectChatModel.fromJson(chatJson);
           _updateChatInList(updatedChat.toEntity());
-
         }
       } catch (e) {
         debugPrint('🔴 Ошибка обработки chatUpdate: $e');

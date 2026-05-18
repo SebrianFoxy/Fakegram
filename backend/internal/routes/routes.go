@@ -69,6 +69,7 @@ func (r *Routes) setupMessageRoutes(api *echo.Group) {
 	
 	messages.POST("/send", r.messageHandler.CreateMessage)
 	messages.GET("/private-chat/:user_id", r.messageHandler.GetMessagesByChat)
+	messages.DELETE("/:message_id", r.messageHandler.DeleteMessage)
 }
 
 func (r *Routes) setupWebSocketRoutes(e *echo.Group) {

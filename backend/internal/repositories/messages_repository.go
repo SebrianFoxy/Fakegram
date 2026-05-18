@@ -325,6 +325,44 @@ func (r *MessageRepository) GetUnreadCount(ctx context.Context, chatID, userID s
     return count, nil
 }
 
+func (r *MessageRepository) DeleteMessage(ctx context.Context, userID, chatID, messageID string) error {
+    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+    if err != nil {
+        return fmt.Errorf("invalid chat ID: %w", err)
+    }
+    
+    if userID != user1 && userID != user2 {
+        return fmt.Errorf("user is not a participant of this chat")
+    }
+
+    query := `
+        UPDATE messages 
+        SET is_deleted = true, 
+            updated_at = NOW()
+        WHERE id = $1 
+            AND chat_id = $2 
+            AND sender_id = $3 
+            AND is_deleted = false
+    `
+
+    result, err := r.DB.ExecContext(ctx, query, messageID, chatID, userID)
+    if err != nil {
+        return fmt.Errorf("failed to delete message: %w", err)
+    }
+
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("failed to check affected rows: %w", err)
+    }
+    
+    if rowsAffected == 0 {
+        return fmt.Errorf("message not found or you don't have permission to delete it")
+    }
+    
+    log.Printf("Message %s deleted by user %s in chat %s", messageID, userID, chatID)
+    return nil
+}
+
 func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, otherUserID, chatID string, cursor *time.Time, limit int) ([]*models.MessageDetail, bool, bool, int64, error) {
     var anchorTime time.Time
     var hasUnread bool
@@ -756,28 +794,38 @@ func (r *MessageRepository) getRepliedMessagesMap(ctx context.Context, messageID
             m.id,
             m.chat_id,
             m.sender_id,
-            m.message_text,
+            CASE 
+                WHEN m.is_deleted THEN ''
+                ELSE m.message_text 
+            END as message_text,
             m.message_type,
             m.reply_to_message_id,
             m.is_edited,
             m.is_deleted,
             m.created_at,
-            u.name,
-            u.surname,
-            u.nickname,
-            u.avatar_url,
-            COALESCE(mrs.is_read, false) as is_read
+            CASE 
+                WHEN m.is_deleted THEN ''
+                ELSE u.name 
+            END as name,
+            CASE 
+                WHEN m.is_deleted THEN ''
+                ELSE u.surname 
+            END as surname,
+            CASE 
+                WHEN m.is_deleted THEN ''
+                ELSE COALESCE(u.nickname, '') 
+            END as nickname,
+            CASE 
+                WHEN m.is_deleted THEN NULL
+                ELSE u.avatar_url 
+            END as avatar_url,
+            false as is_read
         FROM messages m
-        INNER JOIN users u ON m.sender_id = u.id
-        LEFT JOIN (
-            SELECT DISTINCT message_id, true as is_read
-            FROM message_read_status 
-            WHERE user_id = $2
-        ) mrs ON m.id = mrs.message_id
-        WHERE m.id = ANY($1) AND m.is_deleted = false
+        LEFT JOIN users u ON m.sender_id = u.id
+        WHERE m.id = ANY($1)
     `
     
-    rows, err := r.DB.QueryContext(ctx, query, pq.Array(messageIDs), userID)
+    rows, err := r.DB.QueryContext(ctx, query, pq.Array(messageIDs))
     if err != nil {
         return nil, fmt.Errorf("failed to get replied messages: %w", err)
     }
@@ -840,9 +888,7 @@ func (r *MessageRepository) getRepliedMessagesMap(ctx context.Context, messageID
         }
         
         result[id] = msgDetail
-        log.Printf("Loaded reply message: ID=%s, Text=%s", id, messageText)
     }
     
-    log.Printf("Total replied messages loaded: %d", len(result))
     return result, nil
 }

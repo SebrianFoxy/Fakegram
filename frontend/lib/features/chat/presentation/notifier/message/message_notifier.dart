@@ -12,6 +12,7 @@ import '../../../../../core/di/service_locator.dart';
 import '../../../../../core/network/error_handling/error_handler.dart';
 import '../../../../websocket/presentation/notifier/websocket_notifier.dart';
 import '../../../../websocket/presentation/providers/websocket_providers.dart';
+import '../../../domain/entities/last_message_entity.dart';
 import '../../../domain/entities/message_read_entity.dart';
 import '../../../domain/entities/pagination_messages_entity.dart';
 import '../chat/chat_notifier.dart';
@@ -69,6 +70,15 @@ class MessageNotifier extends _$MessageNotifier {
           (previous, next) {
         if (next != null) {
           handleMessageReadAllEvent(next);
+        }
+      },
+    );
+
+    ref.listen<Map<String, dynamic>?>(
+      messageDeletedProvider,
+          (previous, next) {
+        if (next != null) {
+          _handleMessageDeleted(next);
         }
       },
     );
@@ -350,6 +360,22 @@ class MessageNotifier extends _$MessageNotifier {
 
       _replaceTempMessage(tempId, messageData);
 
+      final lastMessageEntity = LastMessageEntity(
+        id: messageData.id,
+        chatId: _currentChatId!,
+        senderId: _currentUserId!,
+        messageText: messageText,
+        messageType: messageType,
+        isEdited: false,
+        isDeleted: false,
+        createdAt: messageData.createdAt,
+      );
+
+      ref.read(chatProvider.notifier).updateLastMessage(
+        chatId: _currentChatId!,
+        message: lastMessageEntity,
+      );
+
       if (_totalUnread > 0) {
         _sendReadAllReceipts();
       }
@@ -362,6 +388,151 @@ class MessageNotifier extends _$MessageNotifier {
     } catch (error) {
       _handleSendError(error, messageText);
     }
+  }
+
+  Future<void> deleteMessage({required String messageId}) async {
+    try {
+      if (_currentChatId == null || _currentUserId == null || messageId.isEmpty) {
+        debugPrint('❌ Cannot delete message: missing required data');
+        return;
+      }
+
+      if (state is! MessageStateSuccess) return;
+      final currentState = state as MessageStateSuccess;
+
+      final deletedMessage = currentState.messages.firstWhere(
+            (m) => m.id == messageId,
+        orElse: () => MessageEntity(
+          id: '',
+          chatId: '',
+          senderId: '',
+          messageText: '',
+          messageType: 'text',
+          replyToMessageId: null,
+          isEdited: false,
+          isDeleted: false,
+          isRead: false,
+          createdAt: DateTime.now(),
+          readAt: null,
+          senderName: '',
+          senderSurname: '',
+          senderNickname: '',
+          senderAvatarUrl: '',
+          status: MessageStatus.sent,
+          replyToMessage: null,
+        ),
+      );
+
+      if (deletedMessage.id.isEmpty) {
+        debugPrint('❌ Message $messageId not found');
+        return;
+      }
+
+      final deletedReplyPlaceholder = deletedMessage.copyWith(
+        isDeleted: true,
+        messageText: '',
+        messageType: 'deleted',
+        senderName: '',
+        senderSurname: '',
+        senderNickname: '',
+        senderAvatarUrl: '',
+        replyToMessage: null,
+        replyToMessageId: null,
+      );
+
+      final updatedMessages = currentState.messages.map((m) {
+        if (m.replyToMessageId == messageId) {
+          return m.copyWith(
+            replyToMessage: deletedReplyPlaceholder,
+          );
+        }
+        return m;
+      }).where((m) => m.id != messageId).toList();
+
+      _loadedMessageIds.remove(messageId);
+
+      if (!deletedMessage.isRead && deletedMessage.senderId != _currentUserId) {
+        _totalUnread = (_totalUnread - 1).clamp(0, _totalUnread);
+      }
+
+      _recalculateFirstUnreadIndex(updatedMessages);
+
+      state = currentState.copyWith(
+        messages: updatedMessages,
+        totalUnread: _totalUnread,
+        firstUnreadIndex: _firstUnreadIndex,
+      );
+
+      if (kDebugMode) {
+        print('🗑️ Message $messageId removed from UI, ${updatedMessages.where((m) => m.replyToMessageId == messageId).length} replies updated');
+      }
+
+      await _messageRepository.deleteMessage(messageId: messageId);
+
+      if (kDebugMode) {
+        print('✅ Message $messageId deleted on server');
+      }
+
+    } catch (error) {
+      debugPrint('❌ DeleteMessageError: ${error.toString()}');
+      final exception = ErrorHandler.handleError(error);
+
+      if (state is MessageStateSuccess && _currentChatId != null) {
+        try {
+          final selectedChat = ref.read(selectedChatProvider);
+          if (selectedChat != null) {
+            await _loadInitialMessages(userId: selectedChat.otherUser.id);
+          }
+        } catch (loadError) {
+          debugPrint('Failed to restore messages: $loadError');
+        }
+
+        state = (state as MessageStateSuccess).copyWith(
+          error: exception.toString(),
+        );
+
+        Future.delayed(const Duration(seconds: 3), () {
+          if (state is MessageStateSuccess) {
+            final updatedState = state as MessageStateSuccess;
+            if (updatedState.error == exception.toString()) {
+              state = updatedState.copyWith(error: null);
+            }
+          }
+        });
+      } else {
+        state = MessageState.error(error: exception);
+      }
+    }
+  }
+
+  Future<void> markMessagesAsReadOnView(List<String> messageIds) async {
+    if (messageIds.isEmpty || _currentChatId == null || _currentUserId == null) {
+      return;
+    }
+
+    if (state is! MessageStateSuccess) return;
+    final currentState = state as MessageStateSuccess;
+
+    final messagesMap = <String, MessageEntity>{};
+    for (final message in currentState.messages) {
+      messagesMap[message.id] = message;
+    }
+
+    final unreadMessageIds = <String>[];
+
+    for (final id in messageIds) {
+      final message = messagesMap[id];
+      if (message != null &&
+          !message.isRead &&
+          message.senderId != _currentUserId) {
+        unreadMessageIds.add(id);
+      }
+    }
+
+    if (unreadMessageIds.isEmpty) return;
+
+    _sendReadReceipts(unreadMessageIds);
+    _markMessagesAsRead(unreadMessageIds);
   }
 
   List<MessageEntity> _sortMessagesByDate(List<MessageEntity> messages) {
@@ -377,20 +548,6 @@ class MessageNotifier extends _$MessageNotifier {
     return sorted;
   }
 
-  void _recalculateFirstUnreadIndex(List<MessageEntity> messages) {
-    final firstUnreadIndex = messages.indexWhere(
-          (m) => !m.isRead && m.senderId != _currentUserId,
-    );
-
-    if (firstUnreadIndex != -1) {
-      _firstUnreadIndex = firstUnreadIndex;
-      _hasUnread = true;
-    } else {
-      _firstUnreadIndex = null;
-      _hasUnread = false;
-    }
-  }
-
   MessageEntity _updateMessageStatus(MessageEntity message) {
     if (message.senderId == _currentUserId) {
       return message.copyWith(
@@ -403,6 +560,20 @@ class MessageNotifier extends _$MessageNotifier {
       isRead: message.isRead,
       status: message.isRead ? MessageStatus.read : MessageStatus.sending,
     );
+  }
+
+  void _recalculateFirstUnreadIndex(List<MessageEntity> messages) {
+    final firstUnreadIndex = messages.indexWhere(
+          (m) => !m.isRead && m.senderId != _currentUserId,
+    );
+
+    if (firstUnreadIndex != -1) {
+      _firstUnreadIndex = firstUnreadIndex;
+      _hasUnread = true;
+    } else {
+      _firstUnreadIndex = null;
+      _hasUnread = false;
+    }
   }
 
   void updateFirstUnreadIndex(int newIndex) {
@@ -549,36 +720,6 @@ class MessageNotifier extends _$MessageNotifier {
         }
       }
     }
-  }
-
-  Future<void> markMessagesAsReadOnView(List<String> messageIds) async {
-    if (messageIds.isEmpty || _currentChatId == null || _currentUserId == null) {
-      return;
-    }
-
-    if (state is! MessageStateSuccess) return;
-    final currentState = state as MessageStateSuccess;
-
-    final messagesMap = <String, MessageEntity>{};
-    for (final message in currentState.messages) {
-      messagesMap[message.id] = message;
-    }
-
-    final unreadMessageIds = <String>[];
-
-    for (final id in messageIds) {
-      final message = messagesMap[id];
-      if (message != null &&
-          !message.isRead &&
-          message.senderId != _currentUserId) {
-        unreadMessageIds.add(id);
-      }
-    }
-
-    if (unreadMessageIds.isEmpty) return;
-
-    _sendReadReceipts(unreadMessageIds);
-    _markMessagesAsRead(unreadMessageIds);
   }
 
   void _sendReadReceipts(List<String> messageIds) {
@@ -764,6 +905,144 @@ class MessageNotifier extends _$MessageNotifier {
     state = (state as MessageStateSuccess).copyWith(
       replyingToMessage: message,
     );
+  }
+
+  void _handleMessageDeleted(Map<String, dynamic> data) {
+    try {
+      final action = data['action'] as String?;
+      final messageId = data['message_id'] as String?;
+      final chatId = data['chat_id'] as String?;
+      final deletedBy = data['deleted_by'] as String?;
+
+      if (kDebugMode) {
+        print('🗑️ Message deleted event: action=$action, messageId=$messageId, chatId=$chatId');
+      }
+
+      if (chatId != _currentChatId || messageId == null) {
+        return;
+      }
+
+      if (state is! MessageStateSuccess) return;
+      final currentState = state as MessageStateSuccess;
+
+      final targetMessage = currentState.messages.firstWhere(
+            (m) => m.id == messageId,
+        orElse: () => MessageEntity(
+          id: '',
+          chatId: '',
+          senderId: '',
+          messageText: '',
+          messageType: 'text',
+          replyToMessageId: null,
+          isEdited: false,
+          isDeleted: false,
+          isRead: false,
+          createdAt: DateTime.now(),
+          readAt: null,
+          senderName: '',
+          senderSurname: '',
+          senderNickname: '',
+          senderAvatarUrl: '',
+          status: MessageStatus.sent,
+          replyToMessage: null,
+        ),
+      );
+
+      if (targetMessage.id.isEmpty) {
+        if (kDebugMode) {
+          print('   ⚠️ Message $messageId not found in state');
+        }
+        return;
+      }
+
+      switch (action) {
+        case 'message_deleted':
+          final deletedReplyPlaceholder = targetMessage.copyWith(
+            isDeleted: true,
+            messageText: '',
+            messageType: 'deleted',
+            senderName: '',
+            senderSurname: '',
+            senderNickname: '',
+            senderAvatarUrl: '',
+            replyToMessage: null,
+            replyToMessageId: null,
+          );
+
+          final updatedMessages = currentState.messages.map((m) {
+            if (m.replyToMessageId == messageId) {
+              return m.copyWith(
+                replyToMessage: deletedReplyPlaceholder,
+              );
+            }
+            return m;
+          }).where((m) => m.id != messageId).toList();
+
+          _loadedMessageIds.remove(messageId);
+
+          final wasUnread = !targetMessage.isRead && targetMessage.senderId != _currentUserId;
+
+          if (wasUnread) {
+            _totalUnread = (_totalUnread - 1).clamp(0, _totalUnread);
+          }
+
+          _recalculateFirstUnreadIndex(updatedMessages);
+
+          state = currentState.copyWith(
+            messages: updatedMessages,
+            totalUnread: _totalUnread,
+            firstUnreadIndex: _firstUnreadIndex,
+          );
+
+          if (kDebugMode) {
+            print('   ✅ Message $messageId removed, ${updatedMessages.where((m) => m.replyToMessageId == messageId).length} replies updated');
+          }
+          break;
+
+        case 'message_deleted_confirm':
+          if (deletedBy == _currentUserId) {
+            final deletedReplyPlaceholder = targetMessage.copyWith(
+              isDeleted: true,
+              messageText: '',
+              messageType: 'deleted',
+              senderName: '',
+              senderSurname: '',
+              senderNickname: '',
+              senderAvatarUrl: '',
+              replyToMessage: null,
+              replyToMessageId: null,
+            );
+
+            final updatedMessages = currentState.messages.map((m) {
+              if (m.replyToMessageId == messageId) {
+                return m.copyWith(
+                  replyToMessage: deletedReplyPlaceholder,
+                );
+              }
+              return m;
+            }).where((m) => m.id != messageId).toList();
+
+            _loadedMessageIds.remove(messageId);
+
+            _recalculateFirstUnreadIndex(updatedMessages);
+
+            state = currentState.copyWith(
+              messages: updatedMessages,
+              firstUnreadIndex: _firstUnreadIndex,
+            );
+
+            if (kDebugMode) {
+              print('   ✅ Own deleted message $messageId confirmed');
+            }
+          }
+          break;
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print('Error handling message deleted event: $e');
+        print(stackTrace);
+      }
+    }
   }
 
   void clearReplyingMessage() {
