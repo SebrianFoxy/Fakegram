@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fakegram-api/internal/repositories"
+	"fakegram-api/internal/services"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -9,16 +9,16 @@ import (
 )
 
 type ChatHandler struct {
-    chatRepo *repositories.ChatRepository
+    chatService *services.ChatService
 }
 
-func NewChatHandler(chatRepo *repositories.ChatRepository) *ChatHandler {
+func NewChatHandler(chatService *services.ChatService) *ChatHandler {
     return &ChatHandler{
-        chatRepo: chatRepo,
+        chatService: chatService,
     }
 }
 
-// GetUserChats возвращает информацию о чатах пользователя
+// GetUserChats  возвращает информацию о чатах пользователя
 // @Summary      Получить чаты пользователя
 // @Description  Возвращает список всех чатов (приватных и групповых) пользователя на основе JWT токена. Для приватных чатов автоматически устанавливается название в формате "Имя Фамилия" собеседника.
 // @Tags         chats
@@ -54,7 +54,7 @@ func (h *ChatHandler) GetUserChats(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	chats, err := h.chatRepo.GetUserChats(ctx, userID)
+	chats, err := h.chatService.GetUserChats(ctx, userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to get user chats: " + err.Error(),

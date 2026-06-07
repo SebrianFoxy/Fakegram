@@ -66,7 +66,7 @@ func (h *UserHandler) GetAllUsers(c echo.Context) error {
             "page":        page,
             "limit":       limit,
             "total_count": totalCount,
-            "total_pages": (totalCount + limit - 1) / limit, // ceil division
+            "total_pages": (totalCount + limit - 1) / limit,
             "has_next":    page*limit < totalCount,
             "has_prev":    page > 1,
         },

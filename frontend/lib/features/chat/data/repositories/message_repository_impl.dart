@@ -67,11 +67,7 @@ class MessageRepositoryImpl implements MessageRepository {
     required int limit,
   }) async {
     try {
-      final accessToken = await _tokenService.getAccessToken();
-
-      if (accessToken == null || accessToken.isEmpty) {
-        throw Exception('Access token is missing');
-      }
+      final accessToken = getAccessToken();
 
       final response = await _remoteDataSource.getMessages(
         userId,
@@ -113,11 +109,7 @@ class MessageRepositoryImpl implements MessageRepository {
     required String replyToMessageId,
   }) async {
     try {
-      final accessToken = await _tokenService.getAccessToken();
-
-      if (accessToken == null || accessToken.isEmpty) {
-        throw Exception('Access token is missing');
-      }
+      final accessToken = getAccessToken();
 
       final request = MessageRequestDTO(
         chatId: chatId,
@@ -145,11 +137,7 @@ class MessageRepositoryImpl implements MessageRepository {
     required String messageId
   }) async {
     try {
-      final accessToken = await _tokenService.getAccessToken();
-
-      if (accessToken == null || accessToken.isEmpty) {
-        throw Exception('Access token is missing');
-      }
+      final accessToken = getAccessToken();
 
       await _remoteDataSource.deleteMessage(
         messageId,
@@ -160,6 +148,45 @@ class MessageRepositoryImpl implements MessageRepository {
       throw ErrorHandler.handleDioError(error);
     } catch (error) {
       throw ErrorHandler.handleError(error);
+    }
+  }
+
+  @override
+  Future<MessageEntity> editMessage({required String messageId, required String newMessageText}) async {
+    try {
+      final accessToken = getAccessToken();
+
+      final request = {
+        'message_text': newMessageText
+      };
+
+      final response = await _remoteDataSource.editMessage(
+        messageId,
+        'application/json',
+        'Bearer $accessToken',
+        request
+      );
+
+      return response.message.toEntity();
+    } on DioException catch (error) {
+      throw ErrorHandler.handleDioError(error);
+    } catch (error) {
+      throw ErrorHandler.handleError(error);
+    }
+  }
+
+  Future<String?> getAccessToken() async {
+    try {
+      final accessToken = await _tokenService.getAccessToken();
+
+      if (accessToken == null || accessToken.isEmpty) {
+        throw Exception('Access token is missing');
+      }
+
+      return accessToken;
+    } catch (e) {
+      debugPrint('getAccessTokenMessageRepositoryError: $e');
+      return null;
     }
   }
 }

@@ -110,6 +110,7 @@ func (r *ChatRepository) GetUserChats(ctx context.Context, userID string) ([]*mo
             &chat.UpdatedAt,
             &chat.UnreadCount,
         )
+        
         if err != nil {
             return nil, fmt.Errorf("failed to scan chat: %w", err)
         }

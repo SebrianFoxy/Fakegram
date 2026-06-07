@@ -543,7 +543,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   void _deleteMessage(MessageEntity message) async {
-    print('Delete message: ${message.id}');
+    debugPrint('Delete message: ${message.id}');
     final confirmed = await DeleteMessageDialog.show(context);
 
     if (confirmed == true && mounted) {
@@ -552,8 +552,13 @@ class _MessagesListState extends ConsumerState<MessagesList> {
   }
 
   void _editMessage(MessageEntity message) {
-    // TODO: Открыть диалог редактирования
-    print('Edit message: ${message.id}');
+    ref.read(messageProvider.notifier).setEditMessage(message);
+
+    final focusNode = ref.read(messageInputFocusProvider);
+    if (focusNode != null) {
+      focusNode.requestFocus();
+    }
+    debugPrint('Edit message: ${message.id}');
   }
 
   void _forwardMessage(MessageEntity message) {

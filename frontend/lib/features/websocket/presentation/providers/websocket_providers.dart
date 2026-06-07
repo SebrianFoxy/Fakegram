@@ -74,6 +74,16 @@ class MessageDeleted extends _$MessageDeleted {
 }
 
 @riverpod
+class MessageEdited extends _$MessageEdited {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
 class MessageRead extends _$MessageRead {
   @override
   Map<String, dynamic>? build() => null;

@@ -157,6 +157,10 @@ class MessageBubbleView extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (message.isEdited && !message.isDeleted) ...[
+                  _buildEditIndicator(theme, isSentByMe),
+                  const SizedBox(width: 4),
+                ],
                 Text(
                   viewModel.formattedTime,
                   style: theme.textTheme.labelSmall?.copyWith(
@@ -177,6 +181,19 @@ class MessageBubbleView extends StatelessWidget {
     );
   }
 
+  Widget _buildEditIndicator(ThemeData theme, bool isSentByMe) {
+    return Text(
+      '(ред.)',
+      style: theme.textTheme.labelSmall?.copyWith(
+        fontSize: 10,
+        fontStyle: FontStyle.italic,
+        color: isSentByMe
+            ? theme.colorScheme.onPrimary.withOpacity(0.6)
+            : theme.colorScheme.onSurface.withOpacity(0.4),
+      ),
+    );
+  }
+
   Widget _buildReplyPreview(BuildContext context, ThemeData theme, bool isSentByMe) {
     final replyMessage = message.replyToMessage!;
     final isReplyingToSelf = replyMessage.senderId == message.senderId;
@@ -193,7 +210,7 @@ class MessageBubbleView extends StatelessWidget {
           left: BorderSide(
             color: isSentByMe
                 ? theme.colorScheme.onPrimary.withOpacity(0.5)
-                : Colors.lightBlueAccent.withOpacity(0.7),
+                : Colors.grey.withOpacity(0.7),
             width: 3,
           ),
         ),

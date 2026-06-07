@@ -363,6 +363,56 @@ abstract class _$MessageDeleted extends $Notifier<Map<String, dynamic>?> {
   }
 }
 
+@ProviderFor(MessageEdited)
+const messageEditedProvider = MessageEditedProvider._();
+
+final class MessageEditedProvider
+    extends $NotifierProvider<MessageEdited, Map<String, dynamic>?> {
+  const MessageEditedProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'messageEditedProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$messageEditedHash();
+
+  @$internal
+  @override
+  MessageEdited create() => MessageEdited();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, dynamic>? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, dynamic>?>(value),
+    );
+  }
+}
+
+String _$messageEditedHash() => r'824aa1400177e1f57890674e734965c21722312a';
+
+abstract class _$MessageEdited extends $Notifier<Map<String, dynamic>?> {
+  Map<String, dynamic>? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<Map<String, dynamic>?, Map<String, dynamic>?>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<Map<String, dynamic>?, Map<String, dynamic>?>,
+        Map<String, dynamic>?,
+        Object?,
+        Object?>;
+    element.handleValue(ref, created);
+  }
+}
+
 @ProviderFor(MessageRead)
 const messageReadProvider = MessageReadProvider._();
 

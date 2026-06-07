@@ -161,6 +161,7 @@ extension MessageStatePatterns on MessageState {
             bool isLoadingMore,
             bool isLoadingNewer,
             MessageEntity? replyingToMessage,
+            MessageEntity? editingMessage,
             String? jumpToMessageId,
             String? olderCursor,
             String? newerCursor,
@@ -185,6 +186,7 @@ extension MessageStatePatterns on MessageState {
             _that.isLoadingMore,
             _that.isLoadingNewer,
             _that.replyingToMessage,
+            _that.editingMessage,
             _that.jumpToMessageId,
             _that.olderCursor,
             _that.newerCursor,
@@ -222,6 +224,7 @@ extension MessageStatePatterns on MessageState {
             bool isLoadingMore,
             bool isLoadingNewer,
             MessageEntity? replyingToMessage,
+            MessageEntity? editingMessage,
             String? jumpToMessageId,
             String? olderCursor,
             String? newerCursor,
@@ -245,6 +248,7 @@ extension MessageStatePatterns on MessageState {
             _that.isLoadingMore,
             _that.isLoadingNewer,
             _that.replyingToMessage,
+            _that.editingMessage,
             _that.jumpToMessageId,
             _that.olderCursor,
             _that.newerCursor,
@@ -279,6 +283,7 @@ extension MessageStatePatterns on MessageState {
             bool isLoadingMore,
             bool isLoadingNewer,
             MessageEntity? replyingToMessage,
+            MessageEntity? editingMessage,
             String? jumpToMessageId,
             String? olderCursor,
             String? newerCursor,
@@ -302,6 +307,7 @@ extension MessageStatePatterns on MessageState {
             _that.isLoadingMore,
             _that.isLoadingNewer,
             _that.replyingToMessage,
+            _that.editingMessage,
             _that.jumpToMessageId,
             _that.olderCursor,
             _that.newerCursor,
@@ -366,6 +372,7 @@ class MessageStateSuccess implements MessageState {
       required this.isLoadingMore,
       required this.isLoadingNewer,
       this.replyingToMessage,
+      this.editingMessage,
       this.jumpToMessageId,
       this.olderCursor,
       this.newerCursor,
@@ -386,6 +393,7 @@ class MessageStateSuccess implements MessageState {
   final bool isLoadingMore;
   final bool isLoadingNewer;
   final MessageEntity? replyingToMessage;
+  final MessageEntity? editingMessage;
   final String? jumpToMessageId;
   final String? olderCursor;
   final String? newerCursor;
@@ -416,6 +424,8 @@ class MessageStateSuccess implements MessageState {
                 other.isLoadingNewer == isLoadingNewer) &&
             (identical(other.replyingToMessage, replyingToMessage) ||
                 other.replyingToMessage == replyingToMessage) &&
+            (identical(other.editingMessage, editingMessage) ||
+                other.editingMessage == editingMessage) &&
             (identical(other.jumpToMessageId, jumpToMessageId) ||
                 other.jumpToMessageId == jumpToMessageId) &&
             (identical(other.olderCursor, olderCursor) ||
@@ -438,6 +448,7 @@ class MessageStateSuccess implements MessageState {
       isLoadingMore,
       isLoadingNewer,
       replyingToMessage,
+      editingMessage,
       jumpToMessageId,
       olderCursor,
       newerCursor,
@@ -447,7 +458,7 @@ class MessageStateSuccess implements MessageState {
 
   @override
   String toString() {
-    return 'MessageState.success(messages: $messages, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, isLoadingMore: $isLoadingMore, isLoadingNewer: $isLoadingNewer, replyingToMessage: $replyingToMessage, jumpToMessageId: $jumpToMessageId, olderCursor: $olderCursor, newerCursor: $newerCursor, totalUnread: $totalUnread, firstUnreadIndex: $firstUnreadIndex, error: $error)';
+    return 'MessageState.success(messages: $messages, hasMoreOlder: $hasMoreOlder, hasMoreNewer: $hasMoreNewer, isLoadingMore: $isLoadingMore, isLoadingNewer: $isLoadingNewer, replyingToMessage: $replyingToMessage, editingMessage: $editingMessage, jumpToMessageId: $jumpToMessageId, olderCursor: $olderCursor, newerCursor: $newerCursor, totalUnread: $totalUnread, firstUnreadIndex: $firstUnreadIndex, error: $error)';
   }
 }
 
@@ -465,6 +476,7 @@ abstract mixin class $MessageStateSuccessCopyWith<$Res>
       bool isLoadingMore,
       bool isLoadingNewer,
       MessageEntity? replyingToMessage,
+      MessageEntity? editingMessage,
       String? jumpToMessageId,
       String? olderCursor,
       String? newerCursor,
@@ -473,6 +485,7 @@ abstract mixin class $MessageStateSuccessCopyWith<$Res>
       String? error});
 
   $MessageEntityCopyWith<$Res>? get replyingToMessage;
+  $MessageEntityCopyWith<$Res>? get editingMessage;
 }
 
 /// @nodoc
@@ -493,6 +506,7 @@ class _$MessageStateSuccessCopyWithImpl<$Res>
     Object? isLoadingMore = null,
     Object? isLoadingNewer = null,
     Object? replyingToMessage = freezed,
+    Object? editingMessage = freezed,
     Object? jumpToMessageId = freezed,
     Object? olderCursor = freezed,
     Object? newerCursor = freezed,
@@ -524,6 +538,10 @@ class _$MessageStateSuccessCopyWithImpl<$Res>
       replyingToMessage: freezed == replyingToMessage
           ? _self.replyingToMessage
           : replyingToMessage // ignore: cast_nullable_to_non_nullable
+              as MessageEntity?,
+      editingMessage: freezed == editingMessage
+          ? _self.editingMessage
+          : editingMessage // ignore: cast_nullable_to_non_nullable
               as MessageEntity?,
       jumpToMessageId: freezed == jumpToMessageId
           ? _self.jumpToMessageId
@@ -563,6 +581,20 @@ class _$MessageStateSuccessCopyWithImpl<$Res>
 
     return $MessageEntityCopyWith<$Res>(_self.replyingToMessage!, (value) {
       return _then(_self.copyWith(replyingToMessage: value));
+    });
+  }
+
+  /// Create a copy of MessageState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $MessageEntityCopyWith<$Res>? get editingMessage {
+    if (_self.editingMessage == null) {
+      return null;
+    }
+
+    return $MessageEntityCopyWith<$Res>(_self.editingMessage!, (value) {
+      return _then(_self.copyWith(editingMessage: value));
     });
   }
 }

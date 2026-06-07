@@ -1,3 +1,4 @@
+import 'package:fakegram/features/auth/domain/entities/user_entity.dart';
 import 'package:fakegram/features/auth/domain/services/user_service.dart';
 import 'package:fakegram/features/auth/presentation/providers/user_providers.dart';
 import 'package:fakegram/features/chat/data/models/message/message_detail_model.dart';
@@ -21,293 +22,147 @@ part 'message_notifier.freezed.dart';
 part 'message_notifier.g.dart';
 part 'message_state.dart';
 
+enum LoadDirection {
+  initial,
+  older,
+  newer,
+}
+
 @riverpod
 class MessageNotifier extends _$MessageNotifier {
   late MessageRepository _messageRepository;
   late UserService _userService;
-  final int _messagesPerPage = 40;
+  static const int _messagesPerPage = 40;
   String? _currentChatId;
   String? _currentUserId;
-  String? _olderCursor;
-  String? _newerCursor;
-  bool _hasMoreOlder = true;
-  bool _hasMoreNewer = true;
   bool _isLoadingMore = false;
   bool _isLoadingNewer = false;
   bool _hasUnread = false;
   int _totalUnread = 0;
   int? _firstUnreadIndex;
   final Set<String> _loadedMessageIds = {};
+  PaginationMessagesEntity? _lastPaginationEntity;
 
   @override
   MessageState build() {
     final selectedChat = ref.watch(selectedChatProvider);
     final userId = ref.watch(currentUserIdProvider);
 
-    _messageRepository = getIt<MessageRepository>();
-    _userService = getIt<UserService>();
-
-    ref.listen<Map<String, dynamic>?>(
-      newMessageFromSocketProvider,
-          (previous, next) {
-        if (next != null) {
-          _handleNewMessageFromSocket(next);
-        }
-      },
-    );
-
-    ref.listen<Map<String, dynamic>?>(
-      messageReadProvider,
-          (previous, next) {
-        if (next != null) {
-          handleMessageReadEvent(next);
-        }
-      },
-    );
-
-    ref.listen<Map<String, dynamic>?>(
-      messageReadAllProvider,
-          (previous, next) {
-        if (next != null) {
-          handleMessageReadAllEvent(next);
-        }
-      },
-    );
-
-    ref.listen<Map<String, dynamic>?>(
-      messageDeletedProvider,
-          (previous, next) {
-        if (next != null) {
-          _handleMessageDeleted(next);
-        }
-      },
-    );
+    _initializeDependencies();
+    _setupSocketListeners();
 
     if (userId == null) {
       return const MessageState.loading();
     }
 
     if (selectedChat != null) {
-      _currentChatId = selectedChat.id;
-      _currentUserId = userId;
-      _resetPagination();
-      _loadInitialMessages(userId: selectedChat.otherUser.id);
+      _initializeChat(selectedChat, userId);
       return const MessageState.loading();
     }
 
     return state;
   }
 
-  Future<void> _loadInitialMessages({required String userId}) async {
-    try {
-      final result = await _messageRepository.getInitialMessages(
-        userId: userId,
-        limit: _messagesPerPage,
-      );
-
-      _updatePaginationState(result);
-      _totalUnread = result.totalUnread;
-
-      final sortedMessages = _sortMessagesByDate(result.messages);
-
-      _loadedMessageIds.clear();
-      _loadedMessageIds.addAll(sortedMessages.map((m) => m.id));
-
-      if (sortedMessages.isNotEmpty) {
-        final firstUnreadIndex = sortedMessages.indexWhere(
-              (m) => !m.isRead && m.senderId != _currentUserId,
-        );
-
-        if (firstUnreadIndex != -1) {
-          _firstUnreadIndex = firstUnreadIndex;
-          _hasUnread = true;
-        } else {
-          _firstUnreadIndex = null;
-          _hasUnread = false;
-        }
-      }
-
-      final updatedMessages = sortedMessages.map((message) {
-        return _updateMessageStatus(message);
-      }).toList();
-
-      state = MessageState.success(
-        messages: updatedMessages,
-        hasMoreOlder: result.hasMoreOlder,
-        hasMoreNewer: result.hasMoreNewer,
-        isLoadingMore: false,
-        isLoadingNewer: false,
-        olderCursor: result.olderCursor,
-        newerCursor: result.newerCursor,
-        totalUnread: result.totalUnread,
-        firstUnreadIndex: _firstUnreadIndex,
-      );
-    } catch (error) {
-      debugPrint('LoadMessageInitialError: ${error.toString()}');
-      final exception = ErrorHandler.handleError(error);
-      state = MessageState.error(error: exception);
-    }
+  void _initializeDependencies() {
+    _messageRepository = getIt<MessageRepository>();
+    _userService = getIt<UserService>();
   }
 
-  Future<void> loadOlderMessages() async {
-    if (!_hasMoreOlder || _isLoadingMore || _currentChatId == null) {
+  void _setupSocketListeners() {
+    _listenToSocketEvent(newMessageFromSocketProvider, _handleNewMessageFromSocket);
+    _listenToSocketEvent(messageReadProvider, handleMessageReadEvent);
+    _listenToSocketEvent(messageReadAllProvider, handleMessageReadAllEvent);
+    _listenToSocketEvent(messageDeletedProvider, _handleMessageDeleted);
+    _listenToSocketEvent(messageEditedProvider, _handleMessageEdited);
+  }
+
+  void _listenToSocketEvent(
+      ProviderListenable<Map<String, dynamic>?> provider,
+      void Function(Map<String, dynamic>) handler,
+      ) {
+    ref.listen<Map<String, dynamic>?>(provider, (previous, next) {
+      if (next != null) {
+        handler(next);
+      }
+    });
+  }
+
+  void _initializeChat(final selectedChat, String userId) {
+    _currentChatId = selectedChat.id;
+    _currentUserId = userId;
+    _resetPagination();
+    _loadInitialMessages(userId: selectedChat.otherUser.id);
+  }
+
+  Future<void> editMessage({
+    required String messageId,
+    required String newMessageText,
+  }) async {
+    if (!_canEditMessage(messageId, newMessageText)) return;
+
+    final currentState = state as MessageStateSuccess;
+
+    final originalMessage = _findMessageById(currentState.messages, messageId);
+    if (originalMessage == null) {
+      debugPrint('❌ Message $messageId not found');
       return;
     }
 
-    _isLoadingMore = true;
-    _updateLoadingState();
-
     try {
-      final selectedChat = ref.read(selectedChatProvider);
-      if (selectedChat == null) return;
+      if (originalMessage.senderId != _currentUserId) {
+        debugPrint('❌ Cannot edit message: not owner');
+        return;
+      }
 
-      final result = await _messageRepository.getOlderMessages(
-        userId: selectedChat.otherUser.id,
-        cursor: _olderCursor ?? DateTime.now().toUtc().toIso8601String(),
-        limit: _messagesPerPage,
+      final editedMessagePlaceholder = _createEditPlaceholder(originalMessage, newMessageText);
+
+      final updatedMessages = _updateMessageAndReplies(
+        currentState.messages,
+        messageId,
+        editedMessagePlaceholder,
       );
 
-      _updatePaginationState(result);
+      _updateStateAfterEdit(updatedMessages, messageId);
 
-      final newMessages = result.messages
-          .where((m) => !_loadedMessageIds.contains(m.id))
-          .toList();
+      final messageData = await _editMessageOnServer(messageId, newMessageText);
 
-      _loadedMessageIds.addAll(newMessages.map((m) => m.id));
-
-      final updatedNewMessages = newMessages.map((message) {
-        return _updateMessageStatus(message);
-      }).toList();
-
-      if (state is MessageStateSuccess) {
-        final currentState = state as MessageStateSuccess;
-
-        final allMessages = [...updatedNewMessages, ...currentState.messages];
-        final sortedMessages = _sortMessagesByDate(allMessages);
-
-        _recalculateFirstUnreadIndex(sortedMessages);
-
-        state = currentState.copyWith(
-          messages: sortedMessages,
-          hasMoreOlder: result.hasMoreOlder,
-          olderCursor: result.olderCursor,
-          isLoadingMore: false,
-          firstUnreadIndex: _firstUnreadIndex,
-        );
-      }
+      _updateLastMessage(messageData, newMessageText, 'text');
+      clearEditMessage();
     } catch (error) {
-      _handleError(error);
-    } finally {
-      _isLoadingMore = false;
+      _handleEditError(error, messageId, originalMessage);
     }
   }
 
-  Future<void> loadNewerMessages() async {
-    if (!_hasMoreNewer || _isLoadingNewer || _currentChatId == null) {
-      return;
-    }
+  Future<void> loadOlderMessages() {
+    return _loadMessages(
+      userId: _getOtherUserId(),
+      direction: LoadDirection.older,
+    );
+  }
 
-    _isLoadingNewer = true;
-    _updateLoadingState();
-
-    try {
-      final selectedChat = ref.read(selectedChatProvider);
-      if (selectedChat == null) return;
-
-      final result = await _messageRepository.getNewerMessages(
-        userId: selectedChat.otherUser.id,
-        cursor: _newerCursor ?? DateTime.now().toIso8601String(),
-        limit: _messagesPerPage,
-      );
-
-      _updatePaginationState(result);
-
-      final newMessages = result.messages
-          .where((m) => !_loadedMessageIds.contains(m.id))
-          .toList();
-
-      _loadedMessageIds.addAll(newMessages.map((m) => m.id));
-
-      final updatedNewMessages = newMessages.map((message) {
-        return _updateMessageStatus(message);
-      }).toList();
-
-      if (state is MessageStateSuccess) {
-        final currentState = state as MessageStateSuccess;
-
-        final allMessages = [...currentState.messages, ...updatedNewMessages];
-        final sortedMessages = _sortMessagesByDate(allMessages);
-
-        _recalculateFirstUnreadIndex(sortedMessages);
-
-        state = currentState.copyWith(
-          messages: sortedMessages,
-          hasMoreNewer: result.hasMoreNewer,
-          newerCursor: result.newerCursor,
-          isLoadingNewer: false,
-          firstUnreadIndex: _firstUnreadIndex,
-        );
-      }
-    } catch (error) {
-      _handleError(error);
-    } finally {
-      _isLoadingNewer = false;
-    }
+  Future<void> loadNewerMessages() {
+    return _loadMessages(
+      userId: _getOtherUserId(),
+      direction: LoadDirection.newer,
+    );
   }
 
   Future<void> jumpToMessage({
     required String messageId,
     required String messageDate,
   }) async {
-    try {
-      if (_currentChatId == null || _currentUserId == null) {
-        return;
-      }
+    if (_currentChatId == null || _currentUserId == null) return;
 
-      final selectedChat = ref.read(selectedChatProvider);
-      if (selectedChat == null) return;
+    _loadedMessageIds.clear();
+    _resetPagination();
+    state = const MessageState.loading();
 
-      _loadedMessageIds.clear();
-      _resetPagination();
-
-      state = const MessageState.loading();
-
-      final result = await _messageRepository.getInitialMessages(
-        userId: selectedChat.otherUser.id,
-        cursor: messageDate,
-        limit: _messagesPerPage,
-      );
-
-      _updatePaginationState(result);
-      _totalUnread = result.totalUnread;
-
-      final sortedMessages = _sortMessagesByDate(result.messages);
-
-      _loadedMessageIds.addAll(sortedMessages.map((m) => m.id));
-
-      final updatedMessages = sortedMessages.map((message) {
-        return _updateMessageStatus(message);
-      }).toList();
-
-      _recalculateFirstUnreadIndex(updatedMessages);
-
-      state = MessageState.success(
-        messages: updatedMessages,
-        hasMoreOlder: result.hasMoreOlder,
-        hasMoreNewer: result.hasMoreNewer,
-        isLoadingMore: false,
-        isLoadingNewer: false,
-        olderCursor: result.olderCursor,
-        newerCursor: result.newerCursor,
-        totalUnread: result.totalUnread,
-        firstUnreadIndex: _firstUnreadIndex,
-        jumpToMessageId: messageId,
-      );
-    } catch (error) {
-      debugPrint('JumpToMessageError: ${error.toString()}');
-      final exception = ErrorHandler.handleError(error);
-      state = MessageState.error(error: exception);
-    }
+    return _loadMessages(
+      userId: _getOtherUserId(),
+      direction: LoadDirection.initial,
+      cursor: messageDate,
+      jumpToMessageId: messageId,
+    );
   }
 
   Future<void> sendMessage({
@@ -316,74 +171,31 @@ class MessageNotifier extends _$MessageNotifier {
     MessageEntity? replyToMessage,
     String? replyToMessageId,
   }) async {
+    if (!_canSendMessage(messageText)) return;
+
     try {
-      if (_currentChatId == null || _currentUserId == null) {
-        return;
-      }
-
-      if (messageText.trim().isEmpty) {
-        return;
-      }
-
       final userData = await _userService.getCurrentUser();
-
-      final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-      final tempMessage = MessageEntity(
-        id: tempId,
-        chatId: _currentChatId.toString(),
-        senderId: _currentUserId!,
+      final tempMessage = _createTempMessage(
         messageText: messageText,
         messageType: messageType,
-        replyToMessageId: replyToMessageId,
-        isEdited: false,
-        isDeleted: false,
-        isRead: true,
-        createdAt: DateTime.now().toLocal(),
-        readAt: DateTime.now(),
-        senderName: userData?.name ?? 'You',
-        senderSurname: userData?.surname ?? '',
-        senderNickname: userData?.nickname ?? 'you',
-        senderAvatarUrl: '',
-        status: MessageStatus.sending,
         replyToMessage: replyToMessage,
+        replyToMessageId: replyToMessageId,
+        userData: userData,
       );
 
       clearReplyingMessage();
       _addTempMessage(tempMessage);
 
-      final messageData = await _messageRepository.sendMessage(
-        chatId: _currentChatId.toString(),
+      final messageData = await _sendMessageToServer(
         messageText: messageText,
         messageType: messageType,
-        replyToMessageId: replyToMessageId ?? '',
+        replyToMessageId: replyToMessageId,
       );
 
-      _replaceTempMessage(tempId, messageData);
-
-      final lastMessageEntity = LastMessageEntity(
-        id: messageData.id,
-        chatId: _currentChatId!,
-        senderId: _currentUserId!,
-        messageText: messageText,
-        messageType: messageType,
-        isEdited: false,
-        isDeleted: false,
-        createdAt: messageData.createdAt,
-      );
-
-      ref.read(chatProvider.notifier).updateLastMessage(
-        chatId: _currentChatId!,
-        message: lastMessageEntity,
-      );
-
-      if (_totalUnread > 0) {
-        _sendReadAllReceipts();
-      }
-
-      ref.read(scrollToSentMessageActionProvider.notifier).state = (
-        messageId: messageData.id,
-        messageDate: messageData.createdAt.toUtc().toIso8601String(),
-      );
+      _replaceTempMessage(tempMessage.id, messageData);
+      _updateLastMessage(messageData, messageText, messageType);
+      _handleReadReceipts();
+      _scrollToSentMessage(messageData);
 
     } catch (error) {
       _handleSendError(error, messageText);
@@ -391,148 +203,965 @@ class MessageNotifier extends _$MessageNotifier {
   }
 
   Future<void> deleteMessage({required String messageId}) async {
-    try {
-      if (_currentChatId == null || _currentUserId == null || messageId.isEmpty) {
-        debugPrint('❌ Cannot delete message: missing required data');
-        return;
-      }
+    if (!_canDeleteMessage(messageId)) return;
 
-      if (state is! MessageStateSuccess) return;
+    try {
       final currentState = state as MessageStateSuccess;
 
-      final deletedMessage = currentState.messages.firstWhere(
-            (m) => m.id == messageId,
-        orElse: () => MessageEntity(
-          id: '',
-          chatId: '',
-          senderId: '',
-          messageText: '',
-          messageType: 'text',
-          replyToMessageId: null,
-          isEdited: false,
-          isDeleted: false,
-          isRead: false,
-          createdAt: DateTime.now(),
-          readAt: null,
-          senderName: '',
-          senderSurname: '',
-          senderNickname: '',
-          senderAvatarUrl: '',
-          status: MessageStatus.sent,
-          replyToMessage: null,
-        ),
-      );
-
-      if (deletedMessage.id.isEmpty) {
+      final deletedMessage = _findMessageById(currentState.messages, messageId);
+      if (deletedMessage == null) {
         debugPrint('❌ Message $messageId not found');
         return;
       }
 
-      final deletedReplyPlaceholder = deletedMessage.copyWith(
-        isDeleted: true,
-        messageText: '',
-        messageType: 'deleted',
-        senderName: '',
-        senderSurname: '',
-        senderNickname: '',
-        senderAvatarUrl: '',
-        replyToMessage: null,
-        replyToMessageId: null,
+      final deletedPlaceholder = _createDeletedPlaceholder(deletedMessage);
+      final updatedMessages = _removeMessageAndUpdateReplies(
+        currentState.messages,
+        messageId,
+        deletedPlaceholder,
       );
-
-      final updatedMessages = currentState.messages.map((m) {
-        if (m.replyToMessageId == messageId) {
-          return m.copyWith(
-            replyToMessage: deletedReplyPlaceholder,
-          );
-        }
-        return m;
-      }).where((m) => m.id != messageId).toList();
 
       _loadedMessageIds.remove(messageId);
 
-      if (!deletedMessage.isRead && deletedMessage.senderId != _currentUserId) {
-        _totalUnread = (_totalUnread - 1).clamp(0, _totalUnread);
-      }
+      _totalUnread = _calculateNewUnreadCount(
+        currentTotal: _totalUnread,
+        deletedMessage: deletedMessage,
+      );
 
       _recalculateFirstUnreadIndex(updatedMessages);
 
-      state = currentState.copyWith(
-        messages: updatedMessages,
-        totalUnread: _totalUnread,
-        firstUnreadIndex: _firstUnreadIndex,
-      );
-
-      if (kDebugMode) {
-        print('🗑️ Message $messageId removed from UI, ${updatedMessages.where((m) => m.replyToMessageId == messageId).length} replies updated');
-      }
-
-      await _messageRepository.deleteMessage(messageId: messageId);
-
-      if (kDebugMode) {
-        print('✅ Message $messageId deleted on server');
-      }
+      _updateStateAfterDelete(updatedMessages, messageId);
+      await _deleteMessageOnServer(messageId);
+      _clearReplyingIfTargetDeleted(messageId);
 
     } catch (error) {
-      debugPrint('❌ DeleteMessageError: ${error.toString()}');
-      final exception = ErrorHandler.handleError(error);
-
-      if (state is MessageStateSuccess && _currentChatId != null) {
-        try {
-          final selectedChat = ref.read(selectedChatProvider);
-          if (selectedChat != null) {
-            await _loadInitialMessages(userId: selectedChat.otherUser.id);
-          }
-        } catch (loadError) {
-          debugPrint('Failed to restore messages: $loadError');
-        }
-
-        state = (state as MessageStateSuccess).copyWith(
-          error: exception.toString(),
-        );
-
-        Future.delayed(const Duration(seconds: 3), () {
-          if (state is MessageStateSuccess) {
-            final updatedState = state as MessageStateSuccess;
-            if (updatedState.error == exception.toString()) {
-              state = updatedState.copyWith(error: null);
-            }
-          }
-        });
-      } else {
-        state = MessageState.error(error: exception);
-      }
+      await _handleDeleteError(error, messageId);
     }
   }
 
   Future<void> markMessagesAsReadOnView(List<String> messageIds) async {
-    if (messageIds.isEmpty || _currentChatId == null || _currentUserId == null) {
-      return;
-    }
+    if (!_canMarkMessagesAsRead(messageIds)) return;
 
-    if (state is! MessageStateSuccess) return;
     final currentState = state as MessageStateSuccess;
-
-    final messagesMap = <String, MessageEntity>{};
-    for (final message in currentState.messages) {
-      messagesMap[message.id] = message;
-    }
-
-    final unreadMessageIds = <String>[];
-
-    for (final id in messageIds) {
-      final message = messagesMap[id];
-      if (message != null &&
-          !message.isRead &&
-          message.senderId != _currentUserId) {
-        unreadMessageIds.add(id);
-      }
-    }
+    final unreadMessageIds = _getUnreadMessageIds(currentState.messages, messageIds);
 
     if (unreadMessageIds.isEmpty) return;
 
     _sendReadReceipts(unreadMessageIds);
     _markMessagesAsRead(unreadMessageIds);
+  }
+
+  void handleMessageReadEvent(Map<String, dynamic> data) {
+    try {
+      final readEntity = MessageReadEntity.fromJson(data);
+
+      if (!_isRelevantReadEvent(readEntity.chatId, readEntity.userId)) return;
+
+      if (kDebugMode) {
+        print('📖 Получено подтверждение о прочтении от ${readEntity.userId}');
+      }
+
+      if (state is! MessageStateSuccess) return;
+
+      final messageIdsToMark = _getMessageIdsUpToIndex(
+        readEntity.lastReadMessageId,
+      );
+
+      if (messageIdsToMark.isEmpty) return;
+
+      _markMessagesAsRead(messageIdsToMark, readAt: readEntity.readAt.toLocal());
+    } catch (error, stackTrace) {
+      debugPrint('handleMessageReadEventError: $error');
+    }
+  }
+
+  void handleMessageReadAllEvent(Map<String, dynamic> data) {
+    try {
+      final chatId = data['chat_id'] as String?;
+      final userId = data['user_id'] as String?;
+
+      if (!_isRelevantReadEvent(chatId, userId)) return;
+      if (kDebugMode) {
+        print('📖 Получено подтверждение о прочтении всех сообщений');
+      }
+
+      if (state is! MessageStateSuccess) return;
+
+      final messageIdsToMark = _getAllUnreadSenderMessageIds();
+
+      if (messageIdsToMark.isEmpty) return;
+
+      _markMessagesAsRead(messageIdsToMark, readAt: DateTime.now());
+    } catch (error, stackTrace) {
+      debugPrint('handleMessageReadAllEventError: $error');
+    }
+  }
+
+  void clearReplyingMessage() {
+    state = (state as MessageStateSuccess).copyWith(
+      replyingToMessage: null,
+    );
+  }
+
+  void _clearReplyingIfTargetDeleted(String deletedMessageId) {
+    final currentState = state as MessageStateSuccess;
+
+    if (currentState.replyingToMessage?.id == deletedMessageId) {
+      clearReplyingMessage();
+
+      if (kDebugMode) {
+        print('   🧹 Cleared reply preview for deleted message $deletedMessageId');
+      }
+    }
+
+    if (currentState.editingMessage?.id == deletedMessageId) {
+      clearEditMessage();
+
+      if (kDebugMode) {
+        print('   🧹 Cleared edit preview for deleted message $deletedMessageId');
+      }
+    }
+  }
+
+  void setReplyingMessage(MessageEntity message) {
+    state = (state as MessageStateSuccess).copyWith(
+      replyingToMessage: message,
+    );
+  }
+
+  Future<void> _loadMessages({
+    required String userId,
+    required LoadDirection direction,
+    String? cursor,
+    String? jumpToMessageId,
+  }) async {
+    if (!_canLoadMore(direction)) return;
+
+    _updateLoadingState(direction, true);
+
+    try {
+      final entity = await _fetchMessages(userId, direction, cursor);
+      final messages = _processNewMessages(entity.messages, direction);
+
+      _lastPaginationEntity = entity;
+      _totalUnread = entity.totalUnread;
+      _recalculateFirstUnreadIndex(messages);
+
+      _updateStateAfterLoad(messages, entity, direction, jumpToMessageId);
+    } catch (error) {
+      _handleError(error);
+    } finally {
+      _updateLoadingState(direction, false);
+    }
+  }
+
+  Future<void> _loadInitialMessages({required String userId}) {
+    return _loadMessages(
+      userId: userId,
+      direction: LoadDirection.initial,
+    );
+  }
+
+  bool _canLoadMore(LoadDirection direction) {
+    if (_currentChatId == null) return false;
+
+    return switch (direction) {
+      LoadDirection.initial => true,
+      LoadDirection.older => (_lastPaginationEntity?.hasMoreOlder ?? true) && !_isLoadingMore,
+      LoadDirection.newer => (_lastPaginationEntity?.hasMoreNewer ?? true) && !_isLoadingNewer,
+    };
+  }
+
+  void _updateLoadingState(LoadDirection direction, bool isLoading) {
+    switch (direction) {
+      case LoadDirection.older:
+        _isLoadingMore = isLoading;
+        break;
+      case LoadDirection.newer:
+        _isLoadingNewer = isLoading;
+        break;
+      case LoadDirection.initial:
+        break;
+    }
+  }
+
+  Future<PaginationMessagesEntity> _fetchMessages(
+      String userId,
+      LoadDirection direction,
+      String? cursor,
+      ) {
+    return switch (direction) {
+      LoadDirection.initial => _messageRepository.getInitialMessages(
+        userId: userId,
+        cursor: cursor,
+        limit: _messagesPerPage,
+      ),
+      LoadDirection.older => _messageRepository.getOlderMessages(
+        userId: userId,
+        cursor: cursor ?? _lastPaginationEntity?.olderCursor ?? _getDefaultCursor(),
+        limit: _messagesPerPage,
+      ),
+      LoadDirection.newer => _messageRepository.getNewerMessages(
+        userId: userId,
+        cursor: cursor ?? _lastPaginationEntity?.newerCursor ?? _getDefaultCursor(),
+        limit: _messagesPerPage,
+      ),
+    };
+  }
+
+  String _getDefaultCursor() {
+    return DateTime.now().toUtc().toIso8601String();
+  }
+
+  List<MessageEntity> _processNewMessages(
+      List<MessageEntity> messages,
+      LoadDirection direction,
+      ) {
+    final newMessages = messages
+        .where((m) => !_loadedMessageIds.contains(m.id))
+        .map(_updateMessageStatus)
+        .toList();
+
+    _loadedMessageIds.addAll(newMessages.map((m) => m.id));
+
+    return _mergeMessages(newMessages, direction);
+  }
+
+  List<MessageEntity> _mergeMessages(
+      List<MessageEntity> newMessages,
+      LoadDirection direction,
+      ) {
+    if (state is! MessageStateSuccess || direction == LoadDirection.initial) {
+      return _sortMessagesByDate(newMessages);
+    }
+
+    final currentMessages = (state as MessageStateSuccess).messages;
+
+    final mergedMessages = direction == LoadDirection.older
+        ? [...newMessages, ...currentMessages]
+        : [...currentMessages, ...newMessages];
+
+    return _sortMessagesByDate(mergedMessages);
+  }
+
+  void _updateStateAfterLoad(
+      List<MessageEntity> messages,
+      PaginationMessagesEntity entity,
+      LoadDirection direction,
+      String? jumpToMessageId,
+      ) {
+    switch (direction) {
+      case LoadDirection.initial:
+        _setInitialState(messages, entity, jumpToMessageId);
+        break;
+      case LoadDirection.older:
+        _updateOlderState(messages, entity);
+        break;
+      case LoadDirection.newer:
+        _updateNewerState(messages, entity);
+        break;
+    }
+  }
+
+  void _setInitialState(
+      List<MessageEntity> messages,
+      PaginationMessagesEntity entity,
+      String? jumpToMessageId,
+      ) {
+    state = MessageState.success(
+      messages: messages,
+      hasMoreOlder: entity.hasMoreOlder,
+      hasMoreNewer: entity.hasMoreNewer,
+      isLoadingMore: false,
+      isLoadingNewer: false,
+      olderCursor: entity.olderCursor,
+      newerCursor: entity.newerCursor,
+      totalUnread: entity.totalUnread,
+      firstUnreadIndex: _firstUnreadIndex,
+      jumpToMessageId: jumpToMessageId,
+    );
+  }
+
+  void _updateOlderState(
+      List<MessageEntity> messages,
+      PaginationMessagesEntity entity,
+      ) {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      state = currentState.copyWith(
+        messages: messages,
+        hasMoreOlder: entity.hasMoreOlder,
+        olderCursor: entity.olderCursor,
+        isLoadingMore: false,
+        firstUnreadIndex: _firstUnreadIndex,
+      );
+    }
+  }
+
+  void _updateNewerState(
+      List<MessageEntity> messages,
+      PaginationMessagesEntity entity,
+      ) {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      state = currentState.copyWith(
+        messages: messages,
+        hasMoreNewer: entity.hasMoreNewer,
+        newerCursor: entity.newerCursor,
+        isLoadingNewer: false,
+        firstUnreadIndex: _firstUnreadIndex,
+      );
+    }
+  }
+
+  String _getOtherUserId() {
+    final chat = ref.read(selectedChatProvider);
+    if (chat == null) {
+      throw StateError('No chat selected');
+    }
+    return chat.otherUser.id;
+  }
+
+  bool _canSendMessage(String messageText) {
+    if (_currentChatId == null || _currentUserId == null) {
+      debugPrint('❌ Cannot send message: missing chat or user');
+      return false;
+    }
+
+    if (messageText.trim().isEmpty) {
+      debugPrint('❌ Cannot send empty message');
+      return false;
+    }
+
+    return true;
+  }
+
+  MessageEntity _createTempMessage({
+    required String messageText,
+    required String messageType,
+    required UserEntity? userData,
+    MessageEntity? replyToMessage,
+    String? replyToMessageId,
+  }) {
+    return MessageEntity(
+      id: _generateTempId(),
+      chatId: _currentChatId.toString(),
+      senderId: _currentUserId!,
+      messageText: messageText,
+      messageType: messageType,
+      replyToMessageId: replyToMessageId,
+      isEdited: false,
+      isDeleted: false,
+      isRead: true,
+      createdAt: DateTime.now().toLocal(),
+      readAt: DateTime.now(),
+      senderName: userData?.name ?? 'You',
+      senderSurname: userData?.surname ?? '',
+      senderNickname: userData?.nickname ?? 'you',
+      senderAvatarUrl: '',
+      status: MessageStatus.sending,
+      replyToMessage: replyToMessage,
+    );
+  }
+
+  String _generateTempId() {
+    return 'temp_${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  Future<MessageEntity> _sendMessageToServer({
+    required String messageText,
+    required String messageType,
+    String? replyToMessageId,
+  }) async {
+    return _messageRepository.sendMessage(
+      chatId: _currentChatId.toString(),
+      messageText: messageText,
+      messageType: messageType,
+      replyToMessageId: replyToMessageId ?? '',
+    );
+  }
+
+  void _updateLastMessage(
+      MessageEntity messageData,
+      String messageText,
+      String messageType,
+      ) {
+    final lastMessageEntity = LastMessageEntity(
+      id: messageData.id,
+      chatId: _currentChatId!,
+      senderId: _currentUserId!,
+      messageText: messageText,
+      messageType: messageType,
+      isEdited: false,
+      isDeleted: false,
+      createdAt: messageData.createdAt,
+    );
+
+    ref.read(chatProvider.notifier).updateLastMessage(
+      chatId: _currentChatId!,
+      message: lastMessageEntity,
+    );
+  }
+
+  void _handleReadReceipts() {
+    if (_totalUnread > 0) {
+      _sendReadAllReceipts();
+    }
+  }
+
+  void _scrollToSentMessage(MessageEntity messageData) {
+    ref.read(scrollToSentMessageActionProvider.notifier).state = (
+    messageId: messageData.id,
+    messageDate: messageData.createdAt.toUtc().toIso8601String(),
+    );
+  }
+
+  void _addTempMessage(MessageEntity tempMessage) {
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      _loadedMessageIds.add(tempMessage.id);
+
+      final allMessages = [...currentState.messages, tempMessage];
+      final sortedMessages = _sortMessagesByDate(allMessages);
+
+      state = currentState.copyWith(
+        messages: sortedMessages,
+      );
+    }
+  }
+
+  void _replaceTempMessage(String tempId, MessageEntity messageData) {
+    if (state is! MessageStateSuccess) return;
+
+    final currentState = state as MessageStateSuccess;
+
+    _updateLoadedMessageIds(tempId, messageData.id);
+
+    final serverMessage = _createServerMessage(messageData);
+    final updatedMessages = _replaceMessageInList(
+      currentState.messages,
+      tempId,
+      serverMessage,
+    );
+
+    state = currentState.copyWith(
+      messages: updatedMessages,
+    );
+  }
+
+  void _updateLoadedMessageIds(String oldId, String newId) {
+    _loadedMessageIds.remove(oldId);
+    _loadedMessageIds.add(newId);
+  }
+
+  MessageEntity _createServerMessage(MessageEntity messageData) {
+    return MessageEntity(
+      id: messageData.id,
+      chatId: messageData.chatId,
+      senderId: messageData.senderId,
+      messageText: messageData.messageText,
+      messageType: messageData.messageType,
+      replyToMessageId: messageData.replyToMessageId,
+      isEdited: messageData.isEdited,
+      isDeleted: messageData.isDeleted,
+      isRead: true,
+      createdAt: messageData.createdAt.toLocal(),
+      readAt: messageData.createdAt.toLocal(),
+      senderName: messageData.senderName,
+      senderSurname: messageData.senderSurname,
+      senderNickname: messageData.senderNickname,
+      senderAvatarUrl: '',
+      status: MessageStatus.sent,
+      replyToMessage: messageData.replyToMessage,
+    );
+  }
+
+  List<MessageEntity> _replaceMessageInList(
+      List<MessageEntity> messages,
+      String tempId,
+      MessageEntity serverMessage,
+      ) {
+    final filteredMessages = messages
+        .where((m) => m.id != tempId)
+        .toList();
+
+    filteredMessages.add(serverMessage);
+
+    return _sortMessagesByDate(filteredMessages);
+  }
+
+  void _handleSendError(Object error, String messageText) {
+    final exception = ErrorHandler.handleError(error);
+    debugPrint('❌ Ошибка отправки сообщения: $exception');
+
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+
+      final updatedMessages = currentState.messages.map((message) {
+        if (message.id.startsWith('temp_') &&
+            message.status == MessageStatus.sending &&
+            message.messageText == messageText) {
+          return message.copyWith(status: MessageStatus.error);
+        }
+        return message;
+      }).toList();
+
+      state = currentState.copyWith(messages: updatedMessages);
+    }
+  }
+
+  bool _canDeleteMessage(String messageId) {
+    if (_currentChatId == null || _currentUserId == null || messageId.isEmpty) {
+      debugPrint('❌ Cannot delete message: missing required data');
+      return false;
+    }
+
+    if (state is! MessageStateSuccess) {
+      debugPrint('❌ Cannot delete message: invalid state');
+      return false;
+    }
+
+    return true;
+  }
+
+  MessageEntity? _findMessageById(List<MessageEntity> messages, String messageId) {
+    try {
+      return messages.firstWhere((m) => m.id == messageId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  MessageEntity _createDeletedPlaceholder(MessageEntity message) {
+    return message.copyWith(
+      isDeleted: true,
+      messageText: '',
+      messageType: 'deleted',
+      senderName: '',
+      senderSurname: '',
+      senderNickname: '',
+      senderAvatarUrl: '',
+      replyToMessage: null,
+      replyToMessageId: null,
+    );
+  }
+
+  List<MessageEntity> _removeMessageAndUpdateReplies(
+      List<MessageEntity> messages,
+      String messageId,
+      MessageEntity deletedPlaceholder,
+      ) {
+    return messages
+        .map((m) => m.replyToMessageId == messageId
+        ? m.copyWith(replyToMessage: deletedPlaceholder)
+        : m)
+        .where((m) => m.id != messageId)
+        .toList();
+  }
+
+  int _calculateNewUnreadCount({
+    required int currentTotal,
+    required MessageEntity deletedMessage,
+  }) {
+    if (!deletedMessage.isRead && deletedMessage.senderId != _currentUserId) {
+      return (currentTotal - 1).clamp(0, currentTotal);
+    }
+    return currentTotal;
+  }
+
+  void _updateStateAfterDelete(List<MessageEntity> updatedMessages, String messageId) {
+    state = (state as MessageStateSuccess).copyWith(
+      messages: updatedMessages,
+      totalUnread: _totalUnread,
+      firstUnreadIndex: _firstUnreadIndex,
+    );
+
+    if (kDebugMode) {
+      final repliesUpdated = updatedMessages
+          .where((m) => m.replyToMessageId == messageId)
+          .length;
+      print('🗑️ Message $messageId removed from UI, $repliesUpdated replies updated');
+    }
+  }
+
+  Future<void> _deleteMessageOnServer(String messageId) async {
+    await _messageRepository.deleteMessage(messageId: messageId);
+
+    if (kDebugMode) {
+      print('✅ Message $messageId deleted on server');
+    }
+  }
+
+  Future<void> _handleDeleteError(dynamic error, String messageId) async {
+    debugPrint('❌ DeleteMessageError: ${error.toString()}');
+    final exception = ErrorHandler.handleError(error);
+
+    if (state is MessageStateSuccess && _currentChatId != null) {
+      await _restoreMessagesAfterError();
+      _showTemporaryError(exception.toString());
+    } else {
+      state = MessageState.error(error: exception);
+    }
+  }
+
+  Future<void> _restoreMessagesAfterError() async {
+    try {
+      final selectedChat = ref.read(selectedChatProvider);
+      if (selectedChat != null) {
+        await _loadInitialMessages(userId: selectedChat.otherUser.id);
+      }
+    } catch (loadError) {
+      debugPrint('Failed to restore messages: $loadError');
+    }
+  }
+
+  void _showTemporaryError(String errorMessage) {
+    state = (state as MessageStateSuccess).copyWith(
+      error: errorMessage,
+    );
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (state is MessageStateSuccess) {
+        final updatedState = state as MessageStateSuccess;
+        if (updatedState.error == errorMessage) {
+          state = updatedState.copyWith(error: null);
+        }
+      }
+    });
+  }
+
+  bool _canMarkMessagesAsRead(List<String> messageIds) {
+    return messageIds.isNotEmpty &&
+        _currentChatId != null &&
+        _currentUserId != null &&
+        state is MessageStateSuccess;
+  }
+
+  List<String> _getUnreadMessageIds(
+      List<MessageEntity> messages,
+      List<String> messageIds,
+      ) {
+    final messagesMap = <String, MessageEntity>{
+      for (final message in messages) message.id: message
+    };
+
+    return messageIds.where((id) {
+      final message = messagesMap[id];
+      return message != null &&
+          !message.isRead &&
+          message.senderId != _currentUserId;
+    }).toList();
+  }
+
+  void _sendReadReceipts(List<String> messageIds) {
+    if (messageIds.isEmpty || _currentChatId == null) return;
+
+    final webSocketNotifier = ref.read(webSocketProvider.notifier);
+
+    final lastMessageId = messageIds.last;
+    webSocketNotifier.sendMessageRead(_currentChatId!, lastMessageId);
+
+    if (kDebugMode) {
+      print('📤 Отправлено подтверждение о прочтении для сообщения: $lastMessageId');
+    }
+  }
+
+  void _sendReadAllReceipts() {
+    if (_currentChatId == null) return;
+
+    final webSocketNotifier = ref.read(webSocketProvider.notifier);
+
+    webSocketNotifier.sendMessageAllRead(_currentChatId!);
+
+    if (kDebugMode) {
+      print('📤 Отправлено подтверждение о прочтении всех сообщение после sendMessage');
+    }
+  }
+
+  void _markMessagesAsRead(List<String> messageIds, {DateTime? readAt}) {
+    if (!_canMarkMessagesAsRead(messageIds)) return;
+
+    final currentState = state as MessageStateSuccess;
+    final updatedMessages = _updateMessagesReadStatus(
+      currentState.messages,
+      messageIds,
+      readAt: readAt,
+    );
+
+    _updateUnreadCount(updatedMessages);
+    _recalculateFirstUnreadIndex(updatedMessages);
+    _updateStateWithReadMessages(currentState, updatedMessages);
+  }
+
+  List<MessageEntity> _updateMessagesReadStatus(
+      List<MessageEntity> messages,
+      List<String> messageIds, {
+        DateTime? readAt,
+      }) {
+    return messages.map((message) {
+      if (_shouldMarkAsRead(message, messageIds)) {
+        return _createReadMessage(message, readAt: readAt);
+      }
+      return message;
+    }).toList();
+  }
+
+  bool _shouldMarkAsRead(MessageEntity message, List<String> messageIds) {
+    return messageIds.contains(message.id) &&
+        (!message.isRead || message.status != MessageStatus.read);
+  }
+
+  MessageEntity _createReadMessage(MessageEntity message, {DateTime? readAt}) {
+    return message.copyWith(
+      isRead: true,
+      readAt: readAt ?? DateTime.now(),
+      status: MessageStatus.read,
+    );
+  }
+
+  void _updateUnreadCount(List<MessageEntity> messages) {
+    _totalUnread = messages
+        .where((m) => !m.isRead && m.senderId != _currentUserId)
+        .length;
+  }
+
+  void _updateStateWithReadMessages(
+      MessageStateSuccess currentState,
+      List<MessageEntity> updatedMessages,
+      ) {
+    state = currentState.copyWith(
+      messages: updatedMessages,
+      totalUnread: _totalUnread,
+      firstUnreadIndex: _firstUnreadIndex,
+    );
+  }
+
+  bool _isRelevantReadEvent(String? chatId, String? userId) {
+    if (chatId != _currentChatId) return false;
+    if (userId == _currentUserId) return false;
+    return true;
+  }
+
+  List<String> _getMessageIdsUpToIndex(String lastReadMessageId) {
+    final currentState = state as MessageStateSuccess;
+
+    final lastReadIndex = currentState.messages.indexWhere(
+          (m) => m.id == lastReadMessageId,
+    );
+
+    if (lastReadIndex == -1) {
+      if (kDebugMode) {
+        print('⚠️ Сообщение $lastReadMessageId не найдено в списке');
+      }
+      return [];
+    }
+
+    return currentState.messages
+        .take(lastReadIndex + 1)
+        .where((m) => m.senderId == _currentUserId &&
+        (!m.isRead || m.status != MessageStatus.read))
+        .map((m) => m.id)
+        .toList();
+  }
+
+  List<String> _getAllUnreadSenderMessageIds() {
+    final currentState = state as MessageStateSuccess;
+
+    return currentState.messages
+        .where((m) => m.senderId == _currentUserId && !m.isRead)
+        .map((m) => m.id)
+        .toList();
+  }
+
+  void _handleNewMessageFromSocket(Map<String, dynamic> data) {
+    final action = data['action'] as String?;
+    final chatId = data['chat_id'] as String?;
+
+    if (kDebugMode) {
+      print('🎯 Новое сообщение из WebSocket: $action для чата $chatId');
+    }
+
+    if (action != 'new_message' || chatId != _currentChatId) return;
+    if (state is! MessageStateSuccess) return;
+
+    final messageData = data['message'] as Map<String, dynamic>?;
+    if (messageData == null) return;
+
+    try {
+      final newMessage = MessageDetailModel.fromJson(messageData).toEntity();
+      final currentState = state as MessageStateSuccess;
+
+      if (_loadedMessageIds.contains(newMessage.id)) {
+        debugPrint('⏭️ Сообщение уже загружено, пропускаем: ${newMessage.id}');
+        return;
+      }
+
+      if (_isTempDuplicate(currentState.messages, newMessage)) {
+        debugPrint('⏭️ Найдено временное сообщение-дубликат, пропускаем');
+        return;
+      }
+
+      debugPrint('✅ Добавляем новое сообщение: ${newMessage.id}');
+
+      _loadedMessageIds.add(newMessage.id);
+
+      final updatedMessage = _updateMessageStatus(newMessage);
+      final sortedMessages = _sortMessagesByDate([
+        ...currentState.messages,
+        updatedMessage,
+      ]);
+
+      _updateUnreadCountForNewMessage(updatedMessage);
+      _recalculateFirstUnreadIndex(sortedMessages);
+
+      state = currentState.copyWith(
+        messages: sortedMessages,
+        totalUnread: _totalUnread,
+        firstUnreadIndex: _firstUnreadIndex,
+      );
+    } catch (e) {
+      debugPrint('Error parsing new message from socket: $e');
+    }
+  }
+
+  bool _isTempDuplicate(List<MessageEntity> messages, MessageEntity newMessage) {
+    return messages.any((m) =>
+    m.id.startsWith('temp_') &&
+        m.messageText == newMessage.messageText &&
+        m.senderId == newMessage.senderId &&
+        (m.createdAt.second == newMessage.createdAt.second ||
+            m.createdAt.isAtSameMomentAs(newMessage.createdAt))
+    );
+  }
+
+  void _updateUnreadCountForNewMessage(MessageEntity message) {
+    if (!message.isRead && message.senderId != _currentUserId) {
+      _totalUnread++;
+    }
+  }
+
+  void _handleError(Object error) {
+    final exception = ErrorHandler.handleError(error);
+    debugPrint('Error: $exception');
+
+    if (state is MessageStateSuccess) {
+      final currentState = state as MessageStateSuccess;
+      state = currentState.copyWith(
+        error: exception.toString(),
+        isLoadingMore: false,
+        isLoadingNewer: false,
+      );
+    }
+  }
+
+  void _handleMessageDeleted(Map<String, dynamic> data) {
+    try {
+      final action = data['action'] as String?;
+      final messageId = data['message_id'] as String?;
+      final chatId = data['chat_id'] as String?;
+      final deletedBy = data['deleted_by'] as String?;
+
+      if (kDebugMode) {
+        print('🗑️ Message deleted event: action=$action, messageId=$messageId, chatId=$chatId');
+      }
+
+      if (!_canProcessDeleteEvent(chatId, messageId)) return;
+      if (state is! MessageStateSuccess) return;
+
+      final targetMessage = _findMessageById(
+        (state as MessageStateSuccess).messages,
+        messageId!,
+      );
+
+      if (targetMessage == null) {
+        if (kDebugMode) {
+          print('   ⚠️ Message $messageId not found in state');
+        }
+        return;
+      }
+
+      _clearReplyingIfTargetDeleted(messageId);
+
+      switch (action) {
+        case 'message_deleted':
+          _handleMessageDeletedAction(messageId, targetMessage);
+          break;
+        case 'message_deleted_confirm':
+          if (deletedBy == _currentUserId) {
+            _handleMessageDeletedConfirmAction(messageId, targetMessage);
+          }
+          break;
+      }
+    } catch (error) {
+      debugPrint('handleMessageDeleteEvent: $error');
+    }
+  }
+
+  bool _canProcessDeleteEvent(String? chatId, String? messageId) {
+    return chatId == _currentChatId && messageId != null;
+  }
+
+  void _handleMessageDeletedAction(String messageId, MessageEntity targetMessage) {
+    final updatedMessages = _performDeleteFromState(messageId, targetMessage);
+
+    _updateTotalUnreadAfterDelete(targetMessage);
+    _recalculateFirstUnreadIndex(updatedMessages);
+    _updateStateAfterFullDelete(updatedMessages, messageId);
+  }
+
+  void _handleMessageDeletedConfirmAction(String messageId, MessageEntity targetMessage) {
+    final updatedMessages = _performDeleteFromState(messageId, targetMessage);
+
+    _recalculateFirstUnreadIndex(updatedMessages);
+    _updateStateAfterConfirmDelete(updatedMessages, messageId);
+  }
+
+  List<MessageEntity> _performDeleteFromState(String messageId, MessageEntity targetMessage) {
+    final deletedPlaceholder = _createDeletedPlaceholder(targetMessage);
+    final updatedMessages = _removeMessageAndUpdateReplies(
+      (state as MessageStateSuccess).messages,
+      messageId,
+      deletedPlaceholder,
+    );
+
+    _loadedMessageIds.remove(messageId);
+
+    return updatedMessages;
+  }
+
+  void _updateStateAfterFullDelete(List<MessageEntity> updatedMessages, String messageId) {
+    state = (state as MessageStateSuccess).copyWith(
+      messages: updatedMessages,
+      totalUnread: _totalUnread,
+      firstUnreadIndex: _firstUnreadIndex,
+    );
+
+    if (kDebugMode) {
+      final repliesUpdated = updatedMessages
+          .where((m) => m.replyToMessageId == messageId)
+          .length;
+      print('   ✅ Message $messageId removed, $repliesUpdated replies updated');
+    }
+  }
+
+  void _updateStateAfterConfirmDelete(List<MessageEntity> updatedMessages, String messageId) {
+    state = (state as MessageStateSuccess).copyWith(
+      messages: updatedMessages,
+      firstUnreadIndex: _firstUnreadIndex,
+    );
+
+    if (kDebugMode) {
+      print('   ✅ Own deleted message $messageId confirmed');
+    }
+  }
+
+  void _updateTotalUnreadAfterDelete(MessageEntity deletedMessage) {
+    if (!deletedMessage.isRead && deletedMessage.senderId != _currentUserId) {
+      _totalUnread = (_totalUnread - 1).clamp(0, _totalUnread);
+    }
   }
 
   List<MessageEntity> _sortMessagesByDate(List<MessageEntity> messages) {
@@ -576,491 +1205,163 @@ class MessageNotifier extends _$MessageNotifier {
     }
   }
 
-  void updateFirstUnreadIndex(int newIndex) {
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-      state = currentState.copyWith(firstUnreadIndex: newIndex);
-    }
-  }
-
-  void _addTempMessage(MessageEntity tempMessage) {
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-
-      _loadedMessageIds.add(tempMessage.id);
-
-      final allMessages = [...currentState.messages, tempMessage];
-      final sortedMessages = _sortMessagesByDate(allMessages);
-
-      state = currentState.copyWith(
-        messages: sortedMessages,
-      );
-    }
-  }
-
-  void _replaceTempMessage(String tempId, MessageEntity messageData) {
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-
-      _loadedMessageIds.remove(tempId);
-      _loadedMessageIds.add(messageData.id);
-
-      final serverMessage = MessageEntity(
-        id: messageData.id,
-        chatId: messageData.chatId,
-        senderId: messageData.senderId,
-        messageText: messageData.messageText,
-        messageType: messageData.messageType,
-        replyToMessageId: messageData.replyToMessageId,
-        isEdited: messageData.isEdited,
-        isDeleted: messageData.isDeleted,
-        isRead: true,
-        createdAt: messageData.createdAt.toLocal(),
-        readAt: messageData.createdAt.toLocal(),
-        senderName: messageData.senderName,
-        senderSurname: messageData.senderSurname,
-        senderNickname: messageData.senderNickname,
-        senderAvatarUrl: '',
-        status: MessageStatus.sent,
-        replyToMessage: messageData.replyToMessage
-      );
-
-      final filteredMessages = currentState.messages
-          .where((m) => m.id != tempId)
-          .toList();
-
-      filteredMessages.add(serverMessage);
-
-      final sortedMessages = _sortMessagesByDate(filteredMessages);
-
-      state = currentState.copyWith(
-        messages: sortedMessages,
-      );
-    }
-  }
-
-  void _handleSendError(Object error, String messageText) {
-    final exception = ErrorHandler.handleError(error);
-    debugPrint('❌ Ошибка отправки сообщения: $exception');
-
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-
-      final updatedMessages = currentState.messages.map((message) {
-        if (message.id.startsWith('temp_') &&
-            message.status == MessageStatus.sending &&
-            message.messageText == messageText) {
-          return message.copyWith(status: MessageStatus.error);
-        }
-        return message;
-      }).toList();
-
-      state = currentState.copyWith(messages: updatedMessages);
-    }
-  }
-
-  void _handleNewMessageFromSocket(Map<String, dynamic> data) {
-    final action = data['action'] as String?;
-    final chatId = data['chat_id'] as String?;
-
-    if (kDebugMode) {
-      print('🎯 Новое сообщение из WebSocket: $action для чата $chatId');
-    }
-
-    if (action == 'new_message' && chatId == _currentChatId) {
-      final messageData = data['message'] as Map<String, dynamic>?;
-      if (messageData != null) {
-        try {
-          final newMessage = MessageDetailModel.fromJson(messageData).toEntity();
-
-          if (state is MessageStateSuccess) {
-            final currentState = state as MessageStateSuccess;
-
-            if (_loadedMessageIds.contains(newMessage.id)) {
-              debugPrint('⏭️ Сообщение уже загружено, пропускаем: ${newMessage.id}');
-              return;
-            }
-
-            final hasTempDuplicate = currentState.messages.any((m) =>
-            m.id.startsWith('temp_') &&
-                m.messageText == newMessage.messageText &&
-                m.senderId == newMessage.senderId &&
-                (m.createdAt.second == newMessage.createdAt.second ||
-                    m.createdAt.isAtSameMomentAs(newMessage.createdAt))
-            );
-
-            if (hasTempDuplicate) {
-              debugPrint('⏭️ Найдено временное сообщение-дубликат, пропускаем');
-              return;
-            }
-
-            debugPrint('✅ Добавляем новое сообщение: ${newMessage.id}');
-
-            _loadedMessageIds.add(newMessage.id);
-
-            final updatedMessage = _updateMessageStatus(newMessage);
-
-            final allMessages = [...currentState.messages, updatedMessage];
-            final sortedMessages = _sortMessagesByDate(allMessages);
-
-            if (!updatedMessage.isRead && updatedMessage.senderId != _currentUserId) {
-              _totalUnread++;
-            }
-
-            _recalculateFirstUnreadIndex(sortedMessages);
-
-            state = currentState.copyWith(
-              messages: sortedMessages,
-              totalUnread: _totalUnread,
-              firstUnreadIndex: _firstUnreadIndex,
-            );
-          }
-        } catch (e) {
-          debugPrint('Error parsing new message from socket: $e');
-        }
-      }
-    }
-  }
-
-  void _sendReadReceipts(List<String> messageIds) {
-    if (messageIds.isEmpty || _currentChatId == null) return;
-
-    final webSocketNotifier = ref.read(webSocketProvider.notifier);
-
-    final lastMessageId = messageIds.last;
-    webSocketNotifier.sendMessageRead(_currentChatId!, lastMessageId);
-
-    if (kDebugMode) {
-      print('📤 Отправлено подтверждение о прочтении для сообщения: $lastMessageId');
-    }
-  }
-
-  void _sendReadAllReceipts() {
-    if (_currentChatId == null) return;
-
-    final webSocketNotifier = ref.read(webSocketProvider.notifier);
-
-    webSocketNotifier.sendMessageAllRead(_currentChatId!);
-
-    if (kDebugMode) {
-      print('📤 Отправлено подтверждение о прочтении всех сообщение после sendMessage');
-    }
-  }
-
-  void _markMessagesAsRead(List<String> messageIds) {
-    if (messageIds.isEmpty || _currentChatId == null) return;
-
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-
-      final updatedMessages = currentState.messages.map((message) {
-        if (messageIds.contains(message.id) && !message.isRead) {
-          return message.copyWith(
-            isRead: true,
-            readAt: DateTime.now(),
-            status: MessageStatus.read,
-          );
-        }
-        return message;
-      }).toList();
-
-      _totalUnread = updatedMessages
-          .where((m) => !m.isRead && m.senderId != _currentUserId)
-          .length;
-
-      _recalculateFirstUnreadIndex(updatedMessages);
-
-      state = currentState.copyWith(
-        messages: updatedMessages,
-        totalUnread: _totalUnread,
-        firstUnreadIndex: _firstUnreadIndex,
-      );
-    }
-  }
-
-  void handleMessageReadEvent(Map<String, dynamic> data) {
-    try {
-      final readEntity = MessageReadEntity.fromJson(data);
-
-      if (readEntity.chatId != _currentChatId) return;
-
-      if (kDebugMode) {
-        print('📖 Получено подтверждение о прочтении от ${readEntity.userId}');
+  List<MessageEntity> _updateMessageAndReplies(
+      List<MessageEntity> messages,
+      String messageId,
+      MessageEntity editedMessage,
+      ) {
+    return messages.map((m) {
+      if (m.id == messageId) {
+        return editedMessage;
       }
 
-      if (state is! MessageStateSuccess) return;
-
-      final currentState = state as MessageStateSuccess;
-
-      final lastReadMessageIndex = currentState.messages.indexWhere(
-              (m) => m.id == readEntity.lastReadMessageId
-      );
-
-      if (lastReadMessageIndex == -1) return;
-
-      final updatedMessages = currentState.messages.asMap().entries.map((entry) {
-        final index = entry.key;
-        final message = entry.value;
-
-        if (message.senderId == _currentUserId && index <= lastReadMessageIndex) {
-          if (!message.isRead || message.status != MessageStatus.read) {
-            if (kDebugMode) {
-              print('   ✅ Отмечаем как прочитанное: ${message.id} (${message.messageText})');
-            }
-            return message.copyWith(
-              isRead: true,
-              readAt: readEntity.readAt.toLocal(),
-              status: MessageStatus.read,
-            );
-          }
-        }
-        return message;
-      }).toList();
-
-      state = currentState.copyWith(messages: updatedMessages);
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('Error handling message_read event: $e');
-        print(stackTrace);
-      }
-    }
-  }
-
-  void handleMessageReadAllEvent(Map<String, dynamic> data) {
-    try {
-      final chatId = data['chat_id'] as String?;
-      final userId = data['user_id'] as String?;
-
-      if (chatId != _currentChatId) return;
-      if (userId == _currentUserId) return;
-
-      if (kDebugMode) {
-        print('📖 Все сообщения в чате прочитаны пользователем $userId');
+      if (m.replyToMessageId == messageId) {
+        return m.copyWith(replyToMessage: editedMessage);
       }
 
-      if (state is! MessageStateSuccess) return;
-      final currentState = state as MessageStateSuccess;
-
-      final now = DateTime.now();
-      final updatedMessages = currentState.messages.map((message) {
-        if (message.senderId == _currentUserId && message.status != MessageStatus.read) {
-          if (kDebugMode) {
-            print('   ✅ Отмечаем как прочитанное: ${message.id} (${message.messageText})');
-          }
-          return message.copyWith(
-            isRead: true,
-            readAt: now,
-            status: MessageStatus.read,
-          );
-        }
-        return message;
-      }).toList();
-
-      _recalculateFirstUnreadIndex(updatedMessages);
-
-      state = currentState.copyWith(
-        messages: updatedMessages,
-        firstUnreadIndex: _firstUnreadIndex,
-      );
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        print('Error in handleMessageReadAllEvent: $e');
-        print(stackTrace);
-      }
-    }
+      return m;
+    }).toList();
   }
 
-  void _handleError(Object error) {
-    final exception = ErrorHandler.handleError(error);
-    debugPrint('Error: $exception');
-
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-      state = currentState.copyWith(
-        error: exception.toString(),
-        isLoadingMore: false,
-        isLoadingNewer: false,
-      );
-    }
-  }
-
-  void _updatePaginationState(PaginationMessagesEntity result) {
-    _olderCursor = result.olderCursor;
-    _newerCursor = result.newerCursor;
-    _hasMoreOlder = result.hasMoreOlder;
-    _hasMoreNewer = result.hasMoreNewer;
-  }
-
-  void _updateLoadingState() {
-    if (state is MessageStateSuccess) {
-      final currentState = state as MessageStateSuccess;
-      state = currentState.copyWith(
-        isLoadingMore: _isLoadingMore,
-        isLoadingNewer: _isLoadingNewer,
-      );
-    }
-  }
-
-  void setReplyingMessage(MessageEntity message) {
-    state = (state as MessageStateSuccess).copyWith(
-      replyingToMessage: message,
+  Future<MessageEntity> _editMessageOnServer(String messageId, String newMessageText) async {
+    return await _messageRepository.editMessage(
+      messageId: messageId,
+      newMessageText: newMessageText,
     );
   }
 
-  void _handleMessageDeleted(Map<String, dynamic> data) {
+  Future<void> _handleEditError(Object error, String messageId, MessageEntity oldMessage) async {
+    debugPrint('❌ Failed to edit message $messageId: $error');
+
+    try {
+      final currentState = state as MessageStateSuccess;
+
+      final restoredMessage = oldMessage.copyWith(
+        messageText: oldMessage.messageText,
+        status: oldMessage.status,
+      );
+
+      final restoredMessages = _updateMessageAndReplies(
+        currentState.messages,
+        oldMessage.id,
+        restoredMessage,
+      );
+
+      _updateStateAfterEdit(restoredMessages, oldMessage.id);
+
+      debugPrint('🔄 Message ${oldMessage.id} restored');
+
+    } catch (restoreError) {
+      debugPrint('❌ Failed to restore, reloading: $restoreError');
+     // await _loadChatMessages();
+    }
+  }
+
+  void _handleMessageEdited(Map<String, dynamic> data) {
     try {
       final action = data['action'] as String?;
-      final messageId = data['message_id'] as String?;
+      final messageData = data['message'] as Map<String, dynamic>?;
       final chatId = data['chat_id'] as String?;
-      final deletedBy = data['deleted_by'] as String?;
+      final editedBy = data['edited_by'] as String?;
 
-      if (kDebugMode) {
-        print('🗑️ Message deleted event: action=$action, messageId=$messageId, chatId=$chatId');
-      }
-
-      if (chatId != _currentChatId || messageId == null) {
+      if (messageData == null) {
         return;
       }
 
-      if (state is! MessageStateSuccess) return;
+      final editedMessage = MessageDetailModel.fromJson(messageData).toEntity();
       final currentState = state as MessageStateSuccess;
 
-      final targetMessage = currentState.messages.firstWhere(
-            (m) => m.id == messageId,
-        orElse: () => MessageEntity(
-          id: '',
-          chatId: '',
-          senderId: '',
-          messageText: '',
-          messageType: 'text',
-          replyToMessageId: null,
-          isEdited: false,
-          isDeleted: false,
-          isRead: false,
-          createdAt: DateTime.now(),
-          readAt: null,
-          senderName: '',
-          senderSurname: '',
-          senderNickname: '',
-          senderAvatarUrl: '',
-          status: MessageStatus.sent,
-          replyToMessage: null,
-        ),
-      );
+      if (kDebugMode) {
+        print('🗑️ Message edited event: action=$action, messageId=${editedMessage.id}, chatId=$chatId');
+      }
 
-      if (targetMessage.id.isEmpty) {
+      final existingMessage = _findMessageById(currentState.messages, editedMessage.id);
+      if (existingMessage == null) {
         if (kDebugMode) {
-          print('   ⚠️ Message $messageId not found in state');
+          print('   ⚠️ Message ${editedMessage.id} not found in state');
         }
         return;
       }
 
-      switch (action) {
-        case 'message_deleted':
-          final deletedReplyPlaceholder = targetMessage.copyWith(
-            isDeleted: true,
-            messageText: '',
-            messageType: 'deleted',
-            senderName: '',
-            senderSurname: '',
-            senderNickname: '',
-            senderAvatarUrl: '',
-            replyToMessage: null,
-            replyToMessageId: null,
-          );
-
-          final updatedMessages = currentState.messages.map((m) {
-            if (m.replyToMessageId == messageId) {
-              return m.copyWith(
-                replyToMessage: deletedReplyPlaceholder,
-              );
-            }
-            return m;
-          }).where((m) => m.id != messageId).toList();
-
-          _loadedMessageIds.remove(messageId);
-
-          final wasUnread = !targetMessage.isRead && targetMessage.senderId != _currentUserId;
-
-          if (wasUnread) {
-            _totalUnread = (_totalUnread - 1).clamp(0, _totalUnread);
-          }
-
-          _recalculateFirstUnreadIndex(updatedMessages);
-
-          state = currentState.copyWith(
-            messages: updatedMessages,
-            totalUnread: _totalUnread,
-            firstUnreadIndex: _firstUnreadIndex,
-          );
-
-          if (kDebugMode) {
-            print('   ✅ Message $messageId removed, ${updatedMessages.where((m) => m.replyToMessageId == messageId).length} replies updated');
-          }
-          break;
-
-        case 'message_deleted_confirm':
-          if (deletedBy == _currentUserId) {
-            final deletedReplyPlaceholder = targetMessage.copyWith(
-              isDeleted: true,
-              messageText: '',
-              messageType: 'deleted',
-              senderName: '',
-              senderSurname: '',
-              senderNickname: '',
-              senderAvatarUrl: '',
-              replyToMessage: null,
-              replyToMessageId: null,
-            );
-
-            final updatedMessages = currentState.messages.map((m) {
-              if (m.replyToMessageId == messageId) {
-                return m.copyWith(
-                  replyToMessage: deletedReplyPlaceholder,
-                );
-              }
-              return m;
-            }).where((m) => m.id != messageId).toList();
-
-            _loadedMessageIds.remove(messageId);
-
-            _recalculateFirstUnreadIndex(updatedMessages);
-
-            state = currentState.copyWith(
-              messages: updatedMessages,
-              firstUnreadIndex: _firstUnreadIndex,
-            );
-
-            if (kDebugMode) {
-              print('   ✅ Own deleted message $messageId confirmed');
-            }
-          }
-          break;
+      if (editedBy == _currentUserId) {
+        if (kDebugMode) {
+          print('   ⏭️ Skipping own edit event');
+        }
+        return;
       }
-    } catch (e, stackTrace) {
+
+      final updatedMessages = _updateMessageAndReplies(
+        currentState.messages,
+        editedMessage.id,
+        editedMessage,
+      );
+
+      _updateStateAfterEdit(updatedMessages, editedMessage.id);
+
+      _updateLastMessage(
+        editedMessage,
+        editedMessage.messageText,
+        editedMessage.messageType,
+      );
+
       if (kDebugMode) {
-        print('Error handling message deleted event: $e');
-        print(stackTrace);
+        print('   ✅ Message ${editedMessage.id} updated from socket');
       }
+    } catch (error) {
+      debugPrint('handleMessageEditEvent: $error');
     }
   }
 
-  void clearReplyingMessage() {
+  void _updateStateAfterEdit(List<MessageEntity> updatedMessages, String messageId) {
+    state = (state as MessageStateSuccess).copyWith(messages: updatedMessages);
+    debugPrint('✅ Message $messageId updated in state');
+  }
+
+  void clearEditMessage() {
     state = (state as MessageStateSuccess).copyWith(
-      replyingToMessage: null,
+      editingMessage: null,
     );
+  }
+
+  void setEditMessage(MessageEntity message) {
+    state = (state as MessageStateSuccess).copyWith(
+      editingMessage: message,
+    );
+  }
+
+  MessageEntity _createEditPlaceholder(MessageEntity message, String newMessageText) {
+    return message.copyWith(
+      isEdited: true,
+      messageText: newMessageText,
+    );
+  }
+
+  bool _canEditMessage(String messageId, String newMessageText) {
+    if (_currentChatId == null || _currentUserId == null) {
+      debugPrint('❌ Cannot edit message: missing required data');
+      return false;
+    }
+
+    if (state is! MessageStateSuccess) {
+      debugPrint('❌ Cannot edit message: invalid state');
+      return false;
+    }
+
+    if (newMessageText.trim().isEmpty) {
+      debugPrint('❌ Cannot edit message: empty text');
+      return false;
+    }
+
+    return true;
   }
 
   void _resetPagination() {
-    _olderCursor = null;
-    _newerCursor = null;
-    _hasMoreOlder = true;
-    _hasMoreNewer = true;
     _isLoadingMore = false;
     _isLoadingNewer = false;
     _totalUnread = 0;
     _hasUnread = false;
     _loadedMessageIds.clear();
+    _lastPaginationEntity = null;
   }
 }
 

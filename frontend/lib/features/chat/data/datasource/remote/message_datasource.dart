@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fakegram/features/chat/data/models/request/message_request_dto.dart';
+import 'package:fakegram/features/chat/data/models/response/edit_message_response_dto.dart';
 import 'package:fakegram/features/chat/data/models/response/message_delete_response_dto.dart';
 import 'package:fakegram/features/chat/data/models/response/send_message_response_dto.dart';
 import 'package:retrofit/retrofit.dart';
@@ -33,5 +34,13 @@ abstract class MessageRemoteDatasource {
     @Path('message_id') String messageId,
     @Header("accept") String accept,
     @Header("Authorization") String authorization,
+  );
+  
+  @PUT('/messages/{message_id}')
+  Future<EditMessageResponseDTO> editMessage(
+      @Path('message_id') String messageId,
+      @Header("accept") String accept,
+      @Header("Authorization") String authorization,
+      @Body() Map<String, dynamic> request,
   );
 }

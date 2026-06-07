@@ -239,3 +239,92 @@ func (h *MessageHandler) DeleteMessage(c echo.Context) error {
 		},
 	})
 }
+
+// EditMessage редактирует сообщение пользователя
+// @Summary      Редактировать сообщение
+// @Description  Редактирование текста сообщения. Только отправитель может редактировать свое сообщение
+// @Tags         messages
+// @Accept       json
+// @Produce      json
+// @Param        message_id path string true "ID сообщения для редактирования"
+// @Param        request body models.UpdateMessageRequest true "Данные для редактирования сообщения"
+// @Success      200 {object} map[string]interface{} "Сообщение успешно отредактировано"
+// @Failure      400 {object} map[string]string "Неверные параметры запроса"
+// @Failure      401 {object} map[string]string "Неавторизован"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Failure      404 {object} map[string]string "Сообщение не найдено"
+// @Failure      500 {object} map[string]string "Ошибка сервера"
+// @Security     BearerAuth
+// @Router       /api/v1/messages/{message_id} [put]
+func (h *MessageHandler) EditMessage(c echo.Context) error {
+	ctx := c.Request().Context()
+	
+	userID, ok := c.Get("userID").(string)
+	if !ok || userID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"error": "User not authenticated",
+		})
+	}
+
+	messageID := c.Param("message_id")
+	if messageID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Message ID is required",
+		})
+	}
+
+	var req models.UpdateMessageRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Invalid request body: " + err.Error(),
+		})
+	}
+
+	if req.MessageText == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Message text is required",
+		})
+	}
+
+	messageDetail, err := h.messageService.EditMessage(ctx, userID, messageID, &req)
+	if err != nil {
+		switch err {
+		case services.ErrAccessDenied:
+			return c.JSON(http.StatusForbidden, map[string]interface{}{
+				"error": "You can only edit your own messages",
+			})
+		case services.ErrMessageNotFound:
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"error": "Message not found",
+			})
+		default:
+			if strings.Contains(err.Error(), "not a participant") {
+				return c.JSON(http.StatusForbidden, map[string]interface{}{
+					"error": "You are not a participant of this chat",
+				})
+			}
+			if strings.Contains(err.Error(), "cannot edit a deleted message") {
+				return c.JSON(http.StatusBadRequest, map[string]interface{}{
+					"error": "Cannot edit a deleted message",
+				})
+			}
+			if strings.Contains(err.Error(), "cannot edit message after 24 hours") {
+                return c.JSON(http.StatusBadRequest, map[string]interface{}{
+                    "error": "Cannot edit message after 24 hours of creation",
+                })
+            }
+			if strings.Contains(err.Error(), "does not belong to the specified chat") {
+				return c.JSON(http.StatusBadRequest, map[string]interface{}{
+					"error": "Message does not belong to the specified chat",
+				})
+			}
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to edit message: " + err.Error(),
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message":     messageDetail,
+	})
+}
