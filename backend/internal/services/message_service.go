@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"time"
-	// "encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -212,6 +211,67 @@ func (s *MessageService) DeleteMessage(ctx context.Context, userID, messageID st
     return nil
 }
 
+func (s *MessageService) EditMessage(ctx context.Context, userID, messageID string, req *models.UpdateMessageRequest) (*models.MessageDetail, error) {
+    message, err := s.messageRepo.GetMessageDetailByID(ctx, messageID, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get message: %w", err)
+    }
+    if message == nil {
+        return nil, ErrMessageNotFound
+    }
+
+    user1, user2, err := models.ExtractUsersFromChatID(message.ChatID)
+    if err != nil {
+        return nil, fmt.Errorf("invalid chat ID: %w", err)
+    }
+    
+    if userID != user1 && userID != user2 {
+        return nil, ErrAccessDenied
+    }
+
+    isMember, err := s.chatRepo.IsUserInDialog(ctx, message.ChatID, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to check user membership: %w", err)
+    }
+    if !isMember {
+        return nil, ErrAccessDenied
+    }
+
+    if message.SenderID != userID {
+        return nil, ErrAccessDenied
+    }
+
+    if message.IsDeleted {
+        return nil, fmt.Errorf("cannot edit a deleted message")
+    }
+
+    if time.Since(message.CreatedAt) > 24*time.Hour {
+        return nil, fmt.Errorf("cannot edit message after 24 hours of creation")
+    }
+
+    updatedMessage, err := s.messageRepo.EditMessage(ctx, messageID, req.MessageText)
+    if err != nil {
+        if errors.Is(err, models.ErrMessageNotFound) {
+            return nil, ErrMessageNotFound
+        }
+        return nil, fmt.Errorf("failed to edit message: %w", err)
+    }
+
+    messageDetail := &models.MessageDetail{
+        Message:  updatedMessage,
+        IsRead:   message.IsRead,
+        ReadAt:   message.ReadAt,
+        Sender:   message.Sender,
+        ReplyToMessage: message.ReplyToMessage,
+    }
+
+    s.broadcastMessageEdited(message.ChatID, messageDetail, userID)
+    s.notifyMessageEdit(message.ChatID, messageDetail, userID)
+
+    log.Printf("Message %s edited by user %s in chat %s", messageID, userID, message.ChatID)
+    return messageDetail, nil
+}
+
 func (s *MessageService) broadcastMessageDeleted(chatID, messageID, userID string) {
     if s.wsPool == nil {
         return
@@ -247,6 +307,27 @@ func (s *MessageService) broadcastNewMessage(message *models.MessageDetail) {
         Type:    "event",
         Payload: utils.MustMarshal(event),
     }, message.SenderID)
+}
+
+func (s *MessageService) broadcastMessageEdited(chatID string, message *models.MessageDetail, editorID string) {
+    if s.wsPool == nil {
+        return
+    }
+
+    event := types.WSEvent{
+        Event: types.EventMessageEdited,
+        Data: map[string]interface{}{
+            "message":   message,
+            "chat_id":   chatID,
+            "edited_by": editorID,
+            "edited_at": time.Now().Format(time.RFC3339),
+        },
+    }
+
+    s.wsPool.BroadcastToChat(chatID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(event),
+    }, editorID)
 }
 
 func (s *MessageService) notifyReceiverAboutNewMessage(chatID string, message *models.MessageDetail, senderID string) {
@@ -431,4 +512,67 @@ func (s *MessageService) notifyMessageDeletion(chatID, messageID, userID string)
     }
 
     s.notifyChatParticipantsAboutMessageDeletion(chatID, receiverID);
+    s.notifyChatParticipantsAboutMessageDeletion(chatID, userID);
+}
+
+func (s *MessageService) notifyMessageEdit(chatID string, message *models.MessageDetail, editorID string) {
+    if s.wsPool == nil {
+        return
+    }
+
+    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+    if err != nil {
+        log.Printf("Error extracting users from chat ID: %v", err)
+        return
+    }
+
+    var receiverID string
+    if user1 == editorID {
+        receiverID = user2
+    } else {
+        receiverID = user1
+    }
+
+    receiverEvent := types.WSEvent{
+        Event: types.EventMessageListUpdate,
+        Data: map[string]interface{}{
+            "action":     "message_edited",
+            "message":    message,
+            "chat_id":    chatID,
+            "edited_by":  editorID,
+            "timestamp":  time.Now().Format(time.RFC3339),
+        },
+    }
+
+    if err := s.wsPool.SendToUser(receiverID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(receiverEvent),
+    }); err != nil {
+        log.Printf("❌ Failed to notify receiver %s about message edit: %v", receiverID, err)
+    } else {
+        log.Printf("✅ Receiver %s notified about message edit", receiverID)
+    }
+
+    senderEvent := types.WSEvent{
+        Event: types.EventMessageListUpdate,
+        Data: map[string]interface{}{
+            "action":     "message_edited_confirm",
+            "message":    message,
+            "chat_id":    chatID,
+            "status":     "edited",
+            "edited_by":  editorID,
+            "timestamp":  time.Now().Format(time.RFC3339),
+        },
+    }
+
+    if err := s.wsPool.SendToUser(editorID, &types.Message{
+        Type:    "event",
+        Payload: utils.MustMarshal(senderEvent),
+    }); err != nil {
+        log.Printf("❌ Failed to send edit confirmation to editor %s: %v", editorID, err)
+    } else {
+        log.Printf("✅ Edit confirmation sent to editor %s", editorID)
+    }
+
+    s.notifyChatParticipantsUpdate(chatID, editorID, "message edit")
 }

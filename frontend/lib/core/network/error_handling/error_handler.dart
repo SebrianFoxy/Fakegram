@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'exceptions.dart';
 
 class ErrorHandler {
@@ -91,6 +92,7 @@ class ErrorHandler {
     } else if (error is String) {
       return NetworkException(error);
     } else {
+      debugPrint('HandlerError: $error');
       return NetworkException('An unexpected error occurred');
     }
   }

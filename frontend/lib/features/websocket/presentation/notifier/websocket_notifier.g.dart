@@ -41,7 +41,7 @@ final class WebSocketNotifierProvider
   }
 }
 
-String _$webSocketNotifierHash() => r'092121c83eba971550d7d9ef4dea9f9cc23290d7';
+String _$webSocketNotifierHash() => r'e2fcf57b41ffd0829b329542288a5652e4f5f646';
 
 abstract class _$WebSocketNotifier extends $Notifier<WebSocketState> {
   WebSocketState build();
@@ -58,6 +58,50 @@ abstract class _$WebSocketNotifier extends $Notifier<WebSocketState> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(webSocketRepository)
+const webSocketRepositoryProvider = WebSocketRepositoryProvider._();
+
+final class WebSocketRepositoryProvider extends $FunctionalProvider<
+    WebSocketRepository,
+    WebSocketRepository,
+    WebSocketRepository> with $Provider<WebSocketRepository> {
+  const WebSocketRepositoryProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'webSocketRepositoryProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$webSocketRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<WebSocketRepository> $createElement(
+          $ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  WebSocketRepository create(Ref ref) {
+    return webSocketRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(WebSocketRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<WebSocketRepository>(value),
+    );
+  }
+}
+
+String _$webSocketRepositoryHash() =>
+    r'4a19c43814a92cac6bf4d24e9ec190b4fec89db2';
 
 @ProviderFor(isWebSocketConnected)
 const isWebSocketConnectedProvider = IsWebSocketConnectedProvider._();
@@ -98,7 +142,7 @@ final class IsWebSocketConnectedProvider
 }
 
 String _$isWebSocketConnectedHash() =>
-    r'b1c59a6730b495d77658d0bc29a451c93b2cc22b';
+    r'510ad5d41364b47c3e1bad3a315eb287bcbc61a7';
 
 @ProviderFor(autoConnectWebSocket)
 const autoConnectWebSocketProvider = AutoConnectWebSocketProvider._();
@@ -132,4 +176,4 @@ final class AutoConnectWebSocketProvider
 }
 
 String _$autoConnectWebSocketHash() =>
-    r'be5d54b73ac9bcffd85afa7fdf607e7519961dc7';
+    r'0409fea846b28d065270ef632790a43229cbf17e';

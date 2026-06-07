@@ -363,6 +363,44 @@ func (r *MessageRepository) DeleteMessage(ctx context.Context, userID, chatID, m
     return nil
 }
 
+func (r *MessageRepository) EditMessage(ctx context.Context, messageID, newText string) (*models.Message, error) {
+    query := `
+        UPDATE messages 
+        SET message_text = $1, 
+            is_edited = true, 
+            updated_at = NOW() 
+        WHERE id = $2 AND is_deleted = false
+        RETURNING id, chat_id, sender_id, message_text, message_type, 
+                reply_to_message_id, is_edited, is_deleted, created_at, updated_at
+    `
+
+    var updatedMessage models.Message
+    err := r.DB.QueryRowContext(ctx, query, 
+        newText, 
+        messageID,
+    ).Scan(
+        &updatedMessage.ID,
+        &updatedMessage.ChatID,
+        &updatedMessage.SenderID,
+        &updatedMessage.MessageText,
+        &updatedMessage.MessageType,
+        &updatedMessage.ReplyToMessageID,
+        &updatedMessage.IsEdited,
+        &updatedMessage.IsDeleted,
+        &updatedMessage.CreatedAt,
+        &updatedMessage.UpdateAt,
+    )
+
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, models.ErrMessageNotFound
+        }
+        return nil, fmt.Errorf("failed to update message: %w", err)
+    }
+
+    return &updatedMessage, nil
+}
+
 func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, otherUserID, chatID string, cursor *time.Time, limit int) ([]*models.MessageDetail, bool, bool, int64, error) {
     var anchorTime time.Time
     var hasUnread bool

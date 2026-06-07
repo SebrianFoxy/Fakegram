@@ -11,7 +11,7 @@ const (
     EventMessageReadAll = "message_read_all"  
     EventMessageError   = "message_error"
     EventMessageSent    = "message_sent"
-    EventMessageUpdated = "message_updated"
+    EventMessageEdited  = "message_edited"
     EventMessageDeleted = "message_deleted"
     EventMessageListUpdate = "message_list_update"
 )

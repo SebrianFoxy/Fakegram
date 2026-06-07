@@ -31,4 +31,9 @@ abstract class MessageRepository {
   Future<void> deleteMessage({
     required String messageId
   });
+
+  Future<MessageEntity> editMessage({
+    required String messageId,
+    required String newMessageText
+  });
 }

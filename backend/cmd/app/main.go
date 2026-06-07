@@ -91,6 +91,7 @@ func main() {
 
 	jwtMiddleware := cnf.CreateJWTMiddleware()
 
+	chatService := services.NewChatService(chatRepo)
 	messageService := services.NewMessageService(messageRepo, chatRepo, wsPool)
 	emailVerificationService := services.NewEmailVerificationService(
 		cnf.SMTPHost,
@@ -105,7 +106,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(userRepo)
 	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService, emailVerificationService)
 	messageHandler := handlers.NewMessageHandler(messageService, wsPool)
-	chatHandler := handlers.NewChatHandler(chatRepo)
+	chatHandler := handlers.NewChatHandler(chatService)
 
 	appRoutes := routes.NewRoutes(
 		userHandler, 
