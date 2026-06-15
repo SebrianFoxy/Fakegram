@@ -326,7 +326,9 @@ class _MessagesListState extends ConsumerState<MessagesList> {
                     onDeleteMessage: message.senderId == currentUser
                         ? () => _deleteMessage(message)
                         : null,
-                    onEditMessage: () => _editMessage(message),
+                    onEditMessage: DateTime.now().difference(message.createdAt).inHours < 24 ?
+                        () => _editMessage(message)
+                        : null,
                     onForwardMessage: () => _forwardMessage(message),
                     onSelectMessage: () => _selectMessage(message),
                   ),
