@@ -84,15 +84,8 @@ func main() {
 	messageRepo := repositories.NewMessageRepository(db)
 
 	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
-	
-	wsManager := websocket.NewWebSocketManager(tokenService, messageRepo)
-	wsPool := wsManager.GetPool()
-	wsHandler := wsManager.GetHandler()
-
-	jwtMiddleware := cnf.CreateJWTMiddleware()
-
-	chatService := services.NewChatService(chatRepo)
-	messageService := services.NewMessageService(messageRepo, chatRepo, wsPool)
+	messageService := services.NewMessageService(messageRepo, chatRepo, nil, nil)
+	chatService := services.NewChatService(chatRepo, nil)
 	emailVerificationService := services.NewEmailVerificationService(
 		cnf.SMTPHost,
 		cnf.SMTPPort,
@@ -103,9 +96,14 @@ func main() {
 		[]byte(cnf.JWTSecret),
 	)
 
+	wsManager := websocket.NewWebSocketManager(tokenService, messageService, chatService)
+	wsHandler := wsManager.GetHandler()
+
+	jwtMiddleware := cnf.CreateJWTMiddleware()
+
 	userHandler := handlers.NewUserHandler(userRepo)
 	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService, emailVerificationService)
-	messageHandler := handlers.NewMessageHandler(messageService, wsPool)
+	messageHandler := handlers.NewMessageHandler(messageService)
 	chatHandler := handlers.NewChatHandler(chatService)
 
 	appRoutes := routes.NewRoutes(

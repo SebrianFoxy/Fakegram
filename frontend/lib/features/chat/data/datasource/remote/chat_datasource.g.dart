@@ -20,7 +20,7 @@ class _ChatRemoteDatasource implements ChatRemoteDatasource {
   final ParseErrorLogger? errorLogger;
 
   @override
-  Future<ChatResponseDTO> chats(String accept, String authorization) async {
+  Future<ChatResponseDTO> getChats(String accept, String authorization) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{
@@ -43,6 +43,47 @@ class _ChatRemoteDatasource implements ChatRemoteDatasource {
     late ChatResponseDTO _value;
     try {
       _value = ChatResponseDTO.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
+  Future<SearchChatResponseDTO> findChats(
+    String query,
+    int offset,
+    int limit,
+    String accept,
+    String authorization,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{
+      r'query': query,
+      r'offset': offset,
+      r'limit': limit,
+    };
+    final _headers = <String, dynamic>{
+      r'accept': accept,
+      r'Authorization': authorization,
+    };
+    _headers.removeWhere((k, v) => v == null);
+    const Map<String, dynamic>? _data = null;
+    final _options = _setStreamType<SearchChatResponseDTO>(
+      Options(method: 'GET', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/chats/search',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late SearchChatResponseDTO _value;
+    try {
+      _value = SearchChatResponseDTO.fromJson(_result.data!);
     } on Object catch (e, s) {
       errorLogger?.logError(e, s, _options, response: _result);
       rethrow;

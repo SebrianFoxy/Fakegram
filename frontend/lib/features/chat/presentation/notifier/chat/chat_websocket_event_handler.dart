@@ -7,12 +7,14 @@ class ChatEventHandler implements WebSocketEventHandler {
   static const _chatListUpdate = 'chat_list_update';
   static const _unreadCountUpdate = 'unread_count_update';
   static const _newChatCreated = 'new_chat_created';
+  static const _chatDeleted = 'chat_deleted';
 
   @override
   bool canHandle(WebSocketEventEntity event) {
     return event.event == _chatListUpdate ||
         event.event == _unreadCountUpdate ||
-        event.event == _newChatCreated;
+        event.event == _newChatCreated ||
+        event.event == _chatDeleted;
   }
 
   @override
@@ -26,6 +28,9 @@ class ChatEventHandler implements WebSocketEventHandler {
         break;
       case _unreadCountUpdate:
         ref.read(unreadCountUpdateProvider.notifier).update(event.data);
+        break;
+      case _chatDeleted:
+        ref.read(chatDeletedProvider.notifier).update(event.data);
         break;
     }
   }

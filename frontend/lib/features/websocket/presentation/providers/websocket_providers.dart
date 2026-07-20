@@ -24,6 +24,16 @@ class NewChat extends _$NewChat {
 }
 
 @riverpod
+class ChatDeleted extends _$ChatDeleted {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  void update(Map<String, dynamic> data) {
+    state = data;
+  }
+}
+
+@riverpod
 class NewMessage extends _$NewMessage {
   @override
   Map<String, dynamic>? build() => null;

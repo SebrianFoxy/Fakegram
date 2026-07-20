@@ -17,7 +17,7 @@ mixin _$DirectChatEntity {
   String get id;
   String get chatType;
   String get title;
-  LastMessageEntity get lastMessage;
+  LastMessageEntity? get lastMessage;
   int get unreadCount;
   ChatUserEntity get otherUser;
   DateTime get updatedAt;
@@ -69,12 +69,12 @@ abstract mixin class $DirectChatEntityCopyWith<$Res> {
       {String id,
       String chatType,
       String title,
-      LastMessageEntity lastMessage,
+      LastMessageEntity? lastMessage,
       int unreadCount,
       ChatUserEntity otherUser,
       DateTime updatedAt});
 
-  $LastMessageEntityCopyWith<$Res> get lastMessage;
+  $LastMessageEntityCopyWith<$Res>? get lastMessage;
   $ChatUserEntityCopyWith<$Res> get otherUser;
 }
 
@@ -94,7 +94,7 @@ class _$DirectChatEntityCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
-    Object? lastMessage = null,
+    Object? lastMessage = freezed,
     Object? unreadCount = null,
     Object? otherUser = null,
     Object? updatedAt = null,
@@ -112,10 +112,10 @@ class _$DirectChatEntityCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      lastMessage: null == lastMessage
+      lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
-              as LastMessageEntity,
+              as LastMessageEntity?,
       unreadCount: null == unreadCount
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
@@ -135,8 +135,12 @@ class _$DirectChatEntityCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $LastMessageEntityCopyWith<$Res> get lastMessage {
-    return $LastMessageEntityCopyWith<$Res>(_self.lastMessage, (value) {
+  $LastMessageEntityCopyWith<$Res>? get lastMessage {
+    if (_self.lastMessage == null) {
+      return null;
+    }
+
+    return $LastMessageEntityCopyWith<$Res>(_self.lastMessage!, (value) {
       return _then(_self.copyWith(lastMessage: value));
     });
   }
@@ -249,7 +253,7 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             String id,
             String chatType,
             String title,
-            LastMessageEntity lastMessage,
+            LastMessageEntity? lastMessage,
             int unreadCount,
             ChatUserEntity otherUser,
             DateTime updatedAt)?
@@ -291,7 +295,7 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             String id,
             String chatType,
             String title,
-            LastMessageEntity lastMessage,
+            LastMessageEntity? lastMessage,
             int unreadCount,
             ChatUserEntity otherUser,
             DateTime updatedAt)
@@ -331,7 +335,7 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             String id,
             String chatType,
             String title,
-            LastMessageEntity lastMessage,
+            LastMessageEntity? lastMessage,
             int unreadCount,
             ChatUserEntity otherUser,
             DateTime updatedAt)?
@@ -361,7 +365,7 @@ class _DirectChatEntity extends DirectChatEntity {
       {required this.id,
       required this.chatType,
       required this.title,
-      required this.lastMessage,
+      this.lastMessage,
       this.unreadCount = 0,
       required this.otherUser,
       required this.updatedAt})
@@ -374,7 +378,7 @@ class _DirectChatEntity extends DirectChatEntity {
   @override
   final String title;
   @override
-  final LastMessageEntity lastMessage;
+  final LastMessageEntity? lastMessage;
   @override
   @JsonKey()
   final int unreadCount;
@@ -432,13 +436,13 @@ abstract mixin class _$DirectChatEntityCopyWith<$Res>
       {String id,
       String chatType,
       String title,
-      LastMessageEntity lastMessage,
+      LastMessageEntity? lastMessage,
       int unreadCount,
       ChatUserEntity otherUser,
       DateTime updatedAt});
 
   @override
-  $LastMessageEntityCopyWith<$Res> get lastMessage;
+  $LastMessageEntityCopyWith<$Res>? get lastMessage;
   @override
   $ChatUserEntityCopyWith<$Res> get otherUser;
 }
@@ -459,7 +463,7 @@ class __$DirectChatEntityCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
-    Object? lastMessage = null,
+    Object? lastMessage = freezed,
     Object? unreadCount = null,
     Object? otherUser = null,
     Object? updatedAt = null,
@@ -477,10 +481,10 @@ class __$DirectChatEntityCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      lastMessage: null == lastMessage
+      lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
-              as LastMessageEntity,
+              as LastMessageEntity?,
       unreadCount: null == unreadCount
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
@@ -500,8 +504,12 @@ class __$DirectChatEntityCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $LastMessageEntityCopyWith<$Res> get lastMessage {
-    return $LastMessageEntityCopyWith<$Res>(_self.lastMessage, (value) {
+  $LastMessageEntityCopyWith<$Res>? get lastMessage {
+    if (_self.lastMessage == null) {
+      return null;
+    }
+
+    return $LastMessageEntityCopyWith<$Res>(_self.lastMessage!, (value) {
       return _then(_self.copyWith(lastMessage: value));
     });
   }

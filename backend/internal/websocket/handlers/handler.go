@@ -1,10 +1,11 @@
-package handler
+package handlers
 
 import (
+	"context"
 	"fakegram-api/internal/services"
 	"fakegram-api/internal/websocket/client"
+	"fakegram-api/internal/websocket/events"
 	"fakegram-api/internal/websocket/pool"
-	"fakegram-api/internal/websocket/types"
 	"log"
 	"net/http"
 
@@ -13,16 +14,18 @@ import (
 )
 
 type WebSocketHandler struct {
-    pool      types.PoolInterface
-    router    types.EventHandler
+    pool      events.PoolInterface
+    router    events.EventHandler
     upgrader  websocket.Upgrader
     tokenService *services.TokenService
+    chatService  *services.ChatService 
 }
 
 func NewWebSocketHandler(
-    pool types.PoolInterface, 
-    router types.EventHandler,
+    pool events.PoolInterface, 
+    router events.EventHandler,
     tokenService *services.TokenService,
+    chatService *services.ChatService,
     ) *WebSocketHandler {
     return &WebSocketHandler{
         pool:   pool,
@@ -103,6 +106,9 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
     log.Printf("✅ WebSocket connected for user: %s", userIDStr)
     
     wsClient := client.NewClient(userIDStr, conn, h.pool)
+    
+    go h.subscribeToUserChats(wsClient, userIDStr)
+
     h.pool.(*pool.Pool).Register <- wsClient
     
     go wsClient.Read(h.router)
@@ -111,4 +117,28 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
     log.Printf("WebSocket client fully connected for user: %s", userIDStr)
     
     return nil
+}
+
+func (h *WebSocketHandler) subscribeToUserChats(wsClient *client.Client, userID string) {
+    if h.chatService == nil {
+        log.Printf("Warning: chatService is nil, skipping chat subscription for user %s", userID)
+        return
+    }
+    
+    ctx := context.Background()
+    
+    chats, err := h.chatService.GetUserChats(ctx, userID)
+    if err != nil {
+        log.Printf("Error getting chats for user %s: %v", userID, err)
+        return
+    }
+    
+    chatIDs := make([]string, 0, len(chats))
+    for _, chat := range chats {
+        chatIDs = append(chatIDs, chat.ID)
+    }
+    
+    wsClient.SubscribeToChats(chatIDs)
+    
+    log.Printf("User %s subscribed to %d chats: %v", userID, len(chatIDs), chatIDs)
 }

@@ -41,7 +41,7 @@ final class MessageNotifierProvider
   }
 }
 
-String _$messageNotifierHash() => r'9889d0cb878fc4ec1c180a85bb4a46ea1bde74a0';
+String _$messageNotifierHash() => r'48fddeda2f36c3988e6b3a7a14cc8f28150726cb';
 
 abstract class _$MessageNotifier extends $Notifier<MessageState> {
   MessageState build();

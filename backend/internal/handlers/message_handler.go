@@ -3,7 +3,6 @@ package handlers
 import (
 	"fakegram-api/internal/models"
 	"fakegram-api/internal/services"
-	"fakegram-api/internal/websocket/types"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,13 +13,11 @@ import (
 
 type MessageHandler struct {
     messageService *services.MessageService
-    wsPool         types.PoolInterface
 }
 
-func NewMessageHandler(messageService *services.MessageService, wsPool types.PoolInterface) *MessageHandler {
+func NewMessageHandler(messageService *services.MessageService) *MessageHandler {
     return &MessageHandler{
         messageService: messageService,
-        wsPool:         wsPool,
     }
 }
 

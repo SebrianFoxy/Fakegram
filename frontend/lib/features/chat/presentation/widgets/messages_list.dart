@@ -586,6 +586,17 @@ class _MessagesListState extends ConsumerState<MessagesList> {
       if (messages.isEmpty) return;
 
       final bool isLastFiveVisible = _checkIfLastMessagesVisible(5);
+      final bool needsScroll = await _checkIfScrollIsNeeded();
+
+      if (!needsScroll) {
+        if (mounted) {
+          setState(() {
+            _initialScrollDone = true;
+            _positionListenerEnabled = true;
+          });
+        }
+        return;
+      }
 
       if (isLastFiveVisible) {
         _scrollToBottom();
@@ -666,5 +677,32 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     final lastMessagesStartIndex = messagesLength - count;
 
     return maxVisibleIndex >= lastMessagesStartIndex;
+  }
+
+  Future<bool> _checkIfScrollIsNeeded() async {
+    final messageState = ref.read(messageProvider);
+    if (messageState is! MessageStateSuccess) return false;
+
+    final messages = messageState.messages;
+    if (messages.isEmpty) return false;
+
+    if (messages.length < 3) return false;
+
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) {
+      return messages.length > 2;
+    }
+
+    final visibleIndices = positions
+        .where((pos) => pos.itemTrailingEdge > 0 && pos.itemLeadingEdge < 1)
+        .map((pos) => pos.index)
+        .toSet();
+
+    if (visibleIndices.length >= messages.length) return false;
+
+    final firstVisibleIndex = visibleIndices.isEmpty ? 0 : visibleIndices.reduce((a, b) => a < b ? a : b);
+    final lastVisibleIndex = visibleIndices.isEmpty ? 0 : visibleIndices.reduce((a, b) => a > b ? a : b);
+
+    return firstVisibleIndex > 0 || lastVisibleIndex < messages.length - 1;
   }
 }

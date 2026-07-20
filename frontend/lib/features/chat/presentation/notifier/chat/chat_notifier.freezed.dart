@@ -54,6 +54,7 @@ extension ChatStatePatterns on ChatState {
     TResult Function(ChatStateSuccessLoading value)? successLoading,
     TResult Function(ChatStateLoading value)? loading,
     TResult Function(ChatStateError value)? error,
+    TResult Function(ChatStateSearchSuccess value)? searchChatSuccess,
     required TResult orElse(),
   }) {
     final _that = this;
@@ -66,6 +67,8 @@ extension ChatStatePatterns on ChatState {
         return loading(_that);
       case ChatStateError() when error != null:
         return error(_that);
+      case ChatStateSearchSuccess() when searchChatSuccess != null:
+        return searchChatSuccess(_that);
       case _:
         return orElse();
     }
@@ -90,6 +93,7 @@ extension ChatStatePatterns on ChatState {
     required TResult Function(ChatStateSuccessLoading value) successLoading,
     required TResult Function(ChatStateLoading value) loading,
     required TResult Function(ChatStateError value) error,
+    required TResult Function(ChatStateSearchSuccess value) searchChatSuccess,
   }) {
     final _that = this;
     switch (_that) {
@@ -101,6 +105,8 @@ extension ChatStatePatterns on ChatState {
         return loading(_that);
       case ChatStateError():
         return error(_that);
+      case ChatStateSearchSuccess():
+        return searchChatSuccess(_that);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -124,6 +130,7 @@ extension ChatStatePatterns on ChatState {
     TResult? Function(ChatStateSuccessLoading value)? successLoading,
     TResult? Function(ChatStateLoading value)? loading,
     TResult? Function(ChatStateError value)? error,
+    TResult? Function(ChatStateSearchSuccess value)? searchChatSuccess,
   }) {
     final _that = this;
     switch (_that) {
@@ -135,6 +142,8 @@ extension ChatStatePatterns on ChatState {
         return loading(_that);
       case ChatStateError() when error != null:
         return error(_that);
+      case ChatStateSearchSuccess() when searchChatSuccess != null:
+        return searchChatSuccess(_that);
       case _:
         return null;
     }
@@ -159,6 +168,7 @@ extension ChatStatePatterns on ChatState {
         successLoading,
     TResult Function()? loading,
     TResult Function(Object? error)? error,
+    TResult Function(List<DirectChatEntity> chats)? searchChatSuccess,
     required TResult orElse(),
   }) {
     final _that = this;
@@ -171,6 +181,8 @@ extension ChatStatePatterns on ChatState {
         return loading();
       case ChatStateError() when error != null:
         return error(_that.error);
+      case ChatStateSearchSuccess() when searchChatSuccess != null:
+        return searchChatSuccess(_that.chats);
       case _:
         return orElse();
     }
@@ -196,6 +208,7 @@ extension ChatStatePatterns on ChatState {
         successLoading,
     required TResult Function() loading,
     required TResult Function(Object? error) error,
+    required TResult Function(List<DirectChatEntity> chats) searchChatSuccess,
   }) {
     final _that = this;
     switch (_that) {
@@ -207,6 +220,8 @@ extension ChatStatePatterns on ChatState {
         return loading();
       case ChatStateError():
         return error(_that.error);
+      case ChatStateSearchSuccess():
+        return searchChatSuccess(_that.chats);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -231,6 +246,7 @@ extension ChatStatePatterns on ChatState {
         successLoading,
     TResult? Function()? loading,
     TResult? Function(Object? error)? error,
+    TResult? Function(List<DirectChatEntity> chats)? searchChatSuccess,
   }) {
     final _that = this;
     switch (_that) {
@@ -242,6 +258,8 @@ extension ChatStatePatterns on ChatState {
         return loading();
       case ChatStateError() when error != null:
         return error(_that.error);
+      case ChatStateSearchSuccess() when searchChatSuccess != null:
+        return searchChatSuccess(_that.chats);
       case _:
         return null;
     }
@@ -428,6 +446,79 @@ class _$ChatStateErrorCopyWithImpl<$Res>
   }) {
     return _then(ChatStateError(
       error: freezed == error ? _self.error : error,
+    ));
+  }
+}
+
+/// @nodoc
+
+class ChatStateSearchSuccess extends ChatState {
+  const ChatStateSearchSuccess({required final List<DirectChatEntity> chats})
+      : _chats = chats,
+        super._();
+
+  final List<DirectChatEntity> _chats;
+  List<DirectChatEntity> get chats {
+    if (_chats is EqualUnmodifiableListView) return _chats;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_chats);
+  }
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  $ChatStateSearchSuccessCopyWith<ChatStateSearchSuccess> get copyWith =>
+      _$ChatStateSearchSuccessCopyWithImpl<ChatStateSearchSuccess>(
+          this, _$identity);
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is ChatStateSearchSuccess &&
+            const DeepCollectionEquality().equals(other._chats, _chats));
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_chats));
+
+  @override
+  String toString() {
+    return 'ChatState.searchChatSuccess(chats: $chats)';
+  }
+}
+
+/// @nodoc
+abstract mixin class $ChatStateSearchSuccessCopyWith<$Res>
+    implements $ChatStateCopyWith<$Res> {
+  factory $ChatStateSearchSuccessCopyWith(ChatStateSearchSuccess value,
+          $Res Function(ChatStateSearchSuccess) _then) =
+      _$ChatStateSearchSuccessCopyWithImpl;
+  @useResult
+  $Res call({List<DirectChatEntity> chats});
+}
+
+/// @nodoc
+class _$ChatStateSearchSuccessCopyWithImpl<$Res>
+    implements $ChatStateSearchSuccessCopyWith<$Res> {
+  _$ChatStateSearchSuccessCopyWithImpl(this._self, this._then);
+
+  final ChatStateSearchSuccess _self;
+  final $Res Function(ChatStateSearchSuccess) _then;
+
+  /// Create a copy of ChatState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? chats = null,
+  }) {
+    return _then(ChatStateSearchSuccess(
+      chats: null == chats
+          ? _self._chats
+          : chats // ignore: cast_nullable_to_non_nullable
+              as List<DirectChatEntity>,
     ));
   }
 }

@@ -2,26 +2,25 @@ package events
 
 import (
     "encoding/json"
-    "fakegram-api/internal/websocket/types"
     "log"
 )
 
 type Router struct {
-    handlers map[string]types.EventHandler
+    handlers map[string]EventHandler
 }
 
 func NewRouter() *Router {
     return &Router{
-        handlers: make(map[string]types.EventHandler),
+        handlers: make(map[string]EventHandler),
     }
 }
 
-func (r *Router) Register(eventType string, handler types.EventHandler) {
+func (r *Router) Register(eventType string, handler EventHandler) {
     r.handlers[eventType] = handler
 }
 
 func (r *Router) RegisterFunc(eventType string, handlerFunc func(clientID string, payload json.RawMessage) error) {
-    r.handlers[eventType] = types.EventHandlerFunc(func(clientID string, eventType string, payload json.RawMessage) error {
+    r.handlers[eventType] = EventHandlerFunc(func(clientID string, eventType string, payload json.RawMessage) error {
         return handlerFunc(clientID, payload)
     })
 }

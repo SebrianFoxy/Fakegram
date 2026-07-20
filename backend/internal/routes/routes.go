@@ -2,7 +2,7 @@ package routes
 
 import (
 	"fakegram-api/internal/handlers"
-	wsMessage "fakegram-api/internal/websocket/handler"
+	wsMessage "fakegram-api/internal/websocket/handlers"
 
 	"github.com/labstack/echo/v4"
 )
@@ -83,4 +83,5 @@ func (r *Routes) setupChatRoutes(api *echo.Group) {
 	chats.Use(r.jwtMiddleware)
 
 	chats.GET("", r.chatHandler.GetUserChats)
-}
+	chats.GET("/search", r.chatHandler.SearchChats)
+}	
