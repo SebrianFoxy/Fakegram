@@ -60,7 +60,7 @@ class MessageNotifier extends _$MessageNotifier {
       return const MessageState.loading();
     }
 
-    return state;
+    return const MessageState.initial();
   }
 
   void _initializeDependencies() {
@@ -126,7 +126,10 @@ class MessageNotifier extends _$MessageNotifier {
 
       final messageData = await _editMessageOnServer(messageId, newMessageText);
 
-      _updateLastMessage(messageData, newMessageText, 'text');
+      if (_isLastMessage(originalMessage, currentState.messages)) {
+        _updateLastMessage(messageData, newMessageText, 'text');
+      }
+
       clearEditMessage();
     } catch (error) {
       _handleEditError(error, messageId, originalMessage);
@@ -214,6 +217,8 @@ class MessageNotifier extends _$MessageNotifier {
         return;
       }
 
+      final isLastMessage = _isLastMessage(deletedMessage, currentState.messages);
+
       final deletedPlaceholder = _createDeletedPlaceholder(deletedMessage);
       final updatedMessages = _removeMessageAndUpdateReplies(
         currentState.messages,
@@ -231,9 +236,27 @@ class MessageNotifier extends _$MessageNotifier {
       _recalculateFirstUnreadIndex(updatedMessages);
 
       _updateStateAfterDelete(updatedMessages, messageId);
+
       await _deleteMessageOnServer(messageId);
       _clearReplyingIfTargetDeleted(messageId);
 
+      if (isLastMessage) {
+        final newLastMessage = _findNewLastMessage(updatedMessages, messageId);
+
+        if (newLastMessage != null) {
+          _updateLastMessage(
+            newLastMessage,
+            newLastMessage.messageText,
+            newLastMessage.messageType,
+          );
+        } else {
+          _updateLastMessage(
+            deletedMessage,
+            '',
+            'deleted',
+          );
+        }
+      }
     } catch (error) {
       await _handleDeleteError(error, messageId);
     }
@@ -583,6 +606,17 @@ class MessageNotifier extends _$MessageNotifier {
     );
   }
 
+  bool _isLastMessage(MessageEntity message, List<MessageEntity> messages) {
+    if (messages.isEmpty) return false;
+
+    final sortedMessages = List<MessageEntity>.from(messages)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final lastMessage = sortedMessages.first;
+
+    return lastMessage.id == message.id;
+  }
+
   void _updateLastMessage(
       MessageEntity messageData,
       String messageText,
@@ -603,6 +637,17 @@ class MessageNotifier extends _$MessageNotifier {
       chatId: _currentChatId!,
       message: lastMessageEntity,
     );
+  }
+
+  MessageEntity? _findNewLastMessage(List<MessageEntity> messages, String deletedMessageId) {
+    final activeMessages = messages
+        .where((m) => m.id != deletedMessageId && !m.isDeleted)
+        .toList();
+
+    if (activeMessages.isEmpty) return null;
+
+    activeMessages.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return activeMessages.first;
   }
 
   void _handleReadReceipts() {
@@ -1084,7 +1129,6 @@ class MessageNotifier extends _$MessageNotifier {
       }
 
       _clearReplyingIfTargetDeleted(messageId);
-
       switch (action) {
         case 'message_deleted':
           _handleMessageDeletedAction(messageId, targetMessage);
@@ -1105,6 +1149,8 @@ class MessageNotifier extends _$MessageNotifier {
   }
 
   void _handleMessageDeletedAction(String messageId, MessageEntity targetMessage) {
+    final currentState = state as MessageStateSuccess;
+
     final updatedMessages = _performDeleteFromState(messageId, targetMessage);
 
     _updateTotalUnreadAfterDelete(targetMessage);
@@ -1297,12 +1343,6 @@ class MessageNotifier extends _$MessageNotifier {
       );
 
       _updateStateAfterEdit(updatedMessages, editedMessage.id);
-
-      _updateLastMessage(
-        editedMessage,
-        editedMessage.messageText,
-        editedMessage.messageType,
-      );
 
       if (kDebugMode) {
         print('   ✅ Message ${editedMessage.id} updated from socket');

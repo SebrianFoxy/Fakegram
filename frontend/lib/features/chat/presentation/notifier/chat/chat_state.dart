@@ -16,4 +16,8 @@ class ChatState with _$ChatState {
   const factory ChatState.error({
     Object? error,
   }) = ChatStateError;
+
+  const factory ChatState.searchChatSuccess({
+    required List<DirectChatEntity> chats
+  }) = ChatStateSearchSuccess;
 }

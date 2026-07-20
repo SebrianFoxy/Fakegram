@@ -19,7 +19,7 @@ mixin _$DirectChatModel {
   String get chatType;
   String get title;
   @JsonKey(name: 'last_message')
-  LastMessageModel get lastMessage;
+  LastMessageModel? get lastMessage;
   @JsonKey(name: 'unread_count')
   int get unreadCount;
   @JsonKey(name: 'other_user')
@@ -78,12 +78,12 @@ abstract mixin class $DirectChatModelCopyWith<$Res> {
       {String id,
       @JsonKey(name: 'chat_type') String chatType,
       String title,
-      @JsonKey(name: 'last_message') LastMessageModel lastMessage,
+      @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
       @JsonKey(name: 'unread_count') int unreadCount,
       @JsonKey(name: 'other_user') ChatUserModel otherUser,
       @JsonKey(name: 'updated_at') DateTime updatedAt});
 
-  $LastMessageModelCopyWith<$Res> get lastMessage;
+  $LastMessageModelCopyWith<$Res>? get lastMessage;
   $ChatUserModelCopyWith<$Res> get otherUser;
 }
 
@@ -103,7 +103,7 @@ class _$DirectChatModelCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
-    Object? lastMessage = null,
+    Object? lastMessage = freezed,
     Object? unreadCount = null,
     Object? otherUser = null,
     Object? updatedAt = null,
@@ -121,10 +121,10 @@ class _$DirectChatModelCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      lastMessage: null == lastMessage
+      lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
-              as LastMessageModel,
+              as LastMessageModel?,
       unreadCount: null == unreadCount
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
@@ -144,8 +144,12 @@ class _$DirectChatModelCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $LastMessageModelCopyWith<$Res> get lastMessage {
-    return $LastMessageModelCopyWith<$Res>(_self.lastMessage, (value) {
+  $LastMessageModelCopyWith<$Res>? get lastMessage {
+    if (_self.lastMessage == null) {
+      return null;
+    }
+
+    return $LastMessageModelCopyWith<$Res>(_self.lastMessage!, (value) {
       return _then(_self.copyWith(lastMessage: value));
     });
   }
@@ -258,7 +262,7 @@ extension DirectChatModelPatterns on DirectChatModel {
             String id,
             @JsonKey(name: 'chat_type') String chatType,
             String title,
-            @JsonKey(name: 'last_message') LastMessageModel lastMessage,
+            @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
             @JsonKey(name: 'unread_count') int unreadCount,
             @JsonKey(name: 'other_user') ChatUserModel otherUser,
             @JsonKey(name: 'updated_at') DateTime updatedAt)?
@@ -300,7 +304,7 @@ extension DirectChatModelPatterns on DirectChatModel {
             String id,
             @JsonKey(name: 'chat_type') String chatType,
             String title,
-            @JsonKey(name: 'last_message') LastMessageModel lastMessage,
+            @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
             @JsonKey(name: 'unread_count') int unreadCount,
             @JsonKey(name: 'other_user') ChatUserModel otherUser,
             @JsonKey(name: 'updated_at') DateTime updatedAt)
@@ -340,7 +344,7 @@ extension DirectChatModelPatterns on DirectChatModel {
             String id,
             @JsonKey(name: 'chat_type') String chatType,
             String title,
-            @JsonKey(name: 'last_message') LastMessageModel lastMessage,
+            @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
             @JsonKey(name: 'unread_count') int unreadCount,
             @JsonKey(name: 'other_user') ChatUserModel otherUser,
             @JsonKey(name: 'updated_at') DateTime updatedAt)?
@@ -370,7 +374,7 @@ class _DirectChatModel extends DirectChatModel {
       {required this.id,
       @JsonKey(name: 'chat_type') required this.chatType,
       required this.title,
-      @JsonKey(name: 'last_message') required this.lastMessage,
+      @JsonKey(name: 'last_message') this.lastMessage,
       @JsonKey(name: 'unread_count') this.unreadCount = 0,
       @JsonKey(name: 'other_user') required this.otherUser,
       @JsonKey(name: 'updated_at') required this.updatedAt})
@@ -387,7 +391,7 @@ class _DirectChatModel extends DirectChatModel {
   final String title;
   @override
   @JsonKey(name: 'last_message')
-  final LastMessageModel lastMessage;
+  final LastMessageModel? lastMessage;
   @override
   @JsonKey(name: 'unread_count')
   final int unreadCount;
@@ -455,13 +459,13 @@ abstract mixin class _$DirectChatModelCopyWith<$Res>
       {String id,
       @JsonKey(name: 'chat_type') String chatType,
       String title,
-      @JsonKey(name: 'last_message') LastMessageModel lastMessage,
+      @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
       @JsonKey(name: 'unread_count') int unreadCount,
       @JsonKey(name: 'other_user') ChatUserModel otherUser,
       @JsonKey(name: 'updated_at') DateTime updatedAt});
 
   @override
-  $LastMessageModelCopyWith<$Res> get lastMessage;
+  $LastMessageModelCopyWith<$Res>? get lastMessage;
   @override
   $ChatUserModelCopyWith<$Res> get otherUser;
 }
@@ -482,7 +486,7 @@ class __$DirectChatModelCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
-    Object? lastMessage = null,
+    Object? lastMessage = freezed,
     Object? unreadCount = null,
     Object? otherUser = null,
     Object? updatedAt = null,
@@ -500,10 +504,10 @@ class __$DirectChatModelCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
-      lastMessage: null == lastMessage
+      lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
-              as LastMessageModel,
+              as LastMessageModel?,
       unreadCount: null == unreadCount
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
@@ -523,8 +527,12 @@ class __$DirectChatModelCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $LastMessageModelCopyWith<$Res> get lastMessage {
-    return $LastMessageModelCopyWith<$Res>(_self.lastMessage, (value) {
+  $LastMessageModelCopyWith<$Res>? get lastMessage {
+    if (_self.lastMessage == null) {
+      return null;
+    }
+
+    return $LastMessageModelCopyWith<$Res>(_self.lastMessage!, (value) {
       return _then(_self.copyWith(lastMessage: value));
     });
   }

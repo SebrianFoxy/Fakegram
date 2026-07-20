@@ -1,21 +1,23 @@
 package client
 
 import (
-    "fakegram-api/internal/websocket/types"
-    "fakegram-api/internal/websocket/utils"
-    "log"
-    "sync"
-    "time"
+	"fakegram-api/internal/websocket/events"
+	"fakegram-api/internal/websocket/types"
+	"fakegram-api/internal/websocket/utils"
+	"log"
+	"sync"
+	"time"
 
-    "github.com/gorilla/websocket"
+	"github.com/gorilla/websocket"
 )
 
 type Client struct {
     UserID      string
     Conn        *websocket.Conn
-    Pool        types.PoolInterface
+    Pool        events.PoolInterface
     mu          sync.Mutex       
     ActiveChat  string
+    Chats       map[string]bool 
     LastTyping  int64 
     LastPing    time.Time
     IsAlive     bool
@@ -24,11 +26,12 @@ type Client struct {
     closed      bool            
 }
 
-func NewClient(userID string, conn *websocket.Conn, pool types.PoolInterface) *Client {
+func NewClient(userID string, conn *websocket.Conn, pool events.PoolInterface) *Client {
     client := &Client{
         UserID:     userID,
         Conn:       conn,
         Pool:       pool,
+        Chats:      make(map[string]bool),
         IsAlive:    true,
         PingTicker: time.NewTicker(30 * time.Second),
         Done:       make(chan bool),
@@ -72,6 +75,58 @@ func (c *Client) SendMessage(message *types.Message) error {
     return c.Conn.WriteJSON(message)
 }
 
+func (c *Client) IsInChat(chatID string) bool {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    
+    _, exists := c.Chats[chatID]
+    return exists
+}
+
+func (c *Client) JoinChat(chatID string) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    
+    c.Chats[chatID] = true
+    log.Printf("User %s joined chat %s", c.UserID, chatID)
+}
+
+func (c *Client) LeaveChat(chatID string) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    
+    delete(c.Chats, chatID)
+    
+    if c.ActiveChat == chatID {
+        c.ActiveChat = ""
+        c.LastTyping = 0
+    }
+    
+    log.Printf("User %s left chat %s", c.UserID, chatID)
+}
+
+func (c *Client) SubscribeToChats(chatIDs []string) {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    
+    for _, chatID := range chatIDs {
+        c.Chats[chatID] = true
+    }
+    
+    log.Printf("User %s subscribed to %d chats", c.UserID, len(chatIDs))
+}
+
+func (c *Client) GetChats() []string {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    
+    chats := make([]string, 0, len(c.Chats))
+    for chatID := range c.Chats {
+        chats = append(chats, chatID)
+    }
+    return chats
+}
+
 func (c *Client) Close() {
     c.mu.Lock()
     defer c.mu.Unlock()
@@ -107,7 +162,12 @@ func (c *Client) GetActiveChat() string {
 func (c *Client) SetActiveChat(chatID string) {
     c.mu.Lock()
     defer c.mu.Unlock()
-    c.ActiveChat = chatID
+    
+    if _, exists := c.Chats[chatID]; exists {
+        c.ActiveChat = chatID
+    } else {
+        log.Printf("Warning: User %s trying to set active chat %s without subscription", c.UserID, chatID)
+    }
 }
 
 func (c *Client) GetLastTyping() int64 {
@@ -129,7 +189,7 @@ func (c *Client) ResetTyping() {
     c.ActiveChat = ""
 }
 
-func (c *Client) Read(handler types.EventHandler) {
+func (c *Client) Read(handler events.EventHandler) {
     defer func() {
         c.Pool.UnregisterClient(c)
         c.Close()

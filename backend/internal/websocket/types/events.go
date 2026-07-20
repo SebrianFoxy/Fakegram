@@ -11,14 +11,13 @@ const (
     EventMessageReadAll = "message_read_all"  
     EventMessageError   = "message_error"
     EventMessageSent    = "message_sent"
-    EventMessageEdited  = "message_edited"
-    EventMessageDeleted = "message_deleted"
     EventMessageListUpdate = "message_list_update"
 )
 
 const (
     EventChatListUpdate = "chat_list_update"
     EventNewChatCreated = "new_chat_created"
+    EventChatDeleted = "chat_deleted"
 )
 
 const (

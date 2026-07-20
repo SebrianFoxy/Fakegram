@@ -388,7 +388,7 @@ func (r *MessageRepository) EditMessage(ctx context.Context, messageID, newText 
         &updatedMessage.IsEdited,
         &updatedMessage.IsDeleted,
         &updatedMessage.CreatedAt,
-        &updatedMessage.UpdateAt,
+        &updatedMessage.UpdatedAt,
     )
 
     if err != nil {
@@ -563,6 +563,10 @@ func (r *MessageRepository) getInitialMessages(ctx context.Context, userID, othe
             return nil, false, false, 0, fmt.Errorf("failed to get unread count: %w", err)
         }
         totalUnread = int64(unreadCount)
+    }
+
+    if allMessages == nil {
+        allMessages = make([]*models.MessageDetail, 0)
     }
     
     return allMessages, hasMoreOlder, hasMoreNewer, totalUnread, nil

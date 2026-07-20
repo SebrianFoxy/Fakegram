@@ -1,26 +1,27 @@
 package pool
 
 import (
-    "fakegram-api/internal/websocket/types"
+    "fakegram-api/internal/websocket/events"
     "fakegram-api/internal/websocket/utils"
+    "fakegram-api/internal/websocket/types"
     "log"
     "sync"
     "time"
 )
 
 type Pool struct {
-    Register   chan types.ClientInterface
-    Unregister chan types.ClientInterface
-    Clients    map[string]types.ClientInterface
+    Register   chan events.ClientInterface
+    Unregister chan events.ClientInterface
+    Clients    map[string]events.ClientInterface
     Broadcast  chan *types.Message
     mu         sync.RWMutex
 }
 
 func NewPool() *Pool {
     return &Pool{
-        Register:   make(chan types.ClientInterface),
-        Unregister: make(chan types.ClientInterface),
-        Clients:    make(map[string]types.ClientInterface),
+        Register:   make(chan events.ClientInterface),
+        Unregister: make(chan events.ClientInterface),
+        Clients:    make(map[string]events.ClientInterface),
         Broadcast:  make(chan *types.Message, 100),
     }
 }
@@ -40,7 +41,7 @@ func (p *Pool) Start() {
     }
 }
 
-func (p *Pool) registerClient(client types.ClientInterface) {
+func (p *Pool) registerClient(client events.ClientInterface) {
     p.mu.Lock()
     p.Clients[client.GetUserID()] = client
     p.mu.Unlock()
@@ -49,7 +50,7 @@ func (p *Pool) registerClient(client types.ClientInterface) {
     log.Printf("User %s connected", client.GetUserID())
 }
 
-func (p *Pool) unregisterClient(client types.ClientInterface) {
+func (p *Pool) unregisterClient(client events.ClientInterface) {
     p.mu.Lock()
     if _, ok := p.Clients[client.GetUserID()]; ok {
         delete(p.Clients, client.GetUserID())
@@ -80,11 +81,11 @@ func (p *Pool) notifyUserStatus(userID string, online bool) {
     }
 }
 
-func (p *Pool) UnregisterClient(client types.ClientInterface) {
+func (p *Pool) UnregisterClient(client events.ClientInterface) {
     p.Unregister <- client
 }
 
-func (p *Pool) GetClient(userID string) types.ClientInterface {
+func (p *Pool) GetClient(userID string) events.ClientInterface {
     p.mu.RLock()
     defer p.mu.RUnlock()
     return p.Clients[userID]

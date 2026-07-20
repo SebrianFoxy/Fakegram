@@ -109,6 +109,56 @@ abstract class _$NewChat extends $Notifier<Map<String, dynamic>?> {
   }
 }
 
+@ProviderFor(ChatDeleted)
+const chatDeletedProvider = ChatDeletedProvider._();
+
+final class ChatDeletedProvider
+    extends $NotifierProvider<ChatDeleted, Map<String, dynamic>?> {
+  const ChatDeletedProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'chatDeletedProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatDeletedHash();
+
+  @$internal
+  @override
+  ChatDeleted create() => ChatDeleted();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Map<String, dynamic>? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Map<String, dynamic>?>(value),
+    );
+  }
+}
+
+String _$chatDeletedHash() => r'ef2a44bcc37d527df6db29db8018ef095ea30e3b';
+
+abstract class _$ChatDeleted extends $Notifier<Map<String, dynamic>?> {
+  Map<String, dynamic>? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<Map<String, dynamic>?, Map<String, dynamic>?>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<Map<String, dynamic>?, Map<String, dynamic>?>,
+        Map<String, dynamic>?,
+        Object?,
+        Object?>;
+    element.handleValue(ref, created);
+  }
+}
+
 @ProviderFor(NewMessage)
 const newMessageProvider = NewMessageProvider._();
 

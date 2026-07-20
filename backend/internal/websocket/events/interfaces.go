@@ -1,8 +1,12 @@
-package types
+package events
 
 import (
-    "encoding/json"
-    "github.com/gorilla/websocket"
+	"context"
+	"encoding/json"
+	"fakegram-api/internal/models"
+	"fakegram-api/internal/websocket/types"
+
+	"github.com/gorilla/websocket"
 )
 
 type EventHandler interface {
@@ -18,8 +22,14 @@ func (f EventHandlerFunc) Handle(clientID string, eventType string, payload json
 type ClientInterface interface {
     GetUserID() string
     GetConn() *websocket.Conn
-    SendMessage(message *Message) error
+    SendMessage(message *types.Message) error
     Close()
+    
+    IsInChat(chatID string) bool
+    JoinChat(chatID string)                   
+    LeaveChat(chatID string)                   
+    SubscribeToChats(chatIDs []string)                         
+    
     GetActiveChat() string
     SetActiveChat(chatID string)
     GetLastTyping() int64
@@ -28,11 +38,14 @@ type ClientInterface interface {
 }
 
 type PoolInterface interface {
-    BroadcastToChat(chatID string, message *Message, excludeUserID string)
-    SendToUser(userID string, message *Message) error
+    BroadcastToChat(chatID string, message *types.Message, excludeUserID string)
+    SendToUser(userID string, message *types.Message) error
     GetClient(userID string) ClientInterface
     UnregisterClient(client ClientInterface)
-    NotifyChatListUpdate(userID string, chat interface{})
     IsUserOnline(userID string) bool
     GetOnlineUsers() []string
+}
+
+type ChatRepository interface {
+	GetUserChats(ctx context.Context, userID string) ([]*models.ChatListItem, error)
 }

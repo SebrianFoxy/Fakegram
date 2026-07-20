@@ -11,8 +11,10 @@ _DirectChatModel _$DirectChatModelFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       chatType: json['chat_type'] as String,
       title: json['title'] as String,
-      lastMessage: LastMessageModel.fromJson(
-          json['last_message'] as Map<String, dynamic>),
+      lastMessage: json['last_message'] == null
+          ? null
+          : LastMessageModel.fromJson(
+              json['last_message'] as Map<String, dynamic>),
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
       otherUser:
           ChatUserModel.fromJson(json['other_user'] as Map<String, dynamic>),

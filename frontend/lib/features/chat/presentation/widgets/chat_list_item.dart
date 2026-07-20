@@ -65,7 +65,7 @@ class ChatListItem extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          chat.lastMessage.messageText,
+                          chat.lastMessage?.messageText ?? '',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurface.withOpacity(0.7),
                           ),
@@ -106,7 +106,9 @@ class ChatListItem extends StatelessWidget {
   }
 
   String _formatTime() {
-    return DateFormat.Hm().format(chat.lastMessage.createdAt);
+    final dateTime = chat.lastMessage?.createdAt;
+    if (dateTime == null) return '';
+    return DateFormat.Hm().format(dateTime);
   }
 
   Widget _buildAvatar(BuildContext context) {

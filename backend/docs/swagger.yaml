@@ -347,6 +347,56 @@ paths:
       summary: Получить чаты пользователя
       tags:
       - chats
+  /api/v1/chats/search:
+    get:
+      consumes:
+      - application/json
+      description: Поиск пользователей и групп по никнейму или названию
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: query
+        required: true
+        type: string
+      - description: Лимит результатов (по умолчанию 20, максимум 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Смещение для пагинации
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результаты поиска
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Поиск чатов
+      tags:
+      - chats
   /api/v1/messages/{message_id}:
     delete:
       consumes:

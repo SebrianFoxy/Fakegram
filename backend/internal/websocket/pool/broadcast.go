@@ -2,9 +2,7 @@ package pool
 
 import (
 	"fakegram-api/internal/websocket/types"
-	"fakegram-api/internal/websocket/utils"
 	"log"
-	"time"
 )
 
 func (p *Pool) broadcastMessage(message *types.Message) {
@@ -27,7 +25,8 @@ func (p *Pool) BroadcastToChat(chatID string, message *types.Message, excludeUse
         if userID == excludeUserID {
             continue
         }
-        
+        if !client.IsInChat(chatID) { continue }
+
         if err := client.SendMessage(message); err != nil {
             log.Printf("Error sending to user %s: %v", userID, err)
         }
@@ -56,27 +55,4 @@ func (p *Pool) SendToUser(userID string, message *types.Message) error {
 
     log.Printf("Message sent to user %s", userID)
     return nil
-}
-
-func (p *Pool) NotifyChatListUpdate(userID string, chat interface{}) {
-    log.Printf("Preparing to send chat update to user %s", userID)
-
-    event := types.WSEvent{
-        Event: types.EventChatListUpdate,
-        Data: map[string]interface{}{
-            "chat":      chat,
-            "timestamp": time.Now().Format(time.RFC3339),
-        },
-    }
-
-    message := &types.Message{
-        Type:    "event",
-        Payload: utils.MustMarshal(event),
-    }
-
-    if err := p.SendToUser(userID, message); err != nil {
-        log.Printf("Failed to send chat list update to user %s: %v", userID, err)
-    } else {
-        log.Printf("Chat list update sent to user %s", userID)
-    }
 }
