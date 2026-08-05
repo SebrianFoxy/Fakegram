@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fakegram-api/internal/models"
 	"time"
 
@@ -9,11 +10,27 @@ import (
 )
 
 type TokenService struct {
-	jwtKey []byte
+	jwtKey    []byte
+	tokenRepo TokenRepository
 }
 
-func NewTokenService(jwtKey []byte) *TokenService {
-	return &TokenService{jwtKey: jwtKey}
+func NewTokenService(jwtKey []byte, tokenRepo TokenRepository) *TokenService {
+	return &TokenService{
+		jwtKey:    jwtKey,
+		tokenRepo: tokenRepo,
+	}
+}
+
+func (s *TokenService) CreateToken(ctx context.Context, token *models.LoginToken) error {
+	return s.tokenRepo.CreateToken(ctx, token)
+}
+
+func (s *TokenService) UpdateToken(ctx context.Context, token *models.LoginToken) error {
+	return s.tokenRepo.UpdateToken(ctx, token)
+}
+
+func (s *TokenService) GetByRefreshToken(ctx context.Context, refreshToken string) (*models.LoginToken, error) {
+	return s.tokenRepo.GetByRefreshToken(ctx, refreshToken)
 }
 
 func (s *TokenService) GenerateTokens(userID string) (*models.LoginToken, error) {
@@ -93,7 +110,6 @@ func (s *TokenService) refreshAccessTokenOnly(existingToken *models.LoginToken) 
 
 	return existingToken, nil
 }
-
 
 func (s *TokenService) ValidateAccessToken(tokenString string) (*jwt.RegisteredClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {

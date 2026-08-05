@@ -20,6 +20,11 @@ type User struct {
     UpdatedAt time.Time `json:"updated_at"`
 }
 
+type GetAllUsersResponse struct {
+	Users      []UserResponse
+	TotalCount int
+}
+
 type UserResponse struct {
     ID        string    `json:"id"`
     Name      string    `json:"name"`
@@ -34,15 +39,6 @@ type UserResponse struct {
     CreatedAt time.Time `json:"created_at"`
     UpdatedAt time.Time `json:"updated_at"`
 }
-
-// type UserService interface {
-//     CreateUser(user *User) error
-//     GetUser(id string) (*User, error)
-//     GetAllUsers() ([]*User, error)
-//     UpdateUser(id string, user *User) error
-//     DeleteUser(id string) error
-//     // GetUserByID(id string) (*User, error)
-// }
 
 func (u *User) ToResponse() UserResponse {
     var bio string

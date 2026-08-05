@@ -1,11 +1,7 @@
 package handlers
 
 import (
-	"fakegram-api/internal/models"
-	"fakegram-api/internal/repositories"
-	"fmt"
-
-	// "fmt"
+	"fakegram-api/internal/services"
 	"net/http"
 	"strconv"
 
@@ -14,12 +10,12 @@ import (
 )
 
 type UserHandler struct {
-    userRepo *repositories.UserRepository
+    userService UserService
 }
 
-func NewUserHandler(userRepo *repositories.UserRepository) *UserHandler {
+func NewUserHandler(userService UserService) *UserHandler {
     return &UserHandler{
-        userRepo: userRepo,
+        userService: userService,
     }
 }
 
@@ -39,40 +35,36 @@ func (h *UserHandler) GetAllUsers(c echo.Context) error {
     ctx := c.Request().Context()
 
     page, _ := strconv.Atoi(c.QueryParam("page"))
-    if page < 1 {
-        page = 1
-    }
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
 
-    limit, _ := strconv.Atoi(c.QueryParam("limit"))
-    if limit < 1 || limit > 100 {
-        limit = 10
-    }
+    result, err := h.userService.GetAllUsers(ctx, page, limit)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to get users",
+		})
+	}
 
-    users, totalCount, err := h.userRepo.GetAllUsers(ctx, page, limit)
-    if err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]string{
-            "error": fmt.Sprintf("Failed to get users: %v", err),
-        })
-    }
+	totalPages := (result.TotalCount + limit - 1) / limit
+	if limit == 0 {
+		limit = 10 
+	}
+	if page == 0 {
+		page = 1
+	}
 
-    usersResponse := make([]models.UserResponse, len(users))
-    for i, user := range users {
-        usersResponse[i] = user.ToResponse()
-    }
+	response := map[string]interface{}{
+		"users": result.Users,
+		"pagination": map[string]interface{}{
+			"page":        page,
+			"limit":       limit,
+			"total_count": result.TotalCount,
+			"total_pages": totalPages,
+			"has_next":    page*limit < result.TotalCount,
+			"has_prev":    page > 1,
+		},
+	}
 
-    response := map[string]interface{}{
-        "users": usersResponse,
-        "pagination": map[string]interface{}{
-            "page":        page,
-            "limit":       limit,
-            "total_count": totalCount,
-            "total_pages": (totalCount + limit - 1) / limit,
-            "has_next":    page*limit < totalCount,
-            "has_prev":    page > 1,
-        },
-    }
-
-    return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, response)
 }
 
 // GetUser возвращает информацию о текущем авторизованном пользователе
@@ -110,9 +102,9 @@ func (h *UserHandler) GetUser(c echo.Context) error {
     }
 
     ctx := c.Request().Context()
-    user, err := h.userRepo.GetUserByID(ctx, userID)
+    user, err := h.userService.GetUserByID(ctx, userID)
     if err != nil {
-        if err == repositories.ErrNotFound {
+        if err == services.ErrNotFound {
             return c.JSON(http.StatusNotFound, map[string]string{
                 "error": "User not found",
             })

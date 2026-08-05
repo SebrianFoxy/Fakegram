@@ -25,15 +25,6 @@ type ChatListItem struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
-type ChatUser struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Surname   string `json:"surname"`
-	Nickname  string `json:"nickname"`
-	AvatarURL string `json:"avatar_url,omitempty"`
-	IsOnline  bool   `json:"is_online"`
-}
-
 type PrivateChatRequest struct {
 	ReceiverID string `json:"receiver_id" validate:"required,uuid4"`
 }
