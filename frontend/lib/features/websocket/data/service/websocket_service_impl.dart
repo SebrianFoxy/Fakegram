@@ -203,6 +203,15 @@ class WebSocketServiceImpl implements WebSocketService {
       }
 
       final jsonMessage = jsonDecode(message);
+
+      if (jsonMessage is Map && jsonMessage['type'] == 'error') {
+        if (kDebugMode) {
+          print('WebSocket: Error message received: $jsonMessage');
+        }
+        onError?.call(jsonMessage.toString());
+        return;
+      }
+
       final event = WebSocketEventModel.fromJson(jsonMessage).toEntity();
 
       if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
