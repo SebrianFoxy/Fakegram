@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fakegram-api/internal/models"
-	"fakegram-api/internal/services"
 	"net/http"
 	"strconv"
 
@@ -11,10 +10,10 @@ import (
 )
 
 type ChatHandler struct {
-    chatService *services.ChatService
+    chatService ChatService
 }
 
-func NewChatHandler(chatService *services.ChatService) *ChatHandler {
+func NewChatHandler(chatService ChatService) *ChatHandler {
     return &ChatHandler{
         chatService: chatService,
     }

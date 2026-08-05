@@ -38,3 +38,40 @@ type ChatRepository interface {
 	GetUserChats(ctx context.Context, userID string) ([]*models.ChatListItem, error)
 	SearchChatByNickname(ctx context.Context, query string, currentUserID string, limit, offset int) ([]*models.ChatListItem, error)
 }
+
+type UserRepository interface {
+	CreateUser(ctx context.Context, user *models.User) error
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUserByID(ctx context.Context, id string) (*models.User, error)
+	GetByNickname(ctx context.Context, nickname string) (*models.User, error)
+	MarkEmailAsVerified(ctx context.Context, userID string) error
+	GetAllUsers(ctx context.Context, page, limit int) ([]*models.User, int, error)
+}
+
+type TokenRepository interface {
+	CreateToken(ctx context.Context, token *models.LoginToken) error
+	GetByRefreshToken(ctx context.Context, refreshToken string) (*models.LoginToken, error)
+	UpdateToken(ctx context.Context, token *models.LoginToken) error
+}
+
+type EncryptionKeyRepository interface {
+	CreateEncryptionKey(req *models.CreateUserMasterKeyRequest) error
+	GetByUserID(userID string) (*models.UserMasterKey, error)
+	UpdateEncryptionKey(userID string, encryptedKey string) error
+	DeleteEncryptionKey(userID string) error
+}
+
+type UserDeviceRepository interface {
+	CreateUserDevice(req *models.CreateDeviceRequest) error
+	GetByUserID(userID string) ([]models.UserDevice, error)
+	GetByDeviceToken(token string) (*models.UserDevice, error)
+	UpdateActivity(deviceToken string) error
+	DeleteUserDevice(userID string, deviceID string) error
+	DeleteAllUserDevices(userID string) error
+}
+
+type KeyCacheService interface {
+	SetMasterKey(userID string, key []byte) error
+	GetMasterKey(userID string) ([]byte, error)
+	DeleteMasterKey(userID string) error
+}

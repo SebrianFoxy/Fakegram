@@ -4,22 +4,24 @@ import (
 	"context"
 	"fakegram-api/internal/models"
 	"fmt"
-	"log"
 	"strings"
 )
 
 type ChatService struct {
 	chatRepo ChatRepository
 	chatNotifier ChatNotifier
+	cryptoService CryptoService
 }
 
 func NewChatService(
 	chatRepo ChatRepository,
 	chatNotifier ChatNotifier,
+	cryptoService CryptoService,
 	) *ChatService {
 	return &ChatService{
 		chatRepo: chatRepo,
 		chatNotifier: chatNotifier,
+		cryptoService: cryptoService,
 	}
 }
 
@@ -36,6 +38,8 @@ func (s *ChatService) GetUserChats(ctx context.Context, userID string) ([]*model
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user chats: %w", err)
 	}
+
+	s.decryptLastMessages(chats)
 	
 	return chats, nil;
 }
@@ -76,47 +80,22 @@ func (s *ChatService) SearchChatByNickname(ctx context.Context, currentUserID, q
 		return nil, fmt.Errorf("failed to search chats: %w", err)
 	}
 
+	s.decryptLastMessages(results)
+
 	return results, nil
 }
 
-func (s *ChatService) UpdateChatListForParticipants(ctx context.Context, chatID string, excludeUserID string) {
-	user1, user2, err := models.ExtractUsersFromChatID(chatID)
-	if err != nil {
-		log.Printf("Error extracting users from chat ID: %v", err)
-		return
-	}
-
-	participants := []string{user1, user2}
-
-	log.Printf("🟢 Updating chat list for participants: %v, exclude: %s", participants, excludeUserID)
-
-	for _, participantID := range participants {
-		if participantID == excludeUserID {
-			log.Printf("🟡 Skipping notification for excluded user: %s", participantID)
+func (s *ChatService) decryptLastMessages(chats []*models.ChatListItem) {
+	for i, chat := range chats {
+		if chat.LastMessage == nil || chat.LastMessage.MessageText == "" {
 			continue
 		}
 
-		log.Printf("🟢 Getting chats for user: %s", participantID)
-
-		chats, err := s.chatRepo.GetUserChats(ctx, participantID)
+		userText, err := s.cryptoService.DecryptMessage(chat.LastMessage.MessageText)
 		if err != nil {
-			log.Printf("Error getting user chats for notification: %v", err)
+			chats[i].LastMessage.MessageText = "[encrypted]"
 			continue
 		}
-
-		var updatedChat *models.ChatListItem
-		for _, chat := range chats {
-			if chat.ID == chatID {
-				updatedChat = chat
-				break
-			}
-		}
-
-		if updatedChat != nil {
-			log.Printf("🟢 Sending chat update to user %s for chat %s", participantID, chatID)
-			s.chatNotifier.NotifyChatListUpdate(participantID, updatedChat, excludeUserID)
-		} else {
-			log.Printf("❌ Chat not found for user %s", participantID)
-		}
+		chats[i].LastMessage.MessageText = string(userText)
 	}
 }

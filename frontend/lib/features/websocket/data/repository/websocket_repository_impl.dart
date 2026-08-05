@@ -17,6 +17,8 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
   final StreamController<bool> _connectionController =
   StreamController<bool>.broadcast();
 
+  Timer? _reconnectTimer;
+
   bool _connectionStatus = false;
   bool _isConnecting = false;
   bool _shouldAutoReconnect = true;
@@ -26,7 +28,17 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
         error.contains('Token') ||
         error.contains('token');
   }
-  Timer? _reconnectTimer;
+
+  bool _isTokenExpiredError(dynamic error) {
+    if (error is Map) {
+      return error['code'] == 'token_expired';
+    }
+    if (error is String) {
+      return error.contains('token_expired') ||
+          error.contains('Token has expired');
+    }
+    return false;
+  }
 
   static const Duration _connectionTimeout = Duration(seconds: 5);
 
@@ -64,7 +76,14 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       if (kDebugMode) {
         print('WebSocketRepository: Error callback: $error');
       }
-      if (_isUnauthorizedError(error)) {
+
+      if (_isTokenExpiredError(error)) {
+        if (kDebugMode) {
+          print('WebSocketRepository: Token expired error detected');
+        }
+        _handleTokenExpired();
+      }
+      else if (_isUnauthorizedError(error)) {
         if (kDebugMode) {
           print('WebSocketRepository: 401 Unauthorized error detected');
         }
@@ -76,10 +95,51 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
     };
   }
 
+  Future<void> _handleTokenExpired() async {
+    if (kDebugMode) {
+      print('WebSocketRepository: Handling token expired');
+    }
+
+    // Отключаем авто-переподключение на время обновления токена
+    _shouldAutoReconnect = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
+    _handleConnectionLost();
+
+    try {
+      if (kDebugMode) {
+        print('WebSocketRepository: Attempting to refresh token...');
+      }
+
+      await _tokenService.updateToken();
+
+      if (kDebugMode) {
+        print('WebSocketRepository: Token refreshed successfully, reconnecting...');
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      _shouldAutoReconnect = true;
+      await connect();
+
+    } catch (e) {
+      if (kDebugMode) {
+        print('WebSocketRepository: Error during token refresh: $e');
+      }
+      _shouldAutoReconnect = true;
+      _scheduleReconnect();
+    }
+  }
+
   Future<void> _handleUnauthorizedError() async {
     if (kDebugMode) {
       print('WebSocketRepository: Handling unauthorized error');
     }
+
+    _shouldAutoReconnect = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
 
     _handleConnectionLost();
 
@@ -96,11 +156,14 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
 
       await disconnect();
       Future.delayed(const Duration(seconds: 1));
+
+      _shouldAutoReconnect = true;
       await connect();
     } catch (e) {
       if (kDebugMode) {
         print('WebSocketRepository: Error during token refresh: $e');
       }
+      _shouldAutoReconnect = true;
       _scheduleReconnect();
     }
   }
@@ -147,16 +210,12 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
         debugPrint('DESKTOP: Connecting to $url (token in Authorization header)');
       }
 
-      await _webSocketService.connect(url, token);
-
-      final connectionFuture = _webSocketService.connect(url, token);
-      final timeoutFuture = Future.delayed(
+      await _webSocketService.connect(url, token).timeout(
         _connectionTimeout,
-            () => throw TimeoutException('WebSocket connection timeout'),
+        onTimeout: () {
+          throw TimeoutException('WebSocket connection timeout');
+        },
       );
-
-      await Future.any([connectionFuture, timeoutFuture]);
-      await connectionFuture;
 
       if (kDebugMode) {
         print('WebSocketRepository: Connection confirmed');

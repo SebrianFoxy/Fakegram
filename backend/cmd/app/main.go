@@ -1,16 +1,18 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 
 	"fakegram-api/internal/config"
 	"fakegram-api/internal/database"
+	"fakegram-api/internal/database/migrations"
 	"fakegram-api/internal/handlers"
 	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/routes"
 	"fakegram-api/internal/services"
-	"fakegram-api/internal/websocket" 
-	"fakegram-api/internal/database/migrations"
+	"fakegram-api/internal/websocket"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -44,48 +46,32 @@ func main() {
 	}
 	defer db.Close()
 
-	err = database.CreateTableUsers(db)
-	if err != nil {
-		log.Fatalf("Failed to create users table: %v", err)
+	if err := initDatabase(db); err != nil {
+		log.Fatalf("Database initialization failed: %v", err)
 	}
-
-	err = database.CreateTableChats(db)
-	if err != nil {
-		log.Fatalf("Failed to create users table: %v", err)
-	}
-
-	err = database.CreateTableChatMembers(db)
-	if err != nil {
-		log.Fatalf("Failed to create users table: %v", err)
-	}
-	
-	err = database.CreateTableMessages(db)
-	if err != nil {
-		log.Fatalf("Failed to create messages table: %v", err)
-	}
-
-	err = database.CreateTableTokens(db)
-	if err != nil {
-		log.Fatalf("Failed to create tokens table: %v", err)
-	}
-
-	err = database.CreateTableMessageReadStatus(db)
-	if err != nil {
-		log.Fatalf("Failed to create tokens table: %v", err)
-	}
-
-	if err := migrations.RunMigrations(db); err != nil {
-        log.Fatalf("Failed to run migrations: %v", err)
-    }
 	
 	userRepo := repositories.NewUserRepository(db)
 	tokenRepo := repositories.NewTokenRepository(db)
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
+	cryptoRepo := repositories.NewEncryptionKeyRepository(db)
+	deviceRepo := repositories.NewUserDeviceRepository(db)
 
-	tokenService := services.NewTokenService([]byte(cnf.JWTSecret))
-	messageService := services.NewMessageService(messageRepo, chatRepo, nil, nil)
-	chatService := services.NewChatService(chatRepo, nil)
+	keyCacheService, err := services.NewKeyCache(cnf.RedisURL, cnf.KeyCacheTTL)
+	if err != nil {
+		log.Printf("Warning: Redis unavailable, key caching disabled: %v", err)
+		keyCacheService = nil
+	}
+
+	cryptoService, err := services.NewCryptoService(cnf, cryptoRepo, deviceRepo, keyCacheService)
+	if err != nil {
+		log.Fatalf("Failed to initialize crypto service: %v", err)
+	}
+
+	userService := services.NewUserService(userRepo)
+	tokenService := services.NewTokenService([]byte(cnf.JWTSecret), tokenRepo)
+	messageService := services.NewMessageService(messageRepo, chatRepo, nil, nil, *cryptoService)
+	chatService := services.NewChatService(chatRepo, nil, *cryptoService)
 	emailVerificationService := services.NewEmailVerificationService(
 		cnf.SMTPHost,
 		cnf.SMTPPort,
@@ -101,8 +87,8 @@ func main() {
 
 	jwtMiddleware := cnf.CreateJWTMiddleware()
 
-	userHandler := handlers.NewUserHandler(userRepo)
-	authHandler := handlers.NewAuthHandler(userRepo, tokenRepo, tokenService, emailVerificationService)
+	userHandler := handlers.NewUserHandler(userService)
+	authHandler := handlers.NewAuthHandler(userService, tokenService, emailVerificationService, cryptoService)
 	messageHandler := handlers.NewMessageHandler(messageService)
 	chatHandler := handlers.NewChatHandler(chatService)
 
@@ -123,4 +109,32 @@ func main() {
 	if err := e.Start(port); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+func initDatabase(db *sql.DB) error {
+	tables := []struct {
+		name string
+		fn   func(*sql.DB) error
+	}{
+		{"users", database.CreateTableUsers},
+		{"chats", database.CreateTableChats},
+		{"chat members", database.CreateTableChatMembers},
+		{"messages", database.CreateTableMessages},
+		{"tokens", database.CreateTableTokens},
+		{"message read status", database.CreateTableMessageReadStatus},
+		{"encrypt master keys", database.CreateTableEncryptMasterKeys},
+		{"users devices", database.CreateTableUsersDevices},
+	}
+
+	for _, t := range tables {
+		if err := t.fn(db); err != nil {
+			return fmt.Errorf("failed to create %s table: %w", t.name, err)
+		}
+	}
+
+	if err := migrations.RunMigrations(db); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return nil
 }

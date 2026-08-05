@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"fakegram-api/internal/models"
 	"fmt"
 	"html/template"
 	"net/smtp"
@@ -51,13 +52,6 @@ func NewEmailVerificationService(
         jwtKey: 	  jwtKey,
 		templates:    templates,
     }
-}
-
-type EmailVerificationToken struct {
-    UserID    string    `json:"user_id"`
-    Email     string    `json:"email"`
-    Type      string    `json:"type"`
-    ExpiresAt int64     `json:"expires_at"`
 }
 
 func (s *EmailVerificationService) SendVerificationEmail(toEmail, userID string) error {
@@ -108,7 +102,7 @@ func (s *EmailVerificationService) sendEmail(to, subject, body string) error {
 func (s *EmailVerificationService) generateVerificationToken(userID, email string) (string, error) {
     expiresAt := time.Now().Add(24 * time.Hour).Unix()
     
-    tokenData := EmailVerificationToken{
+    tokenData := models.EmailVerificationToken{
         UserID:    userID,
         Email:     email,
         Type:      "verification",
@@ -133,7 +127,7 @@ func (s *EmailVerificationService) signToken(data []byte) []byte {
     return h.Sum(nil)
 }
 
-func (s *EmailVerificationService) VerifyToken(token string) (*EmailVerificationToken, error) {
+func (s *EmailVerificationService) VerifyToken(token string) (*models.EmailVerificationToken, error) {
     parts := strings.Split(token, ".")
     if len(parts) != 2 {
         return nil, fmt.Errorf("invalid token format")
@@ -154,7 +148,7 @@ func (s *EmailVerificationService) VerifyToken(token string) (*EmailVerification
         return nil, fmt.Errorf("invalid token signature")
     }
     
-    var tokenData EmailVerificationToken
+    var tokenData models.EmailVerificationToken
     if err := json.Unmarshal(decodedData, &tokenData); err != nil {
         return nil, fmt.Errorf("invalid token data")
     }

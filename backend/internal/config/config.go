@@ -24,6 +24,14 @@ type Config struct {
     SMTPFromEmail string
     JWTSecret     string
     DomainHost    string
+
+    MasterKey     string 
+	Argon2Time    string
+	Argon2Memory  string
+	Argon2Threads string 
+
+    RedisURL      string
+	KeyCacheTTL   string
 }
 
 func LoadConfig() *Config {
@@ -48,6 +56,12 @@ func LoadConfig() *Config {
         SMTPPassword:  getEnv("SMTP_PASSWORD", ""),
         SMTPFromEmail: getEnv("SMTP_FROM_EMAIL", ""),
         DomainHost:    getEnv("DOMAIN_HOST", "localhost:8080"),
+        MasterKey:     getEnv("MASTER_KEY", ""),
+		Argon2Time:    getEnv("ARGON2_TIME", "3"),
+		Argon2Memory:  getEnv("ARGON2_MEMORY", "65536"),
+		Argon2Threads: getEnv("ARGON2_THREADS", "4"),
+        RedisURL:      getEnv("REDIS_URL", "localhost:6379"),
+		KeyCacheTTL:   getEnv("KEY_CACHE_TTL", "2592000"),
     }
 
     log.Printf("Config loaded: DB_HOST=%s, DB_NAME=%s, DB_USER=%s", 
