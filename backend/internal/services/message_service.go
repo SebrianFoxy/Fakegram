@@ -22,6 +22,7 @@ type MessageService struct {
     chatRepo             ChatRepository
     messageNotifier      MessageNotifier 
     chatNotifier         ChatNotifier
+    cryptoService        CryptoService
 }
 
 func NewMessageService(
@@ -29,12 +30,14 @@ func NewMessageService(
     chatRepo ChatRepository,
     messageNotifier MessageNotifier,
     chatNotifier ChatNotifier,
+    cryptoService CryptoService,
 ) *MessageService {
     return &MessageService{
         messageRepo:          messageRepo,
         chatRepo:             chatRepo,
         messageNotifier:      messageNotifier,
         chatNotifier:         chatNotifier,
+        cryptoService:        cryptoService,    
     }
 }
 
@@ -70,9 +73,10 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
                 return nil, ErrAccessDenied
             }
 
-            user1, user2, err := models.ExtractUsersFromChatID(chatID)
+            user1, user2, err := getChatUsers(chatID)
             if err != nil {
-                return nil, fmt.Errorf("failed to extract users from chat ID: %w", err)
+                log.Printf("SendMessage error")
+                return nil, err
             }
 
             if senderID != user1 && senderID != user2 {
@@ -94,6 +98,12 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
         return nil, fmt.Errorf("either chat_id or receiver_id must be provided")
     }
 
+    encryptedText, err := s.encryptForUser(req.MessageText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt message: %w", err)
+	}
+	req.MessageText = encryptedText
+
     replyToMessageID := req.ReplyToMessageID
     if replyToMessageID != nil && *replyToMessageID == "" {
         replyToMessageID = nil
@@ -107,7 +117,6 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
     }
 
     var message *models.MessageDetail
-    var err error
     
     if models.IsPrivateChat(chatID) {
         message, err = s.messageRepo.CreatePrivateMessage(ctx, senderID, req.ReceiverID, createReq)
@@ -119,12 +128,14 @@ func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *
         return nil, fmt.Errorf("failed to create message: %w", err)
     }
 
+    message = s.decryptMessageDetail(message)
+
     s.chatNotifier.SubscribeToChat(senderID, chatID)
     s.chatNotifier.SubscribeToChat(req.ReceiverID, chatID)
     
     s.messageNotifier.NotifyNewMessage(req.ReceiverID, message, chatID, senderID)
     s.messageNotifier.NotifyMessageSent(senderID, message, chatID, req.ReceiverID)
-    s.updateChatListForParticipants(ctx, chatID, senderID)
+    s.updateChatListForParticipants(chatID, senderID)
 
     log.Printf("Message sent by user %s in chat %s (type: %s)", 
         senderID, chatID, getChatType(chatID))
@@ -170,6 +181,10 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
     if err != nil {
         return nil, fmt.Errorf("failed to get messages: %w", err)
     }
+
+    for i, msg := range messages {
+		messages[i] = s.decryptMessageDetail(msg)
+	}
     
     response := &models.GetMessagesResponse{
         Messages:      messages,
@@ -230,7 +245,7 @@ func (s *MessageService) DeleteMessage(ctx context.Context, userID, messageID st
     }
 
     s.messageNotifier.NotifyMessageDeleted(messageDetail.ChatID, messageID, userID)
-    s.updateChatListForParticipants(ctx, messageDetail.ChatID, userID)
+    s.updateChatListForParticipants(messageDetail.ChatID, userID)
     
     log.Printf("Message %s deleted by user %s in chat %s", messageID, userID, messageDetail.ChatID)
     return nil
@@ -245,9 +260,10 @@ func (s *MessageService) EditMessage(ctx context.Context, userID, messageID stri
         return nil, ErrMessageNotFound
     }
 
-    user1, user2, err := models.ExtractUsersFromChatID(message.ChatID)
+    user1, user2, err := getChatUsers(message.ChatID)
     if err != nil {
-        return nil, fmt.Errorf("invalid chat ID: %w", err)
+        log.Printf("EditMessage error")
+        return nil, err
     }
     
     if userID != user1 && userID != user2 {
@@ -274,6 +290,12 @@ func (s *MessageService) EditMessage(ctx context.Context, userID, messageID stri
         return nil, fmt.Errorf("cannot edit message after 24 hours of creation")
     }
 
+    encryptedText, err := s.encryptForUser(req.MessageText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt message: %w", err)
+	}
+	req.MessageText = encryptedText
+
     updatedMessage, err := s.messageRepo.EditMessage(ctx, messageID, req.MessageText)
     if err != nil {
         if errors.Is(err, models.ErrMessageNotFound) {
@@ -290,8 +312,10 @@ func (s *MessageService) EditMessage(ctx context.Context, userID, messageID stri
         ReplyToMessage: message.ReplyToMessage,
     }
 
+    messageDetail = s.decryptMessageDetail(messageDetail)
+
     s.messageNotifier.NotifyMessageEdited(message.ChatID, messageDetail, userID)
-    s.updateChatListForParticipants(ctx, messageDetail.ChatID, userID)
+    s.updateChatListForParticipants(messageDetail.ChatID, userID)
 
     log.Printf("Message %s edited by user %s in chat %s", messageID, userID, message.ChatID)
     return messageDetail, nil
@@ -302,10 +326,11 @@ func (s *MessageService) MarkAllAsRead(ctx context.Context, userID, chatID strin
 		return fmt.Errorf("failed to mark all messages as read: %w", err)
 	}
 
-	user1, user2, err := models.ExtractUsersFromChatID(chatID)
-	if err != nil {
-		return fmt.Errorf("invalid chat ID: %w", err)
-	}
+	user1, user2, err := getChatUsers(chatID)
+    if err != nil {
+        log.Printf("MarkAllAsRead error")
+        return err
+    }
 
 	var otherUserID string
 	if user1 == userID {
@@ -327,10 +352,11 @@ func (s *MessageService) MarkAsRead(ctx context.Context, userID, chatID, lastRea
 		return fmt.Errorf("failed to mark messages as read: %w", err)
 	}
 
-	user1, user2, err := models.ExtractUsersFromChatID(chatID)
-	if err != nil {
-		return fmt.Errorf("invalid chat ID: %w", err)
-	}
+	user1, user2, err := getChatUsers(chatID)
+    if err != nil {
+        log.Printf("MarkAsRead error")
+        return err
+    }
 
 	var otherUserID string
 	if user1 == userID {
@@ -350,17 +376,10 @@ func (s *MessageService) MarkAsRead(ctx context.Context, userID, chatID, lastRea
 	return nil
 }
 
-func getChatType(chatID string) string {
-    if models.IsPrivateChat(chatID) {
-        return "private"
-    }
-    return "group"
-}
-
-func (s *MessageService) updateChatListForParticipants(ctx context.Context, chatID string, excludeUserID string) {
-    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+func (s *MessageService) updateChatListForParticipants(chatID string, excludeUserID string) {
+    user1, user2, err := getChatUsers(chatID)
     if err != nil {
-        log.Printf("Error extracting users from chat ID: %v", err)
+        log.Printf("updateChatListError")
         return
     }
 
@@ -380,6 +399,19 @@ func (s *MessageService) updateChatListForParticipants(ctx context.Context, chat
             continue
         }
 
+        for i, chat := range chats {
+            if chat.LastMessage == nil || chat.LastMessage.MessageText == "" {
+                continue
+            }
+
+            userText, err := s.decryptForUser(chat.LastMessage.MessageText)
+            if err != nil {
+                chats[i].LastMessage.MessageText = "[encrypted]"
+                continue
+            }
+            chats[i].LastMessage.MessageText = userText
+        }
+
         var updatedChat *models.ChatListItem
         for _, chat := range chats {
             if chat.ID == chatID {
@@ -396,4 +428,67 @@ func (s *MessageService) updateChatListForParticipants(ctx context.Context, chat
             s.chatNotifier.NotifyChatDeleted(chatID, participantID)
         }
     }
+}
+
+func (s *MessageService) encryptForUser(userText string) (string, error) {
+	if userText == "" {
+		return "", nil
+	}
+
+	return s.cryptoService.EncryptMessage(userText)
+}
+
+func (s *MessageService) decryptMessageDetail(msg *models.MessageDetail) *models.MessageDetail {
+	if msg == nil {
+		return nil
+	}
+
+	if msg.MessageText != "" {
+		userText, err := s.decryptForUser(msg.MessageText)
+		if err == nil {
+			msg.MessageText = userText
+		} else {
+			msg.MessageText = "[encrypted]"
+		}
+	}
+
+	if msg.ReplyToMessage != nil && msg.ReplyToMessage.MessageText != "" {
+		userText, err := s.decryptForUser(msg.ReplyToMessage.MessageText)
+		if err == nil {
+			msg.ReplyToMessage.MessageText = userText
+		} else {
+			msg.ReplyToMessage.MessageText = "[encrypted]"
+		}
+	}
+
+	return msg
+}
+
+func (s *MessageService) decryptForUser(encryptedText string) (string, error) {
+	if encryptedText == "" {
+		return "", nil
+	}
+
+	userText, err := s.cryptoService.DecryptMessage(encryptedText)
+	if err != nil {
+		return "", err
+	}
+
+	return string(userText), nil
+}
+
+func getChatType(chatID string) string {
+    if models.IsPrivateChat(chatID) {
+        return "private"
+    }
+    return "group"
+}
+
+func getChatUsers(chatID string) (string, string, error) {
+    user1, user2, err := models.ExtractUsersFromChatID(chatID)
+    if err != nil {
+        log.Printf("Error extracting users from chat ID: %v", err)
+        return "", "", err
+    }
+    return user1, user2, nil
 }

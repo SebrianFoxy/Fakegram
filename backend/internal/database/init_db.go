@@ -225,3 +225,54 @@ func CreateTableTokens(db *sql.DB) error {
     log.Println("Tokens table created successfully!")
     return nil
 }
+
+func CreateTableEncryptMasterKeys(db *sql.DB) error {
+    query := `
+	CREATE TABLE IF NOT EXISTS user_master_keys (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+		encrypted_private_key TEXT NOT NULL,
+		password_salt TEXT NOT NULL,
+		public_key TEXT NOT NULL,
+		key_version INT NOT NULL DEFAULT 1,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_user_master_keys_user_id ON user_master_keys(user_id);
+	`
+
+	_, err := db.Exec(query)
+	if err != nil {
+		return err
+	}
+
+    log.Println("Encrypted master keys table created successfully!")
+    return nil
+}
+
+func CreateTableUsersDevices(db *sql.DB) error {
+    query := `
+	CREATE TABLE IF NOT EXISTS users_devices (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		device_id VARCHAR(255) NOT NULL,
+		device_name VARCHAR(255),
+		device_token TEXT NOT NULL UNIQUE,
+		last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(user_id, device_id)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_devices_user_id ON users_devices(user_id);
+	CREATE INDEX IF NOT EXISTS idx_devices_token ON users_devices(device_token);
+	`
+
+	_, err := db.Exec(query)
+	if err != nil {
+		return err
+	}
+
+    log.Println("Users devices table created successfully!")
+    return nil
+}

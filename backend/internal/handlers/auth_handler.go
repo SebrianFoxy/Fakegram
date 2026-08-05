@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"errors"
 	"fakegram-api/internal/models"
-	"fakegram-api/internal/repositories"
 	"fakegram-api/internal/services"
 	"log"
 	"net/http"
@@ -12,23 +12,23 @@ import (
 )
 
 type AuthHandler struct {
-	userRepo *repositories.UserRepository
-	tokenRepo *repositories.TokenRepository
-	tokenService *services.TokenService
-	emailVerificationService *services.EmailVerificationService
+	userService UserService
+	tokenService TokenService
+	emailVerificationService EmailVerificationService
+	cryptoService CryptoService
 }
 
 func NewAuthHandler(
-	userRepo *repositories.UserRepository, 
-	tokenRepo *repositories.TokenRepository, 
-	tokenService *services.TokenService,
-	emailVerificationService *services.EmailVerificationService,
+	userService UserService, 
+	tokenService TokenService,
+	emailVerificationService EmailVerificationService,
+	cryptoService CryptoService,
 	) *AuthHandler {
 	return &AuthHandler{
-		userRepo:	 userRepo,
-		tokenRepo:	 tokenRepo,
+		userService: userService,
 		tokenService: tokenService,
 		emailVerificationService: emailVerificationService,
+		cryptoService: cryptoService,
 	}
 }
 
@@ -51,7 +51,7 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 	}
 
 	ctx := c.Request().Context()
-	user, err := h.userRepo.GetByEmail(ctx, req.Email)
+	user, err := h.userService.GetByEmail(ctx, req.Email)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 	}
@@ -70,13 +70,29 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 		})
 	}
 
+	masterKey, err := h.cryptoService.GetOrCreateUserKey(ctx, user.ID, req.Password)
+	if err != nil {
+		log.Printf("Failed to get/create encryption key: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to initialize encryption"})
+	}
+
+	_, err = h.cryptoService.DeriveAndCacheKey(user.ID, req.Password, masterKey)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+	}
+
+	// deviceToken, err := h.cryptoService.RegisterDevice(ctx, user.ID, req.DeviceID, req.DeviceName)
+	// if err != nil {
+	// 	log.Printf("Warning: failed to register device: %v", err)
+	// }
+
 	loginToken, err := h.tokenService.GenerateTokens(user.ID)
 	if err != nil {
 		log.Println("Token generation error:", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
 	}
 
-	if err := h.tokenRepo.CreateToken(ctx, loginToken); err != nil {
+	if err := h.tokenService.CreateToken(ctx, loginToken); err != nil {
 		log.Println("JWT save error:", err)
 		return c.JSON(http.StatusInternalServerError, 
 			map[string]string{"error": "Failed to save token"})
@@ -104,65 +120,53 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 // @Router       /api/v1/auth/registration [post]
 func (h *AuthHandler) RegistrationUser(c echo.Context) error {
     var req models.RegistrationRequest
-    
-    if err := c.Bind(&req); err != nil {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
-    }
 
-    user := models.NewUserFromRequest(&req)
-
-	if !user.IsEmailValid() {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid email format"})
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
 	}
-
-    if err := user.HashPassword(); err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to process password"})
-    }
 
 	ctx := c.Request().Context()
 
-	existingUserByNickname, err := h.userRepo.GetByNickname(ctx, user.Nickname)
-    if err != nil && err != repositories.ErrNotFound {
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to check nickname availability"})
-    }
-
-    if existingUserByNickname != nil {
-		return c.JSON(http.StatusConflict, map[string]string{"error": "Nickname already exists"})
-	}
-
-    if err := h.userRepo.CreateUser(ctx, user); err != nil {
-        if err == repositories.ErrEmailExists {
-            existingUser, err := h.userRepo.GetByEmail(ctx, user.Email)
-			if err != nil {
-				return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to check user status"})
-			}
-
-			if existingUser != nil && !existingUser.Approved {
-
-				if err := h.emailVerificationService.SendVerificationEmail(user.Email, user.ID); err != nil {
+	user, err := h.userService.CreateUser(ctx, &req)
+	if err != nil {
+		switch {
+		case err.Error() == "invalid email format":
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid email format"})
+		case errors.Is(err, services.ErrNicknameExists):
+			return c.JSON(http.StatusConflict, map[string]string{"error": "Nickname already exists"})
+		case errors.Is(err, services.ErrEmailExists):
+			return c.JSON(http.StatusConflict, map[string]string{"error": "Email already exists"})
+		default:
+			var emailErr *services.EmailNotConfirmedError
+			if errors.As(err, &emailErr) {
+				if err := h.emailVerificationService.SendVerificationEmail(emailErr.Email, emailErr.UserID); err != nil {
 					return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to send confirmation email"})
 				}
-				
+
 				return c.JSON(http.StatusConflict, map[string]string{
 					"error": "Email already exists but not confirmed. Confirmation email has been resent.",
 				})
 			}
-			return c.JSON(http.StatusConflict, map[string]string{"error": "Email already exists"})
-        }
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create user"})
-    }
 
-    if err := h.emailVerificationService.SendVerificationEmail(user.Email, user.ID); err != nil {
+			log.Printf("Registration error: %v", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create user"})
+		}
+	}
+	
+	if err := h.cryptoService.InitUserKeys(ctx, user.ID, req.Password); err != nil {
+		log.Printf("Failed to create encryption keys for user %s: %v", user.ID, err)
+	}
 
-        log.Printf("Failed to send verification email to %s: %v", user.Email, err)
+	if err := h.emailVerificationService.SendVerificationEmail(user.Email, user.ID); err != nil {
+		log.Printf("Failed to send verification email to %s: %v", user.Email, err)
 
-        return c.JSON(http.StatusCreated, map[string]interface{}{
-            "user": user.ToResponse(),
-            "warning": "User created but verification email failed to send",
-        })
-    }
+		return c.JSON(http.StatusCreated, map[string]interface{}{
+			"user":    user.ToResponse(),
+			"warning": "User created but verification email failed to send",
+		})
+	}
 
-    return c.JSON(http.StatusCreated, user.ToResponse())
+	return c.JSON(http.StatusCreated, user.ToResponse())
 }
 
 // RefreshToken обновляет access токен с помощью refresh токена
@@ -185,16 +189,21 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 
 	ctx := c.Request().Context()
 
-	loginToken, err := h.tokenRepo.GetByRefreshToken(ctx, req.RefreshToken)
+	loginToken, err := h.tokenService.GetByRefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid refresh token"})
+	}
+
+	if time.Now().After(loginToken.RefreshTokenExpiredAt) {
+		h.cryptoService.DeleteCachedKey(loginToken.UserID)
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Refresh token expired"})
 	}
 
 	if time.Now().After(loginToken.RefreshTokenExpiredAt) {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Refresh token expired"})
 	}
 	
-	_, err = h.userRepo.GetUserByID(ctx, loginToken.UserID)
+	_, err = h.userService.GetUserByID(ctx, loginToken.UserID)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User not found"})
 	}
@@ -216,16 +225,12 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	}
 
 	if req.RefreshRotate {
-		if err := h.tokenRepo.CreateToken(ctx, updatedToken); err != nil {
+		if err := h.tokenService.CreateToken(ctx, updatedToken); err != nil {
 			log.Println("Token create error:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create token"})
 		}
-		
-		// if err := h.tokenRepo.DeleteByID(ctx, loginToken.ID); err != nil {
-		// 	log.Println("Warning: failed to delete old token:", err)
-		// }
 	} else {
-		if err := h.tokenRepo.UpdateToken(ctx, updatedToken); err != nil {
+		if err := h.tokenService.UpdateToken(ctx, updatedToken); err != nil {
 			log.Println("Token update error:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update token"})
 		}
@@ -266,7 +271,7 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
     }
 
     userID := tokenData.UserID
-    if err := h.userRepo.MarkEmailAsVerified(c.Request().Context(), userID); err != nil {
+    if err := h.userService.MarkEmailAsVerified(c.Request().Context(), userID); err != nil {
         html, err := h.emailVerificationService.RenderVerificationError()
         if err != nil {
             return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Template error"})

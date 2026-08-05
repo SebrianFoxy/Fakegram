@@ -1,20 +1,14 @@
 package repositories
 
 import (
-	"errors"
 	"fakegram-api/internal/models"
+	"fakegram-api/internal/services"
 	"fmt"
 
 	"context"
 	"database/sql"
 
 	"github.com/lib/pq"
-)
-
-var (
-    ErrNotFound      = errors.New("not found")
-    ErrEmailExists   = errors.New("email already exists")
-    ErrDatabase      = errors.New("database error")
 )
 
 type UserRepository struct {
@@ -45,7 +39,7 @@ func (h *UserRepository) CreateUser(ctx context.Context, user *models.User) erro
     if err != nil {
         if pqErr, ok := err.(*pq.Error); ok {
             if pqErr.Code.Name() == "unique_violation" {
-                return ErrEmailExists
+                return services.ErrEmailExists
             }
         }
         return err
@@ -130,7 +124,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
     )
     if err != nil {
         if err == sql.ErrNoRows {
-            return nil, ErrNotFound
+            return nil, services.ErrNotFound
         }
         return nil, fmt.Errorf("failed to get user by email: %w", err)
     }
@@ -154,7 +148,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
     
     if err != nil {
         if err == sql.ErrNoRows {
-            return nil, ErrNotFound
+            return nil, services.ErrNotFound
         }
         return nil, err
     }
@@ -183,7 +177,7 @@ func (r *UserRepository) GetByNickname(ctx context.Context, nickname string) (*m
     )
     if err != nil {
         if err == sql.ErrNoRows {
-            return nil, ErrNotFound
+            return nil, services.ErrNotFound
         }
         return nil, fmt.Errorf("failed to get user by nickname: %w", err)
     }

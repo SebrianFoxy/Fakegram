@@ -12,10 +12,12 @@ import (
 )
 
 type MessageHandler struct {
-    messageService *services.MessageService
+    messageService MessageService
 }
 
-func NewMessageHandler(messageService *services.MessageService) *MessageHandler {
+func NewMessageHandler(
+	messageService MessageService,
+	) *MessageHandler {
     return &MessageHandler{
         messageService: messageService,
     }

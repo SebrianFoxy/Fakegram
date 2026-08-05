@@ -8,6 +8,8 @@ import (
 	"fakegram-api/internal/websocket/pool"
 	"log"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
@@ -48,7 +50,22 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
     log.Printf("Query: %s", c.Request().URL.RawQuery)
     log.Printf("Origin: %s", c.Request().Header.Get("Origin"))
     
+    origin := c.Request().Header.Get("Origin")
+    if origin != "" {
+        c.Response().Header().Set("Access-Control-Allow-Origin", origin)
+        c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
+        log.Printf("CORS headers set for origin: %s", origin)
+    }
+    conn, err := h.upgrader.Upgrade(c.Response(), c.Request(), nil)
+    if err != nil {
+        log.Printf("WebSocket upgrade failed: %v", err)
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "error": "Failed to upgrade connection",
+        })
+    }
+    
     var userIDStr string
+    var tokenExpired bool
     
     contextUserID := c.Get("userID")
     if contextUserID != nil {
@@ -64,51 +81,68 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
         
         if token == "" {
             log.Println("No token provided")
-            return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-                "error": "Token required. Use ?token=JWT_TOKEN in URL",
-            })
+            sendErrorAndClose(conn, "missing_token", "Token required")
+            return nil
         }
         
         claims, err := h.tokenService.ValidateAccessToken(token)
         if err != nil {
             log.Printf("Token validation failed: %v", err)
-            return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-                "error": "Invalid token: " + err.Error(),
-            })
+            
+            if isTokenExpiredError(err) {
+                log.Printf("Token expired, sending error to client")
+                sendErrorAndClose(conn, "token_expired", "Token has expired")
+                return nil
+            }
+            
+            sendErrorAndClose(conn, "invalid_token", "Invalid token: " + err.Error())
+            return nil
         }
         
         if claims.Subject == "" {
             log.Println("Token claims missing subject")
-            return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-                "error": "Token does not contain subject",
-            })
+            sendErrorAndClose(conn, "invalid_token", "Token does not contain subject")
+            return nil
         }
         
         userIDStr = claims.Subject
         log.Printf("User authenticated via token: %s", userIDStr)
     }
     
-    origin := c.Request().Header.Get("Origin")
-    if origin != "" {
-        c.Response().Header().Set("Access-Control-Allow-Origin", origin)
-        c.Response().Header().Set("Access-Control-Allow-Credentials", "true")
-        log.Printf("CORS headers set for origin: %s", origin)
+    if userIDStr == "" {
+        log.Println("Could not determine user ID")
+        errorMsg := map[string]interface{}{
+            "type": "error",
+            "code": "unknown_user",
+            "message": "Could not identify user",
+        }
+        conn.WriteJSON(errorMsg)
+        time.Sleep(100 * time.Millisecond)
+        conn.Close()
+        return nil
     }
     
-    conn, err := h.upgrader.Upgrade(c.Response(), c.Request(), nil)
-    if err != nil {
-        log.Printf("WebSocket upgrade failed: %v", err)
-        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "error": "Failed to upgrade connection",
-        })
-    }
-    
-    log.Printf("✅ WebSocket connected for user: %s", userIDStr)
+    log.Printf("✅ WebSocket connected for user: %s (token expired: %v)", userIDStr, tokenExpired)
     
     wsClient := client.NewClient(userIDStr, conn, h.pool)
     
+    if tokenExpired {
+        go func() {
+            time.Sleep(500 * time.Millisecond)
+            expiredMsg := map[string]interface{}{
+                "type": "token_expired",
+                "message": "Your token has expired, please refresh",
+            }
+            if err := conn.WriteJSON(expiredMsg); err != nil {
+                log.Printf("Failed to send token_expired event: %v", err)
+            } else {
+                log.Printf("Sent token_expired event to user: %s", userIDStr)
+            }
+        }()
+    }
+    
     go h.subscribeToUserChats(wsClient, userIDStr)
-
+    
     h.pool.(*pool.Pool).Register <- wsClient
     
     go wsClient.Read(h.router)
@@ -141,4 +175,27 @@ func (h *WebSocketHandler) subscribeToUserChats(wsClient *client.Client, userID 
     wsClient.SubscribeToChats(chatIDs)
     
     log.Printf("User %s subscribed to %d chats: %v", userID, len(chatIDs), chatIDs)
+}
+
+func isTokenExpiredError(err error) bool {
+    errStr := err.Error()
+    return strings.Contains(errStr, "expired") || 
+        strings.Contains(errStr, "token is expired") ||
+        strings.Contains(errStr, "exp") ||
+        strings.Contains(errStr, "token expired")
+}
+
+func sendErrorAndClose(conn *websocket.Conn, code string, message string) {
+    errorMsg := map[string]interface{}{
+        "type":    "error",
+        "code":    code,
+        "message": message,
+    }
+    
+    if err := conn.WriteJSON(errorMsg); err != nil {
+        log.Printf("Failed to send error message: %v", err)
+    }
+
+    time.Sleep(100 * time.Millisecond)
+    conn.Close()
 }
