@@ -60,8 +60,6 @@ func LoadConfig() *Config {
 		Argon2Time:    getEnv("ARGON2_TIME", "3"),
 		Argon2Memory:  getEnv("ARGON2_MEMORY", "65536"),
 		Argon2Threads: getEnv("ARGON2_THREADS", "4"),
-        RedisURL:      getEnv("REDIS_URL", "localhost:6379"),
-		KeyCacheTTL:   getEnv("KEY_CACHE_TTL", "2592000"),
     }
 
     log.Printf("Config loaded: DB_HOST=%s, DB_NAME=%s, DB_USER=%s", 

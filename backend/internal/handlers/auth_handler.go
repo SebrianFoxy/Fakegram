@@ -187,11 +187,6 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	}
 
 	if time.Now().After(loginToken.RefreshTokenExpiredAt) {
-		h.cryptoService.DeleteCachedKey(loginToken.UserID)
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Refresh token expired"})
-	}
-
-	if time.Now().After(loginToken.RefreshTokenExpiredAt) {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Refresh token expired"})
 	}
 	
