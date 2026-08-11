@@ -47,16 +47,17 @@ type UserService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	MarkEmailAsVerified(ctx context.Context, userID string) error
 	GetAllUsers(ctx context.Context, page, limit int) (*models.GetAllUsersResponse, error)
+	UpgradePassword(ctx context.Context, userID, password string) error
 }
 
 type CryptoService interface {
-	InitUserKeys(ctx context.Context, userID, password string) error
-	GetOrCreateUserKey(ctx context.Context, userID, password string) (*models.UserMasterKey, error)
-	GenerateUserKeys(password string) (encryptedPrivateKey, salt, publicKey string, err error)
-	DeriveAndCacheKey(userID, password string, masterKey *models.UserMasterKey) ([]byte, error)
 	EncryptMessage(userMessage string) (string, error)
 	DecryptMessage(encryptedText string) ([]byte, error)
 	RegisterDevice(ctx context.Context, userID, deviceID, deviceName string) (string, error)
-	DeleteCachedKey(userID string)
-	GetCachedKey(userID string) ([]byte, error)
+}
+
+type PasswordService interface {
+	VerifyPassword(password, hash string) bool
+	NeedsUpgrade(hash string) bool
+	HashPassword(password string) (string, error)
 }

@@ -46,6 +46,7 @@ type UserRepository interface {
 	GetByNickname(ctx context.Context, nickname string) (*models.User, error)
 	MarkEmailAsVerified(ctx context.Context, userID string) error
 	GetAllUsers(ctx context.Context, page, limit int) ([]*models.User, int, error)
+	UpdatePassword(ctx context.Context, userID, newPasswordHash string) error
 }
 
 type TokenRepository interface {
@@ -68,10 +69,4 @@ type UserDeviceRepository interface {
 	UpdateActivity(deviceToken string) error
 	DeleteUserDevice(userID string, deviceID string) error
 	DeleteAllUserDevices(userID string) error
-}
-
-type KeyCacheService interface {
-	SetMasterKey(userID string, key []byte) error
-	GetMasterKey(userID string) ([]byte, error)
-	DeleteMasterKey(userID string) error
 }

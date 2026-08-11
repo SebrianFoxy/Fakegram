@@ -54,21 +54,22 @@ func main() {
 	tokenRepo := repositories.NewTokenRepository(db)
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
-	cryptoRepo := repositories.NewEncryptionKeyRepository(db)
+	//cryptoRepo := repositories.NewEncryptionKeyRepository(db)
 	deviceRepo := repositories.NewUserDeviceRepository(db)
 
-	keyCacheService, err := services.NewKeyCache(cnf.RedisURL, cnf.KeyCacheTTL)
-	if err != nil {
-		log.Printf("Warning: Redis unavailable, key caching disabled: %v", err)
-		keyCacheService = nil
-	}
+	// keyCacheService, err := services.NewKeyCache(cnf.RedisURL, cnf.KeyCacheTTL)
+	// if err != nil {
+	// 	log.Printf("Warning: Redis unavailable, key caching disabled: %v", err)
+	// 	keyCacheService = nil
+	// }
 
-	cryptoService, err := services.NewCryptoService(cnf, cryptoRepo, deviceRepo, keyCacheService)
+	cryptoService, err := services.NewCryptoService(cnf, deviceRepo)
 	if err != nil {
 		log.Fatalf("Failed to initialize crypto service: %v", err)
 	}
 
-	userService := services.NewUserService(userRepo)
+	passwordService := services.NewPasswordService(cnf)
+	userService := services.NewUserService(userRepo, *passwordService)
 	tokenService := services.NewTokenService([]byte(cnf.JWTSecret), tokenRepo)
 	messageService := services.NewMessageService(messageRepo, chatRepo, nil, nil, *cryptoService)
 	chatService := services.NewChatService(chatRepo, nil, *cryptoService)
@@ -88,7 +89,7 @@ func main() {
 	jwtMiddleware := cnf.CreateJWTMiddleware()
 
 	userHandler := handlers.NewUserHandler(userService)
-	authHandler := handlers.NewAuthHandler(userService, tokenService, emailVerificationService, cryptoService)
+	authHandler := handlers.NewAuthHandler(userService, tokenService, emailVerificationService, passwordService)
 	messageHandler := handlers.NewMessageHandler(messageService)
 	chatHandler := handlers.NewChatHandler(chatService)
 

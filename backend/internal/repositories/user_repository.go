@@ -203,3 +203,23 @@ func (r *UserRepository) MarkEmailAsVerified(ctx context.Context, userID string)
     
     return nil
 }
+
+func (r *UserRepository) UpdatePassword(ctx context.Context, userID, newPasswordHash string) error {
+	query := `UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2`
+
+	result, err := r.DB.ExecContext(ctx, query, newPasswordHash, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("user not found with id: %s", userID)
+	}
+
+	return nil
+}
