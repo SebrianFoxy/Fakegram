@@ -1,13 +1,9 @@
 package models
 
 import (
-	"regexp"
-	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginRequest struct {
@@ -50,55 +46,55 @@ type RegistrationRequest struct {
     Password string `json:"password" validate:"required,min=6"`
 }
 
-func NewUserFromRequest(req *RegistrationRequest) *User {
-    user := &User{
-		Name:      strings.TrimSpace(req.Name),
-		Surname:   strings.TrimSpace(req.Surname),
-		Nickname:  strings.TrimSpace(req.Nickname),
-		Email:     req.Email,
-		Password:  req.Password,
-		Approved:  false,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+// func NewUserFromRequest(req *RegistrationRequest) *User {
+//     user := &User{
+// 		Name:      strings.TrimSpace(req.Name),
+// 		Surname:   strings.TrimSpace(req.Surname),
+// 		Nickname:  strings.TrimSpace(req.Nickname),
+// 		Email:     req.Email,
+// 		Password:  req.Password,
+// 		Approved:  false,
+// 		CreatedAt: time.Now(),
+// 		UpdatedAt: time.Now(),
+// 	}
 
-    user.NormalizeEmail()
+//     user.NormalizeEmail()
 	
-	return user
-}
+// 	return user
+// }
 
-func (u *User) HashPassword() error {
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-    if err != nil {
-        return err
-    }
-    u.Password = string(hashedPassword)
-    return nil
-}
+// func (u *User) HashPassword() error {
+//     hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+//     if err != nil {
+//         return err
+//     }
+//     u.Password = string(hashedPassword)
+//     return nil
+// }
 
-func (u *User) CheckPassword(password string) bool {
-    err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
-    return err == nil
-}
+// func (u *User) CheckPassword(password string) bool {
+//     err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+//     return err == nil
+// }
 
-func (u *User) NormalizeEmail() {
-    u.Email = strings.ToLower(strings.TrimSpace(u.Email))
-}
+// func (u *User) NormalizeEmail() {
+//     u.Email = strings.ToLower(strings.TrimSpace(u.Email))
+// }
 
-func (u *User) IsEmailValid() bool {
-	email := u.Email
-	if email == "" || utf8.RuneCountInString(email) > 254 {
-		return false
-	}
+// func (u *User) IsEmailValid() bool {
+// 	email := u.Email
+// 	if email == "" || utf8.RuneCountInString(email) > 254 {
+// 		return false
+// 	}
 	
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	return emailRegex.MatchString(email)
-}
+// 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+// 	return emailRegex.MatchString(email)
+// }
 
-func NormalizeNickname(nickname string) string {
-    return strings.ToLower(strings.TrimSpace(nickname))
-}
+// func NormalizeNickname(nickname string) string {
+//     return strings.ToLower(strings.TrimSpace(nickname))
+// }
 
-func (u *User) CheckNickname(nickname string) bool {
-    return NormalizeNickname(nickname) == NormalizeNickname(u.Nickname)
-}
+// func (u *User) CheckNickname(nickname string) bool {
+//     return NormalizeNickname(nickname) == NormalizeNickname(u.Nickname)
+// }

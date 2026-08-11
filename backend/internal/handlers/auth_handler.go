@@ -15,20 +15,20 @@ type AuthHandler struct {
 	userService UserService
 	tokenService TokenService
 	emailVerificationService EmailVerificationService
-	cryptoService CryptoService
+	passwordService PasswordService
 }
 
 func NewAuthHandler(
 	userService UserService, 
 	tokenService TokenService,
 	emailVerificationService EmailVerificationService,
-	cryptoService CryptoService,
+	passwordService PasswordService,
 	) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 		tokenService: tokenService,
 		emailVerificationService: emailVerificationService,
-		cryptoService: cryptoService,
+		passwordService: passwordService,
 	}
 }
 
@@ -56,7 +56,7 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 	}
 
-	if !user.CheckPassword(req.Password){
+	if !h.passwordService.VerifyPassword(req.Password, user.Password) {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
 	}
 
@@ -70,15 +70,11 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 		})
 	}
 
-	masterKey, err := h.cryptoService.GetOrCreateUserKey(ctx, user.ID, req.Password)
-	if err != nil {
-		log.Printf("Failed to get/create encryption key: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to initialize encryption"})
-	}
-
-	_, err = h.cryptoService.DeriveAndCacheKey(user.ID, req.Password, masterKey)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid credentials"})
+	if h.passwordService.NeedsUpgrade(user.Password) {
+		newHash, err := h.passwordService.HashPassword(req.Password)
+		if err == nil {
+			h.userService.UpgradePassword(ctx, user.ID, newHash)
+		}
 	}
 
 	// deviceToken, err := h.cryptoService.RegisterDevice(ctx, user.ID, req.DeviceID, req.DeviceName)
@@ -151,10 +147,6 @@ func (h *AuthHandler) RegistrationUser(c echo.Context) error {
 			log.Printf("Registration error: %v", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to create user"})
 		}
-	}
-	
-	if err := h.cryptoService.InitUserKeys(ctx, user.ID, req.Password); err != nil {
-		log.Printf("Failed to create encryption keys for user %s: %v", user.ID, err)
 	}
 
 	if err := h.emailVerificationService.SendVerificationEmail(user.Email, user.ID); err != nil {

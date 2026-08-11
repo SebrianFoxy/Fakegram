@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+	"unicode/utf8"
 
 	"fakegram-api/internal/models"
 )
@@ -29,13 +33,16 @@ func (e *EmailNotConfirmedError) Error() string {
 
 type UserService struct {
 	userRepo  UserRepository
+	passwordService PasswordService
 }
 
 func NewUserService(
 	userRepo UserRepository,
+	passwordService PasswordService,
 ) *UserService {
 	return &UserService {
 		userRepo: userRepo,
+		passwordService: passwordService,
 	}
 }
 
@@ -103,46 +110,49 @@ func (s *UserService) GetAllUsers(ctx context.Context, page, limit int) (*models
 }
 
 func (s *UserService) CreateUser(ctx context.Context, req *models.RegistrationRequest) (*models.User, error) {
-	user := models.NewUserFromRequest(req)
+	email := normalizeEmail(req.Email)
+    nickname := normalizeNickname(req.Nickname)
 
-	if !user.IsEmailValid() {
+	if !isEmailValid(email) {
 		return nil, fmt.Errorf("invalid email format")
 	}
 
-	if err := user.HashPassword(); err != nil {
-		return nil, fmt.Errorf("failed to process password: %w", err)
-	}
-
-	existingUserByNickname, err := s.userRepo.GetByNickname(ctx, user.Nickname)
-
-	if err != nil {
-		if !errors.Is(err, ErrNotFound) {
-			return nil, fmt.Errorf("failed to check nickname availability: %w", err)
+	existingByEmail, _ := s.userRepo.GetByEmail(ctx, email)
+	if existingByEmail != nil {
+		if !existingByEmail.Approved {
+			return nil, &EmailNotConfirmedError{
+				Email:  email,
+				UserID: existingByEmail.ID,
+			}
 		}
+		return nil, ErrEmailExists
 	}
-	
-	if existingUserByNickname != nil {
+
+	existingByNickname, _ := s.userRepo.GetByNickname(ctx, nickname)
+	if existingByNickname != nil {
 		return nil, ErrNicknameExists
 	}
 
-	if err := s.userRepo.CreateUser(ctx, user); err != nil {
-		if errors.Is(err, ErrEmailExists) {
-			existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
-
-			if err != nil {
-				return nil, fmt.Errorf("failed to check user status: %w", err)
-			}
-
-			if existingUser != nil && !existingUser.Approved {
-				return nil, &EmailNotConfirmedError{
-					Email:  user.Email,
-					UserID: existingUser.ID,
-				}
-			}
-			return nil, ErrEmailExists
-		}
-		return nil, fmt.Errorf("failed to create user: %w", err)
+	hashedPassword, err := s.passwordService.HashPassword(req.Password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
+
+	user := &models.User{
+        Name:      strings.TrimSpace(req.Name),
+        Surname:   strings.TrimSpace(req.Surname),
+        Nickname:  nickname,
+        Email:     email,
+        Password:  hashedPassword,  
+        Approved:  false,
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
+
+	if err := s.userRepo.CreateUser(ctx, user); err != nil {
+		return nil, err
+	}
+
 	return user, nil
 }
 
@@ -155,7 +165,7 @@ func (s *UserService) AuthenticateUser(ctx context.Context, email, password stri
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	if !user.CheckPassword(password) {
+	if !s.passwordService.VerifyPassword(password, user.Password) {
 		return nil, ErrInvalidCredentials
 	}
 
@@ -168,4 +178,38 @@ func (s *UserService) MarkEmailAsVerified(ctx context.Context, userID string) er
 	}
 
 	return s.userRepo.MarkEmailAsVerified(ctx, userID)
+}
+
+func (s *UserService) UpgradePassword(ctx context.Context, userID, password string) error {
+	hashedPassword, err := s.passwordService.HashPassword(password)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	return s.userRepo.UpdatePassword(ctx, userID, hashedPassword)
+}
+
+func (s *UserService) UpdatePassword(ctx context.Context, userID, newPassword string) error {
+	hashedPassword, err := s.passwordService.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	return s.userRepo.UpdatePassword(ctx, userID, hashedPassword)
+}
+
+func normalizeEmail(email string) string {
+	return strings.ToLower(strings.TrimSpace(email))
+}
+
+func isEmailValid(email string) bool {
+	if email == "" || utf8.RuneCountInString(email) > 254 {
+		return false
+	}
+	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	return re.MatchString(email)
+}
+
+func normalizeNickname(nickname string) string {
+	return strings.ToLower(strings.TrimSpace(nickname))
 }
