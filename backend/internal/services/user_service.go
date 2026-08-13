@@ -180,15 +180,6 @@ func (s *UserService) MarkEmailAsVerified(ctx context.Context, userID string) er
 	return s.userRepo.MarkEmailAsVerified(ctx, userID)
 }
 
-func (s *UserService) UpgradePassword(ctx context.Context, userID, password string) error {
-	hashedPassword, err := s.passwordService.HashPassword(password)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	return s.userRepo.UpdatePassword(ctx, userID, hashedPassword)
-}
-
 func (s *UserService) UpdatePassword(ctx context.Context, userID, newPassword string) error {
 	hashedPassword, err := s.passwordService.HashPassword(newPassword)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fakegram-api/internal/config"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -81,16 +82,27 @@ func (s *PasswordService) NeedsUpgrade(hash string) bool {
 func (s *PasswordService) verifyArgon2(password, encoded string) bool {
 	parts := strings.Split(encoded, "$")
 	if len(parts) != 6 {
+		log.Printf("Invalid format")
 		return false
 	}
 
 	var mem, time uint32
 	var threads uint8
-	fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &mem, &time, &threads)
 
-	salt, _ := base64.RawStdEncoding.DecodeString(parts[4])
-	expectedHash, _ := base64.RawStdEncoding.DecodeString(parts[5])
+	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
+	if err != nil {
+		log.Printf("Salt decode error: %v", err)
+		return false
+	}
+
+	expectedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
+	if err != nil {
+		return false
+	}
 
 	newHash := argon2.IDKey([]byte(password), salt, time, mem, threads, uint32(len(expectedHash)))
-	return subtle.ConstantTimeCompare(expectedHash, newHash) == 1
+	
+	result := subtle.ConstantTimeCompare(expectedHash, newHash) == 1
+
+	return result
 }

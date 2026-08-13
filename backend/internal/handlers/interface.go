@@ -47,7 +47,7 @@ type UserService interface {
 	AuthenticateUser(ctx context.Context, email, password string) (*models.User, error)
 	MarkEmailAsVerified(ctx context.Context, userID string) error
 	GetAllUsers(ctx context.Context, page, limit int) (*models.GetAllUsersResponse, error)
-	UpgradePassword(ctx context.Context, userID, password string) error
+	UpdatePassword(ctx context.Context, userID, newPassword string) error
 }
 
 type CryptoService interface {
