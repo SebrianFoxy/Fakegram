@@ -81,7 +81,6 @@ func (s *PasswordService) NeedsUpgrade(hash string) bool {
 
 func (s *PasswordService) verifyArgon2(password, encoded string) bool {
 	parts := strings.Split(encoded, "$")
-	log.Printf("Argon2 parts: %d", len(parts))
 	if len(parts) != 6 {
 		log.Printf("Invalid format")
 		return false
@@ -89,28 +88,21 @@ func (s *PasswordService) verifyArgon2(password, encoded string) bool {
 
 	var mem, time uint32
 	var threads uint8
-	fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &mem, &time, &threads)
-	log.Printf("Params: m=%d, t=%d, p=%d", mem, time, threads)
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
 		log.Printf("Salt decode error: %v", err)
 		return false
 	}
-	log.Printf("Salt bytes: %d", len(salt))
 
 	expectedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		log.Printf("Hash decode error: %v", err)
 		return false
 	}
-	log.Printf("Expected hash bytes: %d", len(expectedHash))
 
 	newHash := argon2.IDKey([]byte(password), salt, time, mem, threads, uint32(len(expectedHash)))
-	log.Printf("New hash bytes: %d", len(newHash))
 	
 	result := subtle.ConstantTimeCompare(expectedHash, newHash) == 1
-	log.Printf("Result: %v", result)
 
 	return result
 }
