@@ -57,7 +57,7 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 	}
 
 	if !h.passwordService.VerifyPassword(req.Password, user.Password) {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or password"})
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Invalid email or Password"})
 	}
 
 	if !user.Approved {
@@ -71,10 +71,7 @@ func (h *AuthHandler) LoginUser(c echo.Context) error {
 	}
 
 	if h.passwordService.NeedsUpgrade(user.Password) {
-		newHash, err := h.passwordService.HashPassword(req.Password)
-		if err == nil {
-			h.userService.UpgradePassword(ctx, user.ID, newHash)
-		}
+		h.userService.UpdatePassword(ctx, user.ID, req.Password)
 	}
 
 	// deviceToken, err := h.cryptoService.RegisterDevice(ctx, user.ID, req.DeviceID, req.DeviceName)
