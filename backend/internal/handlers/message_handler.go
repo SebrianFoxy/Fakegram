@@ -85,12 +85,12 @@ func (h *MessageHandler) CreateMessage(c echo.Context) error {
 
 // GetMessagesByChat получает сообщения из чата между двумя пользователями
 // @Summary      Получить сообщения чата
-// @Description  Возвращает сообщения из приватного чата с поддержкой двунаправленной пагинации.
+// @Description  Возвращает сообщения из чата с поддержкой двунаправленной пагинации.
 // @Description  При первой загрузке (direction=around) автоматически позиционирует на первом непрочитанном сообщении.
 // @Tags         messages
 // @Accept       json
 // @Produce      json
-// @Param        user_id   path     string  true   "ID второго пользователя"
+// @Param        chat_id   path     string  true   "ID чата (private_user1_user2 или group_UUID)"
 // @Param        direction query    string  false  "Направление загрузки: around (первая загрузка вокруг непрочитанного), older (старые сообщения), newer (новые сообщения)" default(around) Enums(around, older, newer)
 // @Param        cursor    query    string  false  "Временная метка опорного сообщения в формате RFC3339 (например, 2024-01-02T15:04:05Z). Обязателен для direction=older или direction=newer"
 // @Param        limit     query    int     false  "Количество сообщений (1-100)" default(30) mininum(1) maximum(100)
@@ -99,79 +99,79 @@ func (h *MessageHandler) CreateMessage(c echo.Context) error {
 // @Failure      403 {object} map[string]string "Доступ запрещен (пользователь не является участником чата)"
 // @Failure      500 {object} map[string]string "Ошибка сервера"
 // @Security     BearerAuth
-// @Router       /api/v1/messages/private-chat/{user_id} [get]
+// @Router       /api/v1/messages/chat/{chat_id} [get]
 func (h *MessageHandler) GetMessagesByChat(c echo.Context) error {
-    ctx := c.Request().Context()
-    
-    currentUserID, ok := c.Get("userID").(string)
-    if !ok || currentUserID == "" {
-        return c.JSON(http.StatusUnauthorized, map[string]interface{}{
-            "error": "User not authenticated",
-        })
-    }
+	ctx := c.Request().Context()
 
-    otherUserID := c.Param("user_id")
-    if otherUserID == "" {
-        return c.JSON(http.StatusBadRequest, map[string]interface{}{
-            "error": "User ID is required",
-        })
-    }
-    
-    if currentUserID == otherUserID {
-        return c.JSON(http.StatusBadRequest, map[string]interface{}{
-            "error": "Cannot get messages with yourself",
-        })
-    }
-    
-    direction := c.QueryParam("direction")
-    if direction == "" {
-        direction = "around"
-    }
-    
-    if direction != "around" && direction != "older" && direction != "newer" {
-        return c.JSON(http.StatusBadRequest, map[string]interface{}{
-            "error": "Invalid direction. Must be 'around', 'older', or 'newer'",
-        })
-    }
-    
-    var cursor *time.Time
-    cursorStr := c.QueryParam("cursor")
-    if cursorStr != "" {
-        parsedTime, err := time.Parse(time.RFC3339, cursorStr)
-        if err != nil {
-            return c.JSON(http.StatusBadRequest, map[string]interface{}{
-                "error": "Invalid cursor format. Use RFC3339 format (e.g., 2024-01-02T15:04:05Z)",
-            })
-        }
-        cursor = &parsedTime
-    }
-    
-    limit, _ := strconv.Atoi(c.QueryParam("limit"))
-    if limit < 1 || limit > 100 {
-        limit = 30
-    }
+	currentUserID, ok := c.Get("userID").(string)
+	if !ok || currentUserID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"error": "User not authenticated",
+		})
+	}
 
-    response, err := h.messageService.GetMessagesByChat(
-        ctx, 
-        currentUserID, 
-        otherUserID, 
-        cursor, 
-        limit, 
-        direction,
-    )
-    
-    if err != nil {
-        if err == services.ErrAccessDenied {
-            return c.JSON(http.StatusForbidden, map[string]interface{}{
-                "error": "Access denied to this chat",
-            })
-        }
-        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
-            "error": "Failed to get messages: " + err.Error(),
-        })
-    }
-    
-    return c.JSON(http.StatusOK, response)
+	chatID := c.Param("chat_id")
+	if chatID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Chat ID is required",
+		})
+	}
+
+	direction := c.QueryParam("direction")
+	if direction == "" {
+		direction = "around"
+	}
+
+	if direction != "around" && direction != "older" && direction != "newer" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error": "Invalid direction. Must be 'around', 'older', or 'newer'",
+		})
+	}
+
+	var cursor *time.Time
+	cursorStr := c.QueryParam("cursor")
+	if cursorStr != "" {
+		parsedTime, err := time.Parse(time.RFC3339, cursorStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]interface{}{
+				"error": "Invalid cursor format. Use RFC3339 format (e.g., 2024-01-02T15:04:05Z)",
+			})
+		}
+		cursor = &parsedTime
+	}
+
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+	if limit < 1 || limit > 100 {
+		limit = 30
+	}
+
+	response, err := h.messageService.GetMessagesByChat(
+		ctx,
+		currentUserID,
+		chatID,
+		cursor,
+		limit,
+		direction,
+	)
+
+	if err != nil {
+		switch err {
+		case services.ErrAccessDenied:
+			return c.JSON(http.StatusForbidden, map[string]interface{}{
+				"error": "Access denied to this chat",
+			})
+		case services.ErrMessageNotFound:
+			return c.JSON(http.StatusNotFound, map[string]interface{}{
+				"error": "Message not found",
+			})
+		default:
+			return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"error": "Failed to get messages: " + err.Error(),
+			})
+		}
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
 
 // DeleteMessage удаляет сообщение пользователя

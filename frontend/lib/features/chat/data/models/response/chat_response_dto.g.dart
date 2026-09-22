@@ -11,7 +11,7 @@ _ChatResponseDTO _$ChatResponseDTOFromJson(Map<String, dynamic> json) =>
       chats: (json['chats'] as List<dynamic>)
           .map((e) => DirectChatModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      count: (json['count'] as num).toInt(),
+      count: (json['count'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ChatResponseDTOToJson(_ChatResponseDTO instance) =>

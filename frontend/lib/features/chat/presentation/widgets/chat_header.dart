@@ -44,9 +44,12 @@ class ChatHeader extends ConsumerWidget {
   }
 
   ImageProvider _getAvatarImage() {
-    if (chat.otherUser.avatarUrl != null) {
-      return NetworkImage(chat.otherUser.avatarUrl!);
+    final otherUser = chat.otherUser;
+
+    if (otherUser?.avatarUrl != null && otherUser!.avatarUrl!.isNotEmpty) {
+      return NetworkImage(otherUser.avatarUrl!);
     }
+
     return const AssetImage('assets/default-avatar.png');
   }
 
@@ -57,7 +60,8 @@ class ChatHeader extends ConsumerWidget {
           radius: 24,
           backgroundImage: _getAvatarImage(),
         ),
-        if (chat.otherUser.isOnline) _buildOnlineIndicator(theme),
+        if (chat.otherUser != null && chat.otherUser!.isOnline)
+          _buildOnlineIndicator(theme),
       ],
     );
   }
@@ -92,7 +96,7 @@ class ChatHeader extends ConsumerWidget {
             maxLines: 1,
           ),
           Text(
-            chat.otherUser.isOnline ? 'в сети' : 'был(а) недавно',
+            _getUserStatus(),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
@@ -107,5 +111,15 @@ class ChatHeader extends ConsumerWidget {
       icon: Icon(Icons.more_vert, color: colorScheme.onSurface.withOpacity(0.6)),
       onPressed: () {},
     );
+  }
+
+  String _getUserStatus() {
+    final otherUser = chat.otherUser;
+
+    if (otherUser == null) {
+      return 'Групповой чат';
+    }
+
+    return otherUser.isOnline ? 'в сети' : 'был(а) недавно';
   }
 }

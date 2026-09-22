@@ -15,6 +15,7 @@ abstract class LastMessageModel with _$LastMessageModel {
     @JsonKey(name: 'is_edited') required bool isEdited,
     @JsonKey(name: 'is_deleted') required bool isDeleted,
     @JsonKey(name: 'created_at') required DateTime createdAt,
+    @JsonKey(name: 'updated_at') required DateTime updatedAt,
   }) = _LastMessageModel;
 
   const LastMessageModel._();

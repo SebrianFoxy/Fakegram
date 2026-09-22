@@ -41,7 +41,7 @@ final class WebSocketNotifierProvider
   }
 }
 
-String _$webSocketNotifierHash() => r'e2fcf57b41ffd0829b329542288a5652e4f5f646';
+String _$webSocketNotifierHash() => r'6bc83a4349e93de027ad23b727fb6591ed9bf850';
 
 abstract class _$WebSocketNotifier extends $Notifier<WebSocketState> {
   WebSocketState build();
@@ -142,7 +142,7 @@ final class IsWebSocketConnectedProvider
 }
 
 String _$isWebSocketConnectedHash() =>
-    r'510ad5d41364b47c3e1bad3a315eb287bcbc61a7';
+    r'7a2f0c7f9d0c2d6941cf7b468fee2e4f4c8fb172';
 
 @ProviderFor(autoConnectWebSocket)
 const autoConnectWebSocketProvider = AutoConnectWebSocketProvider._();
@@ -176,4 +176,4 @@ final class AutoConnectWebSocketProvider
 }
 
 String _$autoConnectWebSocketHash() =>
-    r'0409fea846b28d065270ef632790a43229cbf17e';
+    r'df8744f82e28c3803ce1d92110844c36d7fb9db1';

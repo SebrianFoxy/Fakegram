@@ -6,11 +6,17 @@ class ChatListHeader extends StatefulWidget {
     required this.onChanged,
     required this.onClear,
     required this.searchController,
+    this.onCreateGroupChat,
+    this.onCreatePrivateChat,
+    this.onCreateChannel,
   });
 
   final Function(String query) onChanged;
   final VoidCallback onClear;
   final TextEditingController searchController;
+  final VoidCallback? onCreateGroupChat;
+  final VoidCallback? onCreatePrivateChat;
+  final VoidCallback? onCreateChannel;
 
   @override
   State<ChatListHeader> createState() => _ChatListHeaderState();
@@ -42,7 +48,16 @@ class _ChatListHeaderState extends State<ChatListHeader> {
       ),
       child: Column(
         children: [
-          _buildTitle(theme),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              _buildTitle(theme),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _buildButtonGroupChat(colorScheme),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           _buildSearchField(colorScheme),
         ],
@@ -58,6 +73,14 @@ class _ChatListHeaderState extends State<ChatListHeader> {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+
+  Widget _buildButtonGroupChat(ColorScheme colorScheme) {
+    return _CreateChatButton(
+      onCreateGroupChat: widget.onCreateGroupChat,
+      onCreatePrivateChat: widget.onCreatePrivateChat,
+      onCreateChannel: widget.onCreateChannel,
     );
   }
 

@@ -80,6 +80,29 @@ class ChatNotifier extends _$ChatNotifier {
     }
   }
 
+  Future<bool> createGroupChat({
+    required String title,
+    required List<String> memberIds,
+  }) async {
+    try {
+      final groupChat = await _chatRepository.createGroupChat(
+        title: title,
+        membersIDs: memberIds,
+      );
+
+      _updateCache(groupChat);
+      _syncUIWithCache();
+
+      return true;
+    } on DioException catch (error) {
+      _handleLoadError(error);
+      return false;
+    } catch (error) {
+      _handleLoadError(error);
+      return false;
+    }
+  }
+
   Future<void> searchChats(String query) async {
     if (query.trim().length < 3) {
       clearSearch();
@@ -110,7 +133,7 @@ class ChatNotifier extends _$ChatNotifier {
   }
 
   void _handleLoadError(dynamic error) {
-    debugPrint('loadChatsError: $error');
+    debugPrint('handleError: $error');
     final exception = error is DioException
         ? ErrorHandler.handleDioError(error)
         : ErrorHandler.handleError(error);
@@ -250,7 +273,7 @@ final chatSelectionStateProvider = Provider<String>((ref) {
     return "Выберите чат";
   }
 
-  return selectedChat.otherUser.id;
+  return selectedChat.id;
 });
 
 final chatMessagesProvider = StateProvider.family<List<MessageEntity>, String>((ref, chatId) {

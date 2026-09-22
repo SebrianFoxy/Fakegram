@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:fakegram/features/chat/data/models/request/chat_group_request_dto.dart';
+import 'package:fakegram/features/chat/data/models/response/chat_group_response_dto.dart';
 import 'package:fakegram/features/chat/data/models/response/search_chat_response_dto.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../models/response/chat_response_dto.dart';
@@ -22,5 +24,12 @@ abstract class ChatRemoteDatasource {
       @Query('limit') int limit,
       @Header("accept") String accept,
       @Header("Authorization") String authorization,
+  );
+
+  @POST('/chats/group')
+  Future<ChatGroupResponseDTO> createGroupChat(
+      @Header("accept") String accept,
+      @Header("Authorization") String authorization,
+      @Body() ChatGroupRequestDTO request,
   );
 }

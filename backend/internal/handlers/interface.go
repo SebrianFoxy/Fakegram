@@ -10,7 +10,7 @@ import (
 
 type MessageService interface {
 	SendMessage(ctx context.Context, senderID string, req *models.CreateMessageRequest) (*models.MessageDetail, error)
-	GetMessagesByChat(ctx context.Context, userID, otherUserID string, cursor *time.Time, limit int, direction string) (*models.GetMessagesResponse, error)
+	GetMessagesByChat(ctx context.Context, userID, chatID string, cursor *time.Time, limit int, direction string) (*models.GetMessagesResponse, error)
 	DeleteMessage(ctx context.Context, userID, messageID string) error
 	EditMessage(ctx context.Context, userID, messageID string, req *models.UpdateMessageRequest) (*models.MessageDetail, error)
 	MarkAsRead(ctx context.Context, userID, chatID, lastReadMessageID string) error
@@ -20,6 +20,8 @@ type MessageService interface {
 type ChatService interface {
 	GetUserChats(ctx context.Context, userID string) ([]*models.ChatListItem, error)
 	SearchChatByNickname(ctx context.Context, currentUserID, query string, limit, offset int) ([]*models.ChatListItem, error)
+	CreateGroupChat(ctx context.Context, creatorID string, req *models.CreateGroupChatRequest) (*models.ChatListItem, error)
+	GetChatByID(ctx context.Context, chatID, userID string) (*models.ChatListItem, error)
 }
 
 type TokenService interface {

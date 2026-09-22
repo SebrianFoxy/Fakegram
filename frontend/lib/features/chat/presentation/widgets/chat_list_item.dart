@@ -112,15 +112,15 @@ class ChatListItem extends StatelessWidget {
   }
 
   Widget _buildAvatar(BuildContext context) {
+    final otherUser = chat.otherUser;
+
     return Stack(
       children: [
         CircleAvatar(
           radius: 28,
-          backgroundImage: chat.otherUser.avatarUrl != null
-              ? NetworkImage(chat.otherUser.avatarUrl!)
-              : const AssetImage('assets/default-avatar.png') as ImageProvider,
+          backgroundImage: _getAvatarImage(),
         ),
-        if (chat.otherUser.isOnline)
+        if (otherUser != null && otherUser.isOnline)
           Positioned(
             right: 2,
             bottom: 2,
@@ -140,4 +140,19 @@ class ChatListItem extends StatelessWidget {
       ],
     );
   }
+
+  ImageProvider _getAvatarImage() {
+    final otherUser = chat.otherUser;
+
+    if (otherUser?.avatarUrl != null && otherUser!.avatarUrl!.isNotEmpty) {
+      return NetworkImage(otherUser.avatarUrl!);
+    }
+
+    if (chat.chatType == 'group' && chat.avatarUrl != null && chat.avatarUrl!.isNotEmpty) {
+      return NetworkImage(chat.avatarUrl!);
+    }
+
+    return const AssetImage('assets/default-avatar.png') as ImageProvider;
+  }
+
 }

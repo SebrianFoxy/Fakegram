@@ -4,19 +4,19 @@ import '../entities/pagination_messages_entity.dart';
 
 abstract class MessageRepository {
   Future<PaginationMessagesEntity> getInitialMessages({
-    required String userId,
+    required String chatId,
     @Default(null) String? cursor,
     required int limit,
   });
 
   Future<PaginationMessagesEntity> getOlderMessages({
-    required String userId,
+    required String chatId,
     required String cursor,
     required int limit,
   });
 
   Future<PaginationMessagesEntity> getNewerMessages({
-    required String userId,
+    required String chatId,
     required String cursor,
     required int limit,
   });

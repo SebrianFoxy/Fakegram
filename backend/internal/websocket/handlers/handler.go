@@ -32,6 +32,7 @@ func NewWebSocketHandler(
     return &WebSocketHandler{
         pool:   pool,
         router: router,
+        chatService: chatService,
         tokenService: tokenService,
         upgrader: websocket.Upgrader{
             ReadBufferSize:  1024,

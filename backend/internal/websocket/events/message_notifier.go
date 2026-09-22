@@ -35,8 +35,6 @@ func (n *MessageWsNotifier) NotifyNewMessage(receiverID string, message *models.
 	log.Printf("✅ New message broadcast to chat %s", chatID)
 }
 
-
-
 func (n *MessageWsNotifier) NotifyMessageSent(senderID string, message *models.MessageDetail, chatID, receiverID string) {
 	log.Printf("Preparing to send message sent confirmation to user %s", senderID)
 
@@ -56,8 +54,8 @@ func (n *MessageWsNotifier) NotifyMessageSent(senderID string, message *models.M
 	n.sendEvent(senderID, event)
 }
 
-func (n *MessageWsNotifier) NotifyMessageRead(otherUserID, userID, chatID, lastReadMessageID string) {
-	log.Printf("Preparing to send read receipt to user %s", otherUserID)
+func (n *MessageWsNotifier) NotifyMessageRead(userID, chatID, lastReadMessageID string) {
+	log.Printf("Preparing to send read receipt 'NotifyMessageRead' by user: %s", userID)
 
 	event := types.WSEvent{
 		Event: types.EventMessageRead,
@@ -68,12 +66,13 @@ func (n *MessageWsNotifier) NotifyMessageRead(otherUserID, userID, chatID, lastR
 			"read_at":              time.Now().Format(time.RFC3339),
 		},
 	}
+	n.broadcastToChat(chatID, event, userID)
 
-	n.sendEvent(otherUserID, event)
+	log.Printf("✅ Message %s read, broadcast to chat %s", lastReadMessageID, chatID)
 }
 
-func (n *MessageWsNotifier) NotifyMessageReadAll(otherUserID, userID, chatID string) {
-	log.Printf("Preparing to send read all notification to user %s", otherUserID)
+func (n *MessageWsNotifier) NotifyMessageReadAll(userID, chatID string) {
+	log.Printf("Preparing to send read all notification to user ")
 
 	event := types.WSEvent{
 		Event: types.EventMessageReadAll,
@@ -84,7 +83,7 @@ func (n *MessageWsNotifier) NotifyMessageReadAll(otherUserID, userID, chatID str
 		},
 	}
 
-	n.sendEvent(otherUserID, event)
+	n.broadcastToChat(chatID, event, userID)
 }
 
 func (n *MessageWsNotifier) NotifyMessageDeleted(chatID, messageID, userID string) {

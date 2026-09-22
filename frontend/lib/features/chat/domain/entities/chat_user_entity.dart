@@ -6,17 +6,17 @@ part 'chat_user_entity.freezed.dart';
 abstract class ChatUserEntity with _$ChatUserEntity {
   const factory ChatUserEntity({
     required String id,
-    required String name,
-    required String surname,
-    required String nickname,
-    required String email,
-    required bool approved,
-    required String? bio,
-    required String? avatarUrl,
-    required bool isOnline,
-    required DateTime lastSeen,
-    required DateTime createdAt,
-    required DateTime updatedAt,
+    @Default('') String name,
+    @Default('') String surname,
+    @Default('') String nickname,
+    @Default('') String email,
+    @Default(false) bool approved,
+    String? bio,
+    String? avatarUrl,
+    @Default(false) bool isOnline,
+    DateTime? lastSeen,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) = _ChatUserEntity;
 
   const ChatUserEntity._();

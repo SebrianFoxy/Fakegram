@@ -17,7 +17,7 @@ mixin _$ChatResponseDTO {
   @JsonKey(name: "chats")
   List<DirectChatModel> get chats;
   @JsonKey(name: "count")
-  int get count;
+  int? get count;
 
   /// Create a copy of ChatResponseDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -58,7 +58,7 @@ abstract mixin class $ChatResponseDTOCopyWith<$Res> {
   @useResult
   $Res call(
       {@JsonKey(name: "chats") List<DirectChatModel> chats,
-      @JsonKey(name: "count") int count});
+      @JsonKey(name: "count") int? count});
 }
 
 /// @nodoc
@@ -75,17 +75,17 @@ class _$ChatResponseDTOCopyWithImpl<$Res>
   @override
   $Res call({
     Object? chats = null,
-    Object? count = null,
+    Object? count = freezed,
   }) {
     return _then(_self.copyWith(
       chats: null == chats
           ? _self.chats
           : chats // ignore: cast_nullable_to_non_nullable
               as List<DirectChatModel>,
-      count: null == count
+      count: freezed == count
           ? _self.count
           : count // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
     ));
   }
 }
@@ -184,7 +184,7 @@ extension ChatResponseDTOPatterns on ChatResponseDTO {
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>(
     TResult Function(@JsonKey(name: "chats") List<DirectChatModel> chats,
-            @JsonKey(name: "count") int count)?
+            @JsonKey(name: "count") int? count)?
         $default, {
     required TResult orElse(),
   }) {
@@ -213,7 +213,7 @@ extension ChatResponseDTOPatterns on ChatResponseDTO {
   @optionalTypeArgs
   TResult when<TResult extends Object?>(
     TResult Function(@JsonKey(name: "chats") List<DirectChatModel> chats,
-            @JsonKey(name: "count") int count)
+            @JsonKey(name: "count") int? count)
         $default,
   ) {
     final _that = this;
@@ -240,7 +240,7 @@ extension ChatResponseDTOPatterns on ChatResponseDTO {
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>(
     TResult? Function(@JsonKey(name: "chats") List<DirectChatModel> chats,
-            @JsonKey(name: "count") int count)?
+            @JsonKey(name: "count") int? count)?
         $default,
   ) {
     final _that = this;
@@ -258,7 +258,7 @@ extension ChatResponseDTOPatterns on ChatResponseDTO {
 class _ChatResponseDTO implements ChatResponseDTO {
   const _ChatResponseDTO(
       {@JsonKey(name: "chats") required final List<DirectChatModel> chats,
-      @JsonKey(name: "count") required this.count})
+      @JsonKey(name: "count") this.count})
       : _chats = chats;
   factory _ChatResponseDTO.fromJson(Map<String, dynamic> json) =>
       _$ChatResponseDTOFromJson(json);
@@ -274,7 +274,7 @@ class _ChatResponseDTO implements ChatResponseDTO {
 
   @override
   @JsonKey(name: "count")
-  final int count;
+  final int? count;
 
   /// Create a copy of ChatResponseDTO
   /// with the given fields replaced by the non-null parameter values.
@@ -321,7 +321,7 @@ abstract mixin class _$ChatResponseDTOCopyWith<$Res>
   @useResult
   $Res call(
       {@JsonKey(name: "chats") List<DirectChatModel> chats,
-      @JsonKey(name: "count") int count});
+      @JsonKey(name: "count") int? count});
 }
 
 /// @nodoc
@@ -338,17 +338,17 @@ class __$ChatResponseDTOCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   $Res call({
     Object? chats = null,
-    Object? count = null,
+    Object? count = freezed,
   }) {
     return _then(_ChatResponseDTO(
       chats: null == chats
           ? _self._chats
           : chats // ignore: cast_nullable_to_non_nullable
               as List<DirectChatModel>,
-      count: null == count
+      count: freezed == count
           ? _self.count
           : count // ignore: cast_nullable_to_non_nullable
-              as int,
+              as int?,
     ));
   }
 }

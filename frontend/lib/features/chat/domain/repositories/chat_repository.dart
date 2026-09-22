@@ -8,4 +8,11 @@ abstract class ChatRepository {
     required int offset,
     required int limit,
   });
+
+  Future<DirectChatEntity> createGroupChat({
+    required String title,
+    required List<String> membersIDs,
+    String? avatarUrl,
+    String? description,
+  });
 }

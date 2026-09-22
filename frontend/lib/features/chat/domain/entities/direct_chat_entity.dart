@@ -10,9 +10,10 @@ abstract class DirectChatEntity with _$DirectChatEntity {
     required String id,
     required String chatType,
     required String title,
+    @Default('') String? avatarUrl,
     LastMessageEntity? lastMessage,
     @Default(0) int unreadCount,
-    required ChatUserEntity otherUser,
+    ChatUserEntity? otherUser,
     required DateTime updatedAt,
   }) = _DirectChatEntity;
 
