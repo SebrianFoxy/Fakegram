@@ -11,6 +11,8 @@ func RunMigrations(db *sql.DB) error {
         fn   func(*sql.DB) error
     }{
         {"001_add_updated_at_messages", AddUpdatedAtToMessages},
+        {"002_add_messages_seq", AddSeqToMessages},
+        {"003_add_chat_members_seq", AddLastReadSeqToChatMembers},
     }
 
     for _, m := range migrations {

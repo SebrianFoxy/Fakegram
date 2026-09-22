@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'message_read_info_entity.dart';
 
 part 'message_entity.freezed.dart';
 
@@ -25,6 +26,7 @@ abstract class MessageEntity with _$MessageEntity {
     required bool isRead,
     required DateTime createdAt,
     required DateTime? readAt,
+    List<MessageReadInfoEntity>? readBy,
     required String senderName,
     required String senderSurname,
     required String senderNickname,

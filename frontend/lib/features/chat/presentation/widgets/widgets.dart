@@ -24,10 +24,14 @@ part 'chat_header.dart';
 part 'chat_list.dart';
 part 'chat_list_header.dart';
 part 'chat_list_item.dart';
+part 'chat_create_group_chat_button.dart';
+part 'chat_group_chat_form.dart';
+
 part 'message_area.dart';
 part 'messages_bubble.dart';
 part 'messages_input.dart';
 part 'message_context_menu.dart';
 part 'messages_list.dart';
 part 'user_panel.dart';
+
 part '../page/chat_page.dart';

@@ -35,6 +35,8 @@ mixin _$MessageDetailModel {
   DateTime get createdAt;
   @JsonKey(name: 'read_at')
   DateTime? get readAt;
+  @JsonKey(name: 'read_by', defaultValue: [])
+  List<MessageReadInfoModel>? get readBy;
   @JsonKey(name: 'sender')
   MessageUserDetailModel get sender;
   @JsonKey(name: 'reply_to_message', defaultValue: null)
@@ -74,6 +76,7 @@ mixin _$MessageDetailModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
+            const DeepCollectionEquality().equals(other.readBy, readBy) &&
             (identical(other.sender, sender) || other.sender == sender) &&
             (identical(other.replyToMessage, replyToMessage) ||
                 other.replyToMessage == replyToMessage));
@@ -94,12 +97,13 @@ mixin _$MessageDetailModel {
       isRead,
       createdAt,
       readAt,
+      const DeepCollectionEquality().hash(readBy),
       sender,
       replyToMessage);
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender, replyToMessage: $replyToMessage)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, readBy: $readBy, sender: $sender, replyToMessage: $replyToMessage)';
   }
 }
 
@@ -122,6 +126,8 @@ abstract mixin class $MessageDetailModelCopyWith<$Res> {
       @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
+      @JsonKey(name: 'read_by', defaultValue: [])
+      List<MessageReadInfoModel>? readBy,
       @JsonKey(name: 'sender') MessageUserDetailModel sender,
       @JsonKey(name: 'reply_to_message', defaultValue: null)
       MessageDetailModel? replyToMessage});
@@ -154,6 +160,7 @@ class _$MessageDetailModelCopyWithImpl<$Res>
     Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
+    Object? readBy = freezed,
     Object? sender = null,
     Object? replyToMessage = freezed,
   }) {
@@ -202,6 +209,10 @@ class _$MessageDetailModelCopyWithImpl<$Res>
           ? _self.readAt
           : readAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      readBy: freezed == readBy
+          ? _self.readBy
+          : readBy // ignore: cast_nullable_to_non_nullable
+              as List<MessageReadInfoModel>?,
       sender: null == sender
           ? _self.sender
           : sender // ignore: cast_nullable_to_non_nullable
@@ -344,6 +355,8 @@ extension MessageDetailModelPatterns on MessageDetailModel {
             @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
             @JsonKey(name: 'created_at') DateTime createdAt,
             @JsonKey(name: 'read_at') DateTime? readAt,
+            @JsonKey(name: 'read_by', defaultValue: [])
+            List<MessageReadInfoModel>? readBy,
             @JsonKey(name: 'sender') MessageUserDetailModel sender,
             @JsonKey(name: 'reply_to_message', defaultValue: null)
             MessageDetailModel? replyToMessage)?
@@ -365,6 +378,7 @@ extension MessageDetailModelPatterns on MessageDetailModel {
             _that.isRead,
             _that.createdAt,
             _that.readAt,
+            _that.readBy,
             _that.sender,
             _that.replyToMessage);
       case _:
@@ -400,6 +414,8 @@ extension MessageDetailModelPatterns on MessageDetailModel {
             @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
             @JsonKey(name: 'created_at') DateTime createdAt,
             @JsonKey(name: 'read_at') DateTime? readAt,
+            @JsonKey(name: 'read_by', defaultValue: [])
+            List<MessageReadInfoModel>? readBy,
             @JsonKey(name: 'sender') MessageUserDetailModel sender,
             @JsonKey(name: 'reply_to_message', defaultValue: null)
             MessageDetailModel? replyToMessage)
@@ -420,6 +436,7 @@ extension MessageDetailModelPatterns on MessageDetailModel {
             _that.isRead,
             _that.createdAt,
             _that.readAt,
+            _that.readBy,
             _that.sender,
             _that.replyToMessage);
       case _:
@@ -454,6 +471,8 @@ extension MessageDetailModelPatterns on MessageDetailModel {
             @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
             @JsonKey(name: 'created_at') DateTime createdAt,
             @JsonKey(name: 'read_at') DateTime? readAt,
+            @JsonKey(name: 'read_by', defaultValue: [])
+            List<MessageReadInfoModel>? readBy,
             @JsonKey(name: 'sender') MessageUserDetailModel sender,
             @JsonKey(name: 'reply_to_message', defaultValue: null)
             MessageDetailModel? replyToMessage)?
@@ -474,6 +493,7 @@ extension MessageDetailModelPatterns on MessageDetailModel {
             _that.isRead,
             _that.createdAt,
             _that.readAt,
+            _that.readBy,
             _that.sender,
             _that.replyToMessage);
       case _:
@@ -498,10 +518,13 @@ class _MessageDetailModel extends MessageDetailModel {
       @JsonKey(name: 'is_read', defaultValue: false) required this.isRead,
       @JsonKey(name: 'created_at') required this.createdAt,
       @JsonKey(name: 'read_at') required this.readAt,
+      @JsonKey(name: 'read_by', defaultValue: [])
+      final List<MessageReadInfoModel>? readBy,
       @JsonKey(name: 'sender') required this.sender,
       @JsonKey(name: 'reply_to_message', defaultValue: null)
       this.replyToMessage})
-      : super._();
+      : _readBy = readBy,
+        super._();
   factory _MessageDetailModel.fromJson(Map<String, dynamic> json) =>
       _$MessageDetailModelFromJson(json);
 
@@ -537,6 +560,17 @@ class _MessageDetailModel extends MessageDetailModel {
   @override
   @JsonKey(name: 'read_at')
   final DateTime? readAt;
+  final List<MessageReadInfoModel>? _readBy;
+  @override
+  @JsonKey(name: 'read_by', defaultValue: [])
+  List<MessageReadInfoModel>? get readBy {
+    final value = _readBy;
+    if (value == null) return null;
+    if (_readBy is EqualUnmodifiableListView) return _readBy;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
   @override
   @JsonKey(name: 'sender')
   final MessageUserDetailModel sender;
@@ -582,6 +616,7 @@ class _MessageDetailModel extends MessageDetailModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
+            const DeepCollectionEquality().equals(other._readBy, _readBy) &&
             (identical(other.sender, sender) || other.sender == sender) &&
             (identical(other.replyToMessage, replyToMessage) ||
                 other.replyToMessage == replyToMessage));
@@ -602,12 +637,13 @@ class _MessageDetailModel extends MessageDetailModel {
       isRead,
       createdAt,
       readAt,
+      const DeepCollectionEquality().hash(_readBy),
       sender,
       replyToMessage);
 
   @override
   String toString() {
-    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, sender: $sender, replyToMessage: $replyToMessage)';
+    return 'MessageDetailModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, readBy: $readBy, sender: $sender, replyToMessage: $replyToMessage)';
   }
 }
 
@@ -632,6 +668,8 @@ abstract mixin class _$MessageDetailModelCopyWith<$Res>
       @JsonKey(name: 'is_read', defaultValue: false) bool isRead,
       @JsonKey(name: 'created_at') DateTime createdAt,
       @JsonKey(name: 'read_at') DateTime? readAt,
+      @JsonKey(name: 'read_by', defaultValue: [])
+      List<MessageReadInfoModel>? readBy,
       @JsonKey(name: 'sender') MessageUserDetailModel sender,
       @JsonKey(name: 'reply_to_message', defaultValue: null)
       MessageDetailModel? replyToMessage});
@@ -666,6 +704,7 @@ class __$MessageDetailModelCopyWithImpl<$Res>
     Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
+    Object? readBy = freezed,
     Object? sender = null,
     Object? replyToMessage = freezed,
   }) {
@@ -714,6 +753,10 @@ class __$MessageDetailModelCopyWithImpl<$Res>
           ? _self.readAt
           : readAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      readBy: freezed == readBy
+          ? _self._readBy
+          : readBy // ignore: cast_nullable_to_non_nullable
+              as List<MessageReadInfoModel>?,
       sender: null == sender
           ? _self.sender
           : sender // ignore: cast_nullable_to_non_nullable

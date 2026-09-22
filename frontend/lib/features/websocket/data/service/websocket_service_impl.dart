@@ -12,13 +12,12 @@ class WebSocketServiceImpl implements WebSocketService {
   WebSocketChannel? _channel;
   bool _isConnected = false;
   bool _isConnecting = false;
-  bool _shouldReconnect = true;
   String? _currentUrl;
   String? _currentToken;
-  Timer? _reconnectTimer;
+  Timer? _connectionTimeoutTimer;
   Completer<void>? _connectionCompleter;
   StreamSubscription<dynamic>? _streamSubscription;
-  Map<String, String>? headers;
+  bool _notifiedDisconnect = false;
 
   @override
   Function(WebSocketEventEntity)? onEvent;
@@ -31,98 +30,105 @@ class WebSocketServiceImpl implements WebSocketService {
 
   @override
   Future<void> connect(String url, String token) async {
-    if (_isConnecting || _isConnected) {
-      return;
-    }
+    if (_isConnecting || _isConnected) return;
 
     _currentUrl = url;
     _currentToken = token;
     _isConnecting = true;
     _isConnected = false;
-    _shouldReconnect = true;
     _connectionCompleter = Completer<void>();
 
     if (kDebugMode) {
-      print('WebSocket: Connecting to $url');
+      debugPrint('WebSocket: Connecting to $url');
     }
 
     try {
+      final Uri uri;
+      final Map<String, dynamic>? headers;
+
       if (kIsWeb) {
-        final uri = Uri.parse(url);
-        final queryParams = {'token': token};
-
-        _currentUrl = Uri(
-          scheme: uri.scheme,
-          host: uri.host,
-          port: uri.port,
-          path: uri.path,
-          queryParameters: queryParams,
-        ).toString();
-
+        final parsed = Uri.parse(url);
+        uri = parsed.replace(queryParameters: {
+          ...parsed.queryParameters,
+          'token': token,
+        });
         headers = null;
       } else {
+        uri = Uri.parse(url);
         headers = {'Authorization': 'Bearer $token'};
       }
 
       if (kDebugMode) {
-        print('Platform: ${kIsWeb ? "WEB" : "DESKTOP"}');
-        print('Final URL: $_currentUrl');
-        if (headers != null) print('Headers: $headers');
+        debugPrint('Platform: ${kIsWeb ? "WEB" : "DESKTOP"}');
+        debugPrint('Final URL: $uri');
+        if (headers != null) debugPrint('Headers: $headers');
       }
 
       _channel = kIsWeb
-          ? WebSocketChannel.connect(Uri.parse(url))
-          : IOWebSocketChannel.connect(Uri.parse(url), headers: headers);
-
+          ? WebSocketChannel.connect(uri)
+          : IOWebSocketChannel.connect(uri, headers: headers);
 
       _streamSubscription = _channel!.stream.listen(
         _handleMessage,
         onError: (error) {
-          if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-            _connectionCompleter!.completeError(error);
-          }
+          _completeConnectionWithError(error);
           _handleError(error);
         },
         onDone: () {
-          if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-            _connectionCompleter!.completeError(
-              Exception('Connection closed'),
-            );
-          }
+          _completeConnectionWithError(Exception('Connection closed'));
           _handleDisconnect();
         },
       );
 
-      Future.delayed(const Duration(seconds: 5), () {
-        if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-          _connectionCompleter!.completeError(
-            TimeoutException('WebSocket connection timeout'),
-          );
-        }
+      _connectionTimeoutTimer?.cancel();
+      _connectionTimeoutTimer = Timer(const Duration(seconds: 5), () {
+        _completeConnectionWithError(
+          TimeoutException('WebSocket connection timeout'),
+        );
       });
 
       await _connectionCompleter!.future;
 
+      _connectionTimeoutTimer?.cancel();
+      _connectionTimeoutTimer = null;
       _isConnected = true;
       _isConnecting = false;
-
+      _notifiedDisconnect = false;
       onConnected?.call();
 
       if (kDebugMode) {
-        print('WebSocket: Connected successfully');
+        debugPrint('WebSocket: Connected successfully');
       }
-
     } catch (e) {
       _cleanup();
-
       if (kDebugMode) {
-        print('WebSocket: Connection failed: $e');
+        debugPrint('WebSocket: Connection failed: $e');
       }
-
-      _scheduleReconnect();
+      _notifyDisconnectOnce();
       rethrow;
     } finally {
       _isConnecting = false;
+    }
+  }
+
+  void _notifyDisconnectOnce() {
+    if (_notifiedDisconnect) return;
+    _notifiedDisconnect = true;
+    onError?.call('WebSocket connection failed');
+    onDisconnected?.call();
+  }
+
+  void _completeConnectionWithError(Object error) {
+    final completer = _connectionCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(error);
+    }
+  }
+
+  void _completeConnection() {
+    final completer = _connectionCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
     }
   }
 
@@ -132,66 +138,55 @@ class WebSocketServiceImpl implements WebSocketService {
     _streamSubscription?.cancel();
     _streamSubscription = null;
     _channel = null;
+    _connectionTimeoutTimer?.cancel();
+    _connectionTimeoutTimer = null;
   }
 
   @override
   Future<void> disconnect() async {
-    _shouldReconnect = false;
-    _reconnectTimer?.cancel();
-
     try {
       await _channel?.sink.close();
     } catch (e) {
-      debugPrint('WebsocketServiceDisconnect error: $e');
+      debugPrint('WebSocketServiceDisconnect error: $e');
     }
+
     _cleanup();
-
-    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-      _connectionCompleter!.completeError(Exception('Manually disconnected'));
-    }
+    _completeConnectionWithError(Exception('Manually disconnected'));
     _connectionCompleter = null;
-
+    _currentUrl = null;
+    _currentToken = null;
+    _notifiedDisconnect = true;
     onDisconnected?.call();
   }
 
   void _handleError(dynamic error) {
-    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-      _connectionCompleter!.completeError(error);
-    }
-
+    _completeConnectionWithError(error);
     if (kDebugMode) {
-      print('WebSocket stream error: $error');
+      debugPrint('WebSocket stream error: $error');
     }
-
     _cleanup();
-    onDisconnected?.call();
-    _scheduleReconnect();
+    _notifyDisconnectOnce();
   }
 
   void _handleDisconnect() {
-    if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-      _connectionCompleter!.completeError(Exception('Connection closed'));
-    }
-
+    _completeConnectionWithError(Exception('Connection closed'));
     _cleanup();
-    onDisconnected?.call();
-    _scheduleReconnect();
+    _notifyDisconnectOnce();
   }
 
   @override
   void sendMessage(WebSocketMessageEntity message) {
-    if (_isConnected && _channel != null) {
-      try {
-        final jsonMessage = jsonEncode({
-          'type': message.type,
-          'payload': message.payload,
-        });
+    if (!_isConnected || _channel == null) return;
 
-        _channel!.sink.add(jsonMessage);
-      } catch (e) {
-        if (kDebugMode) {
-          print('Failed to send WebSocket message: $e');
-        }
+    try {
+      final jsonMessage = jsonEncode({
+        'type': message.type,
+        'payload': message.payload,
+      });
+      _channel!.sink.add(jsonMessage);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to send WebSocket message: $e');
       }
     }
   }
@@ -199,14 +194,14 @@ class WebSocketServiceImpl implements WebSocketService {
   void _handleMessage(dynamic message) {
     try {
       if (kDebugMode) {
-        print('WebSocket: Received message: $message');
+        debugPrint('WebSocket: Received message: $message');
       }
 
       final jsonMessage = jsonDecode(message);
 
       if (jsonMessage is Map && jsonMessage['type'] == 'error') {
         if (kDebugMode) {
-          print('WebSocket: Error message received: $jsonMessage');
+          debugPrint('WebSocket: Error message received: $jsonMessage');
         }
         onError?.call(jsonMessage.toString());
         return;
@@ -214,27 +209,13 @@ class WebSocketServiceImpl implements WebSocketService {
 
       final event = WebSocketEventModel.fromJson(jsonMessage).toEntity();
 
-      if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-        _connectionCompleter!.complete();
-      }
+      _completeConnection();
       onEvent?.call(event);
     } catch (e) {
       if (kDebugMode) {
-        print('WebSocket: Message parsing error: $e');
+        debugPrint('WebSocket: Message parsing error: $e');
       }
       onError?.call('Message parsing error: $e');
     }
-  }
-
-  void _scheduleReconnect() {
-    if (!_shouldReconnect || _reconnectTimer != null) {
-      return;
-    }
-    _reconnectTimer = Timer(const Duration(seconds: 3), () {
-      _reconnectTimer = null;
-      if (_shouldReconnect && !_isConnected && !_isConnecting && _currentUrl != null && _currentToken != null) {
-        connect(_currentUrl!, _currentToken!);
-      }
-    });
   }
 }

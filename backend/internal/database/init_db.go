@@ -88,6 +88,7 @@ func CreateTableChatMembers(db *sql.DB) error {
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         chat_id VARCHAR(255) NOT NULL,
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        last_read_seq BIGINT,
         role VARCHAR(20) DEFAULT 'member',
         joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(chat_id, user_id)
@@ -96,6 +97,7 @@ func CreateTableChatMembers(db *sql.DB) error {
 
     CREATE INDEX IF NOT EXISTS idx_chat_members_user_id ON chat_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_chat_members_chat_id ON chat_members(chat_id);
+    CREATE INDEX IF NOT EXISTS idx_chat_members_chat ON chat_members(chat_id);
     `
 
     _, err := db.Exec(query)
@@ -110,15 +112,18 @@ func CreateTableChatMembers(db *sql.DB) error {
 func CreateTableChats(db *sql.DB) error {
     query := `
     CREATE TABLE IF NOT EXISTS chats (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        chat_type VARCHAR(20) DEFAULT 'private',
+        id VARCHAR(255) PRIMARY KEY,
         title VARCHAR(255),
         description TEXT,
         avatar_url VARCHAR(500),
         created_by UUID REFERENCES users(id),
+        is_deleted BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE INDEX IF NOT EXISTS idx_chats_is_deleted ON chats(is_deleted) WHERE is_deleted = FALSE;
+    CREATE INDEX IF NOT EXISTS idx_chats_created_at ON chats(created_at);
     `
 
     _, err := db.Exec(query)
@@ -134,6 +139,7 @@ func CreateTableMessages(db *sql.DB) error {
     query := `
     CREATE TABLE IF NOT EXISTS messages (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        seq BIGSERIAL NOT NULL,      
         chat_id VARCHAR(255) NOT NULL,
         sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         message_text TEXT,
@@ -148,6 +154,7 @@ func CreateTableMessages(db *sql.DB) error {
     CREATE INDEX IF NOT EXISTS idx_messages_chat_id_created_at ON messages(chat_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
     CREATE INDEX IF NOT EXISTS idx_messages_reply_to ON messages(reply_to_message_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_chat_seq_sender ON messages(chat_id, seq, sender_id) WHERE NOT is_deleted;
     `
     
     _, err := db.Exec(query)

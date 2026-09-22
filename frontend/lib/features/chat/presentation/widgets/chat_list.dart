@@ -4,9 +4,15 @@ class ChatList extends ConsumerStatefulWidget {
   const ChatList({
     super.key,
     this.onChatSelected,
+    this.onCreateGroupChat,
+    this.onCreatePrivateChat,
+    this.onCreateChannel,
   });
 
   final Function(DirectChatEntity)? onChatSelected;
+  final VoidCallback? onCreateGroupChat;
+  final VoidCallback? onCreatePrivateChat;
+  final VoidCallback? onCreateChannel;
 
   @override
   ConsumerState<ChatList> createState() => _ChatListState();
@@ -37,6 +43,9 @@ class _ChatListState extends ConsumerState<ChatList> {
           onChanged: _onSearchChanged,
           onClear: _clearSearch,
           searchController: _searchController,
+          onCreateGroupChat: widget.onCreateGroupChat,
+          onCreatePrivateChat: widget.onCreatePrivateChat,
+          onCreateChannel: widget.onCreateChannel,
         ),
         _buildConnectionStatus(isWebSocketConnected),
         Expanded(

@@ -72,6 +72,68 @@ func (h *ChatHandler) GetUserChats(c echo.Context) error {
 	})
 }
 
+// GetUserChatByID - получение одного чата по ID
+// @Summary      Получить чат по ID
+// @Description  Возвращает информацию о конкретном чате (приватном или групповом) пользователя
+// @Tags         chats
+// @Accept       json
+// @Produce      json
+// @Param        chat_id path string true "ID чата"
+// @Success      200 {object} models.ChatListItem "Информация о чате"
+// @Failure      400 {object} map[string]string "Неверные параметры запроса"
+// @Failure      401 {object} map[string]string "Неавторизован"
+// @Failure      403 {object} map[string]string "Доступ запрещен"
+// @Failure      404 {object} map[string]string "Чат не найден"
+// @Failure      500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Security     BearerAuth
+// @Router       /api/v1/chats/{chat_id} [get]
+func (h *ChatHandler) GetUserChatByID(c echo.Context) error {
+	token, ok := c.Get("user").(*jwt.Token)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "Invalid token",
+		})
+	}
+
+	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "Invalid token claims",
+		})
+	}
+
+	userID := claims.Subject
+	if userID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "User ID not found in token",
+		})
+	}
+
+	chatID := c.Param("chat_id")
+	if chatID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Chat ID is required",
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	chat, err := h.chatService.GetChatByID(ctx, chatID, userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to get user chat: " + err.Error(),
+		})
+	}
+
+	if chat == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{
+			"error": "Chat not found",
+		})
+	}
+
+	return c.JSON(http.StatusOK, chat)
+}
+
 // SearchChats - поиск чатов (пользователей и групп)
 // @Summary      Поиск чатов
 // @Description  Поиск пользователей и групп по никнейму или названию
@@ -147,5 +209,61 @@ func (h *ChatHandler) SearchChats(c echo.Context) error {
 		"chats":   chats,
 		"count":   len(chats),
 		"query":   query,
+	})
+}
+
+// CreateGroupChat - создание группового чата
+// @Summary      Создать групповой чат
+// @Description  Создает новый групповой чат с указанными участниками
+// @Tags         chats
+// @Accept       json
+// @Produce      json
+// @Param        request body models.CreateGroupChatRequest true "Данные для создания группы"
+// @Success      201 {object} map[string]interface{} "Групповой чат успешно создан"
+// @Failure      400 {object} map[string]string "Неверные параметры запроса"
+// @Failure      401 {object} map[string]string "Неавторизован"
+// @Failure      500 {object} map[string]string "Внутренняя ошибка сервера"
+// @Security     BearerAuth
+// @Router       /api/v1/chats/group [post]
+func (h *ChatHandler) CreateGroupChat(c echo.Context) error {
+	token, ok := c.Get("user").(*jwt.Token)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "Invalid token",
+		})
+	}
+
+	claims, ok := token.Claims.(*jwt.RegisteredClaims)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "Invalid token claims",
+		})
+	}
+
+	creatorID := claims.Subject
+	if creatorID == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{
+			"error": "User ID not found in token",
+		})
+	}
+
+	var req models.CreateGroupChatRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": "Invalid request: " + err.Error(),
+		})
+	}
+
+	ctx := c.Request().Context()
+
+	chat, err := h.chatService.CreateGroupChat(ctx, creatorID, &req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{
+			"error": "Failed to create group chat: " + err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"chat":    chat,
 	})
 }

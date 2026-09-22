@@ -20,12 +20,12 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<PaginationMessagesEntity> getInitialMessages({
-    required String userId,
+    required String chatId,
     String? cursor,
     required int limit,
   }) async {
     return _getMessages(
-      userId: userId,
+      chatId: chatId,
       direction: 'around',
       cursor: cursor,
       limit: limit,
@@ -34,12 +34,12 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<PaginationMessagesEntity> getOlderMessages({
-    required String userId,
+    required String chatId,
     required String cursor,
     required int limit,
   }) async {
     return _getMessages(
-      userId: userId,
+      chatId: chatId,
       direction: 'older',
       cursor: cursor,
       limit: limit,
@@ -48,12 +48,12 @@ class MessageRepositoryImpl implements MessageRepository {
 
   @override
   Future<PaginationMessagesEntity> getNewerMessages({
-    required String userId,
+    required String chatId,
     required String cursor,
     required int limit,
   }) async {
     return _getMessages(
-      userId: userId,
+      chatId: chatId,
       direction: 'newer',
       cursor: cursor,
       limit: limit,
@@ -61,16 +61,16 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   Future<PaginationMessagesEntity> _getMessages({
-    required String userId,
+    required String chatId,
     required String direction,
     String? cursor,
     required int limit,
   }) async {
     try {
-      final accessToken = getAccessToken();
+      final accessToken = await getAccessToken();
 
       final response = await _remoteDataSource.getMessages(
-        userId,
+        chatId,
         direction,
         cursor,
         limit,
@@ -109,14 +109,14 @@ class MessageRepositoryImpl implements MessageRepository {
     required String replyToMessageId,
   }) async {
     try {
-      final accessToken = getAccessToken();
+      final accessToken = await getAccessToken();
 
       final request = MessageRequestDTO(
         chatId: chatId,
         message: messageText,
         messageType: messageType,
         replyToMessageId: replyToMessageId,
-      ).toJson();
+      );
 
       final response = await _remoteDataSource.sendMessage(
         'application/json',
@@ -137,7 +137,7 @@ class MessageRepositoryImpl implements MessageRepository {
     required String messageId
   }) async {
     try {
-      final accessToken = getAccessToken();
+      final accessToken = await getAccessToken();
 
       await _remoteDataSource.deleteMessage(
         messageId,
@@ -154,7 +154,7 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<MessageEntity> editMessage({required String messageId, required String newMessageText}) async {
     try {
-      final accessToken = getAccessToken();
+      final accessToken = await getAccessToken();
 
       final request = {
         'message_text': newMessageText

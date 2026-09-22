@@ -1,6 +1,7 @@
 import 'package:fakegram/features/chat/data/models/message/message_user_detail_model.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../domain/entities/message_entity.dart';
+import 'message_read_info_model.dart';
 
 part 'message_detail_model.freezed.dart';
 part 'message_detail_model.g.dart';
@@ -19,6 +20,7 @@ abstract class MessageDetailModel with _$MessageDetailModel {
     @JsonKey(name: 'is_read', defaultValue: false) required bool isRead,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'read_at') required DateTime? readAt,
+    @JsonKey(name: 'read_by', defaultValue: []) List<MessageReadInfoModel>? readBy,
     @JsonKey(name: 'sender') required MessageUserDetailModel sender,
     @JsonKey(name: 'reply_to_message', defaultValue: null) MessageDetailModel? replyToMessage,
   }) = _MessageDetailModel;
@@ -38,6 +40,7 @@ abstract class MessageDetailModel with _$MessageDetailModel {
     replyToMessage: replyToMessage?.toEntity(),
     isEdited: isEdited,
     isRead: isRead,
+    readBy: readBy?.map((e) => e.toEntity()).toList(),
     isDeleted: isDeleted,
     createdAt: createdAt.toLocal(),
     readAt: readAt,

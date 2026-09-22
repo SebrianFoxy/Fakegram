@@ -16,6 +16,7 @@ _LastMessageModel _$LastMessageModelFromJson(Map<String, dynamic> json) =>
       isEdited: json['is_edited'] as bool,
       isDeleted: json['is_deleted'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
 Map<String, dynamic> _$LastMessageModelToJson(_LastMessageModel instance) =>
@@ -28,4 +29,5 @@ Map<String, dynamic> _$LastMessageModelToJson(_LastMessageModel instance) =>
       'is_edited': instance.isEdited,
       'is_deleted': instance.isDeleted,
       'created_at': instance.createdAt.toIso8601String(),
+      'updated_at': instance.updatedAt.toIso8601String(),
     };

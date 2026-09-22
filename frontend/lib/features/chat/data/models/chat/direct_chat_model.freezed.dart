@@ -17,13 +17,16 @@ mixin _$DirectChatModel {
   String get id;
   @JsonKey(name: 'chat_type')
   String get chatType;
+  @JsonKey(name: 'title')
   String get title;
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl;
   @JsonKey(name: 'last_message')
   LastMessageModel? get lastMessage;
   @JsonKey(name: 'unread_count')
   int get unreadCount;
   @JsonKey(name: 'other_user')
-  ChatUserModel get otherUser;
+  ChatUserModel? get otherUser;
   @JsonKey(name: 'updated_at')
   DateTime get updatedAt;
 
@@ -47,6 +50,8 @@ mixin _$DirectChatModel {
             (identical(other.chatType, chatType) ||
                 other.chatType == chatType) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.lastMessage, lastMessage) ||
                 other.lastMessage == lastMessage) &&
             (identical(other.unreadCount, unreadCount) ||
@@ -59,12 +64,12 @@ mixin _$DirectChatModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, chatType, title, lastMessage,
-      unreadCount, otherUser, updatedAt);
+  int get hashCode => Object.hash(runtimeType, id, chatType, title, avatarUrl,
+      lastMessage, unreadCount, otherUser, updatedAt);
 
   @override
   String toString() {
-    return 'DirectChatModel(id: $id, chatType: $chatType, title: $title, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
+    return 'DirectChatModel(id: $id, chatType: $chatType, title: $title, avatarUrl: $avatarUrl, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
   }
 }
 
@@ -77,14 +82,15 @@ abstract mixin class $DirectChatModelCopyWith<$Res> {
   $Res call(
       {String id,
       @JsonKey(name: 'chat_type') String chatType,
-      String title,
+      @JsonKey(name: 'title') String title,
+      @JsonKey(name: 'avatar_url') String? avatarUrl,
       @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
       @JsonKey(name: 'unread_count') int unreadCount,
-      @JsonKey(name: 'other_user') ChatUserModel otherUser,
+      @JsonKey(name: 'other_user') ChatUserModel? otherUser,
       @JsonKey(name: 'updated_at') DateTime updatedAt});
 
   $LastMessageModelCopyWith<$Res>? get lastMessage;
-  $ChatUserModelCopyWith<$Res> get otherUser;
+  $ChatUserModelCopyWith<$Res>? get otherUser;
 }
 
 /// @nodoc
@@ -103,9 +109,10 @@ class _$DirectChatModelCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
+    Object? avatarUrl = freezed,
     Object? lastMessage = freezed,
     Object? unreadCount = null,
-    Object? otherUser = null,
+    Object? otherUser = freezed,
     Object? updatedAt = null,
   }) {
     return _then(_self.copyWith(
@@ -121,6 +128,10 @@ class _$DirectChatModelCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
+      avatarUrl: freezed == avatarUrl
+          ? _self.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
@@ -129,10 +140,10 @@ class _$DirectChatModelCopyWithImpl<$Res>
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
               as int,
-      otherUser: null == otherUser
+      otherUser: freezed == otherUser
           ? _self.otherUser
           : otherUser // ignore: cast_nullable_to_non_nullable
-              as ChatUserModel,
+              as ChatUserModel?,
       updatedAt: null == updatedAt
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -158,8 +169,12 @@ class _$DirectChatModelCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $ChatUserModelCopyWith<$Res> get otherUser {
-    return $ChatUserModelCopyWith<$Res>(_self.otherUser, (value) {
+  $ChatUserModelCopyWith<$Res>? get otherUser {
+    if (_self.otherUser == null) {
+      return null;
+    }
+
+    return $ChatUserModelCopyWith<$Res>(_self.otherUser!, (value) {
       return _then(_self.copyWith(otherUser: value));
     });
   }
@@ -261,10 +276,11 @@ extension DirectChatModelPatterns on DirectChatModel {
     TResult Function(
             String id,
             @JsonKey(name: 'chat_type') String chatType,
-            String title,
+            @JsonKey(name: 'title') String title,
+            @JsonKey(name: 'avatar_url') String? avatarUrl,
             @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
             @JsonKey(name: 'unread_count') int unreadCount,
-            @JsonKey(name: 'other_user') ChatUserModel otherUser,
+            @JsonKey(name: 'other_user') ChatUserModel? otherUser,
             @JsonKey(name: 'updated_at') DateTime updatedAt)?
         $default, {
     required TResult orElse(),
@@ -276,6 +292,7 @@ extension DirectChatModelPatterns on DirectChatModel {
             _that.id,
             _that.chatType,
             _that.title,
+            _that.avatarUrl,
             _that.lastMessage,
             _that.unreadCount,
             _that.otherUser,
@@ -303,10 +320,11 @@ extension DirectChatModelPatterns on DirectChatModel {
     TResult Function(
             String id,
             @JsonKey(name: 'chat_type') String chatType,
-            String title,
+            @JsonKey(name: 'title') String title,
+            @JsonKey(name: 'avatar_url') String? avatarUrl,
             @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
             @JsonKey(name: 'unread_count') int unreadCount,
-            @JsonKey(name: 'other_user') ChatUserModel otherUser,
+            @JsonKey(name: 'other_user') ChatUserModel? otherUser,
             @JsonKey(name: 'updated_at') DateTime updatedAt)
         $default,
   ) {
@@ -317,6 +335,7 @@ extension DirectChatModelPatterns on DirectChatModel {
             _that.id,
             _that.chatType,
             _that.title,
+            _that.avatarUrl,
             _that.lastMessage,
             _that.unreadCount,
             _that.otherUser,
@@ -343,10 +362,11 @@ extension DirectChatModelPatterns on DirectChatModel {
     TResult? Function(
             String id,
             @JsonKey(name: 'chat_type') String chatType,
-            String title,
+            @JsonKey(name: 'title') String title,
+            @JsonKey(name: 'avatar_url') String? avatarUrl,
             @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
             @JsonKey(name: 'unread_count') int unreadCount,
-            @JsonKey(name: 'other_user') ChatUserModel otherUser,
+            @JsonKey(name: 'other_user') ChatUserModel? otherUser,
             @JsonKey(name: 'updated_at') DateTime updatedAt)?
         $default,
   ) {
@@ -357,6 +377,7 @@ extension DirectChatModelPatterns on DirectChatModel {
             _that.id,
             _that.chatType,
             _that.title,
+            _that.avatarUrl,
             _that.lastMessage,
             _that.unreadCount,
             _that.otherUser,
@@ -373,10 +394,11 @@ class _DirectChatModel extends DirectChatModel {
   const _DirectChatModel(
       {required this.id,
       @JsonKey(name: 'chat_type') required this.chatType,
-      required this.title,
+      @JsonKey(name: 'title') this.title = '',
+      @JsonKey(name: 'avatar_url') this.avatarUrl,
       @JsonKey(name: 'last_message') this.lastMessage,
       @JsonKey(name: 'unread_count') this.unreadCount = 0,
-      @JsonKey(name: 'other_user') required this.otherUser,
+      @JsonKey(name: 'other_user') this.otherUser,
       @JsonKey(name: 'updated_at') required this.updatedAt})
       : super._();
   factory _DirectChatModel.fromJson(Map<String, dynamic> json) =>
@@ -388,7 +410,11 @@ class _DirectChatModel extends DirectChatModel {
   @JsonKey(name: 'chat_type')
   final String chatType;
   @override
+  @JsonKey(name: 'title')
   final String title;
+  @override
+  @JsonKey(name: 'avatar_url')
+  final String? avatarUrl;
   @override
   @JsonKey(name: 'last_message')
   final LastMessageModel? lastMessage;
@@ -397,7 +423,7 @@ class _DirectChatModel extends DirectChatModel {
   final int unreadCount;
   @override
   @JsonKey(name: 'other_user')
-  final ChatUserModel otherUser;
+  final ChatUserModel? otherUser;
   @override
   @JsonKey(name: 'updated_at')
   final DateTime updatedAt;
@@ -426,6 +452,8 @@ class _DirectChatModel extends DirectChatModel {
             (identical(other.chatType, chatType) ||
                 other.chatType == chatType) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.lastMessage, lastMessage) ||
                 other.lastMessage == lastMessage) &&
             (identical(other.unreadCount, unreadCount) ||
@@ -438,12 +466,12 @@ class _DirectChatModel extends DirectChatModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, chatType, title, lastMessage,
-      unreadCount, otherUser, updatedAt);
+  int get hashCode => Object.hash(runtimeType, id, chatType, title, avatarUrl,
+      lastMessage, unreadCount, otherUser, updatedAt);
 
   @override
   String toString() {
-    return 'DirectChatModel(id: $id, chatType: $chatType, title: $title, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
+    return 'DirectChatModel(id: $id, chatType: $chatType, title: $title, avatarUrl: $avatarUrl, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
   }
 }
 
@@ -458,16 +486,17 @@ abstract mixin class _$DirectChatModelCopyWith<$Res>
   $Res call(
       {String id,
       @JsonKey(name: 'chat_type') String chatType,
-      String title,
+      @JsonKey(name: 'title') String title,
+      @JsonKey(name: 'avatar_url') String? avatarUrl,
       @JsonKey(name: 'last_message') LastMessageModel? lastMessage,
       @JsonKey(name: 'unread_count') int unreadCount,
-      @JsonKey(name: 'other_user') ChatUserModel otherUser,
+      @JsonKey(name: 'other_user') ChatUserModel? otherUser,
       @JsonKey(name: 'updated_at') DateTime updatedAt});
 
   @override
   $LastMessageModelCopyWith<$Res>? get lastMessage;
   @override
-  $ChatUserModelCopyWith<$Res> get otherUser;
+  $ChatUserModelCopyWith<$Res>? get otherUser;
 }
 
 /// @nodoc
@@ -486,9 +515,10 @@ class __$DirectChatModelCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
+    Object? avatarUrl = freezed,
     Object? lastMessage = freezed,
     Object? unreadCount = null,
-    Object? otherUser = null,
+    Object? otherUser = freezed,
     Object? updatedAt = null,
   }) {
     return _then(_DirectChatModel(
@@ -504,6 +534,10 @@ class __$DirectChatModelCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
+      avatarUrl: freezed == avatarUrl
+          ? _self.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
@@ -512,10 +546,10 @@ class __$DirectChatModelCopyWithImpl<$Res>
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
               as int,
-      otherUser: null == otherUser
+      otherUser: freezed == otherUser
           ? _self.otherUser
           : otherUser // ignore: cast_nullable_to_non_nullable
-              as ChatUserModel,
+              as ChatUserModel?,
       updatedAt: null == updatedAt
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -541,8 +575,12 @@ class __$DirectChatModelCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $ChatUserModelCopyWith<$Res> get otherUser {
-    return $ChatUserModelCopyWith<$Res>(_self.otherUser, (value) {
+  $ChatUserModelCopyWith<$Res>? get otherUser {
+    if (_self.otherUser == null) {
+      return null;
+    }
+
+    return $ChatUserModelCopyWith<$Res>(_self.otherUser!, (value) {
       return _then(_self.copyWith(otherUser: value));
     });
   }

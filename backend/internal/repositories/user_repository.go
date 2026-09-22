@@ -223,3 +223,19 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userID, newPassword
 
 	return nil
 }
+
+func (r *UserRepository) CheckUsersApproved(ctx context.Context, userIDs ...string) (bool, error) {
+    if len(userIDs) == 0 {
+		return false, nil
+	}
+
+	query := `SELECT COUNT(*) FROM users WHERE id = ANY($1) AND approved = true`
+
+	var count int
+	err := r.DB.QueryRowContext(ctx, query, pq.Array(userIDs)).Scan(&count)
+	if err != nil {
+		return false, fmt.Errorf("failed to verify users: %w", err)
+	}
+
+	return count == len(userIDs), nil
+}

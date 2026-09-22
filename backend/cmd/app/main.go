@@ -54,14 +54,7 @@ func main() {
 	tokenRepo := repositories.NewTokenRepository(db)
 	chatRepo := repositories.NewChatRepository(db)
 	messageRepo := repositories.NewMessageRepository(db)
-	//cryptoRepo := repositories.NewEncryptionKeyRepository(db)
 	deviceRepo := repositories.NewUserDeviceRepository(db)
-
-	// keyCacheService, err := services.NewKeyCache(cnf.RedisURL, cnf.KeyCacheTTL)
-	// if err != nil {
-	// 	log.Printf("Warning: Redis unavailable, key caching disabled: %v", err)
-	// 	keyCacheService = nil
-	// }
 
 	cryptoService, err := services.NewCryptoService(cnf, deviceRepo)
 	if err != nil {
@@ -71,8 +64,8 @@ func main() {
 	passwordService := services.NewPasswordService(cnf)
 	userService := services.NewUserService(userRepo, *passwordService)
 	tokenService := services.NewTokenService([]byte(cnf.JWTSecret), tokenRepo)
-	messageService := services.NewMessageService(messageRepo, chatRepo, nil, nil, *cryptoService)
-	chatService := services.NewChatService(chatRepo, nil, *cryptoService)
+	chatService := services.NewChatService(userRepo, chatRepo, nil, *cryptoService)
+	messageService := services.NewMessageService(messageRepo, userRepo, chatRepo, nil, nil, *cryptoService, chatService)
 	emailVerificationService := services.NewEmailVerificationService(
 		cnf.SMTPHost,
 		cnf.SMTPPort,
