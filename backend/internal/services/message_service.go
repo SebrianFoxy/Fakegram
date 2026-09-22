@@ -2,10 +2,11 @@ package services
 
 import (
 	"context"
-	"time"
 	"errors"
 	"fmt"
 	"log"
+	"sort"
+	"time"
 
 	"fakegram-api/internal/models"
 )
@@ -19,25 +20,31 @@ var (
 
 type MessageService struct {
     messageRepo          MessageRepository
+    userRepo             UserRepository
     chatRepo             ChatRepository
     messageNotifier      MessageNotifier 
     chatNotifier         ChatNotifier
     cryptoService        CryptoService
+    chatService          *ChatService
 }
 
 func NewMessageService(
     messageRepo MessageRepository,
+    userRepo UserRepository,
     chatRepo ChatRepository,
     messageNotifier MessageNotifier,
     chatNotifier ChatNotifier,
     cryptoService CryptoService,
+    chatService *ChatService,
 ) *MessageService {
     return &MessageService{
         messageRepo:          messageRepo,
+        userRepo:             userRepo,
         chatRepo:             chatRepo,
         messageNotifier:      messageNotifier,
         chatNotifier:         chatNotifier,
         cryptoService:        cryptoService,    
+        chatService:          chatService,
     }
 }
 
@@ -47,106 +54,69 @@ func (s *MessageService) SetNotifier(messageNotifier MessageNotifier, chatNotifi
 }
 
 func (s *MessageService) SendMessage(ctx context.Context, senderID string, req *models.CreateMessageRequest) (*models.MessageDetail, error) {
-    var chatID string
-    
-    if req.ChatID != "" {
-        chatID = req.ChatID
-        
-        isGroup := !models.IsPrivateChat(chatID)
-        
-        if isGroup {
-            isMember, err := s.chatRepo.IsUserInDialog(ctx, chatID, senderID)
-            if err != nil {
-                return nil, fmt.Errorf("failed to check group membership: %w", err)
-            }
-            if !isMember {
-                return nil, ErrNotGroupMember
-            }
-            
-            req.ReceiverID = ""
-        } else {
-            isMember, err := s.chatRepo.IsUserInDialog(ctx, chatID, senderID)
-            if err != nil {
-                return nil, fmt.Errorf("failed to check user membership: %w", err)
-            }
-            if !isMember {
-                return nil, ErrAccessDenied
-            }
+    chatID, receiverID, err := s.resolveChatAndReceiver(ctx, senderID, req)
+	if err != nil {
+		return nil, err
+	}
 
-            user1, user2, err := getChatUsers(chatID)
-            if err != nil {
-                log.Printf("SendMessage error")
-                return nil, err
-            }
-
-            if senderID != user1 && senderID != user2 {
-                return nil, fmt.Errorf("sender %s is not a participant in chat %s", senderID, chatID)
-            }
-
-            if user1 == senderID {
-                req.ReceiverID = user2
-            } else {
-                req.ReceiverID = user1
-            }
+	if receiverID != "" {
+        if err := s.chatService.EnsureChatMembers(
+            ctx, chatID, []string{senderID, receiverID},
+        ); err != nil {
+            return nil, fmt.Errorf("ensure private chat members: %w", err)
         }
-    } else if req.ReceiverID != "" {
-        if senderID == req.ReceiverID {
-            return nil, fmt.Errorf("cannot send message to yourself")
-        }
-        chatID = models.GenerateChatID(senderID, req.ReceiverID)
-    } else {
-        return nil, fmt.Errorf("either chat_id or receiver_id must be provided")
     }
+
+    if err := s.validateReply(ctx, chatID, senderID, req.ReplyToMessageID); err != nil {
+		return nil, err
+	}
 
     encryptedText, err := s.encryptForUser(req.MessageText)
 	if err != nil {
 		return nil, fmt.Errorf("failed to encrypt message: %w", err)
 	}
-	req.MessageText = encryptedText
-
-    replyToMessageID := req.ReplyToMessageID
-    if replyToMessageID != nil && *replyToMessageID == "" {
-        replyToMessageID = nil
-    }
 
     createReq := &models.CreateMessageRequest{
         ChatID:           chatID,
-        MessageText:      req.MessageText,
+        MessageText:      encryptedText,
         MessageType:      req.MessageType,
-        ReplyToMessageID: replyToMessageID,
+        ReplyToMessageID: req.ReplyToMessageID,
     }
 
-    var message *models.MessageDetail
+    messageID, err := s.messageRepo.CreateMessage(ctx, chatID, senderID, createReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create message: %w", err)
+	}
     
-    if models.IsPrivateChat(chatID) {
-        message, err = s.messageRepo.CreatePrivateMessage(ctx, senderID, req.ReceiverID, createReq)
-    } else {
-        //message, err = s.messageRepo.CreateGroupMessage(ctx, senderID, chatID, createReq)
-    }
-    
-    if err != nil {
-        return nil, fmt.Errorf("failed to create message: %w", err)
-    }
+    messageDetail, err := s.messageRepo.GetMessageDetailByID(ctx, messageID, senderID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get message detail: %w", err)
+	}
 
-    message = s.decryptMessageDetail(message)
+    messageDetail = s.decryptMessageDetail(messageDetail)
 
-    s.chatNotifier.SubscribeToChat(senderID, chatID)
-    s.chatNotifier.SubscribeToChat(req.ReceiverID, chatID)
-    
-    s.messageNotifier.NotifyNewMessage(req.ReceiverID, message, chatID, senderID)
-    s.messageNotifier.NotifyMessageSent(senderID, message, chatID, req.ReceiverID)
-    s.updateChatListForParticipants(chatID, senderID)
+	s.chatNotifier.SubscribeToChat(senderID, chatID)
 
-    log.Printf("Message sent by user %s in chat %s (type: %s)", 
-        senderID, chatID, getChatType(chatID))
+    if receiverID != "" {
+		s.chatNotifier.SubscribeToChat(receiverID, chatID)
+		s.messageNotifier.NotifyNewMessage(receiverID, messageDetail, chatID, senderID)
+	} else {
+		s.messageNotifier.NotifyNewMessage("", messageDetail, chatID, senderID)
+	}
+
+	s.messageNotifier.NotifyMessageSent(senderID, messageDetail, chatID, receiverID)
+	s.updateChatListForParticipants(chatID, senderID)
+
+    log.Printf("Message sent by user %s in chat %s", 
+        senderID, chatID)
     
-    return message, nil
+    return messageDetail, nil
 }
 
-func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUserID string, cursor *time.Time, limit int, direction string) (*models.GetMessagesResponse, error) {
-    if userID == otherUserID {
-        return nil, fmt.Errorf("cannot get messages with yourself")
-    }
+func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, chatID string, cursor *time.Time, limit int, direction string) (*models.GetMessagesResponse, error) {
+    if userID == "" || chatID == "" {
+		return nil, fmt.Errorf("user ID and chat ID are required")
+	}
     
     if limit <= 0 || limit > 100 {
         limit = 30
@@ -160,9 +130,7 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
         return nil, fmt.Errorf("cursor is required for direction: %s", direction)
     }
     
-    chatID := models.GenerateChatID(userID, otherUserID)
-    
-    isMember, err := s.chatRepo.IsUserInDialog(ctx, chatID, userID)
+    isMember, err := s.chatService.IsUserInDialog(ctx, chatID, userID)
     if err != nil {
         return nil, fmt.Errorf("failed to check user membership: %w", err)
     }
@@ -170,17 +138,21 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
         return nil, ErrAccessDenied
     }
     
-    messages, hasMoreOlder, hasMoreNewer, unreadCount, err := s.messageRepo.GetMessagesByChat(
-        ctx, 
-        userID, 
-        otherUserID, 
-        cursor, 
-        limit, 
-        direction,
-    )
-    if err != nil {
-        return nil, fmt.Errorf("failed to get messages: %w", err)
-    }
+	var messages []*models.MessageDetail
+	var hasMoreOlder, hasMoreNewer bool
+
+	switch direction {
+	case "around":
+		messages, hasMoreOlder, hasMoreNewer, err = s.getInitialMessages(ctx, userID, chatID, cursor, limit)
+	case "older":
+		messages, hasMoreOlder, hasMoreNewer, err = s.getOlderMessages(ctx, userID, chatID, *cursor, limit)
+	case "newer":
+		messages, hasMoreOlder, hasMoreNewer, err = s.getNewerMessages(ctx, userID, chatID, *cursor, limit)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get messages: %w", err)
+	}
 
     for i, msg := range messages {
 		messages[i] = s.decryptMessageDetail(msg)
@@ -189,7 +161,7 @@ func (s *MessageService) GetMessagesByChat(ctx context.Context, userID, otherUse
     response := &models.GetMessagesResponse{
         Messages:      messages,
         Count:         len(messages),
-        TotalUnread:   unreadCount,
+        TotalUnread:   0,
         HasMoreOlder:  hasMoreOlder,
         HasMoreNewer:  hasMoreNewer,
     }
@@ -239,6 +211,14 @@ func (s *MessageService) DeleteMessage(ctx context.Context, userID, messageID st
     if messageDetail.SenderID != userID {
         return ErrAccessDenied
     }
+
+    isMember, err := s.chatService.IsUserInDialog(ctx, messageDetail.ChatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user membership: %w", err)
+	}
+	if !isMember {
+		return ErrAccessDenied
+	}
     
     if err := s.messageRepo.DeleteMessage(ctx, userID, messageDetail.ChatID, messageID); err != nil {
         return fmt.Errorf("failed to delete message: %w", err)
@@ -260,17 +240,7 @@ func (s *MessageService) EditMessage(ctx context.Context, userID, messageID stri
         return nil, ErrMessageNotFound
     }
 
-    user1, user2, err := getChatUsers(message.ChatID)
-    if err != nil {
-        log.Printf("EditMessage error")
-        return nil, err
-    }
-    
-    if userID != user1 && userID != user2 {
-        return nil, ErrAccessDenied
-    }
-
-    isMember, err := s.chatRepo.IsUserInDialog(ctx, message.ChatID, userID)
+    isMember, err := s.chatService.IsUserInDialog(ctx, message.ChatID, userID)
     if err != nil {
         return nil, fmt.Errorf("failed to check user membership: %w", err)
     }
@@ -322,50 +292,59 @@ func (s *MessageService) EditMessage(ctx context.Context, userID, messageID stri
 }
 
 func (s *MessageService) MarkAllAsRead(ctx context.Context, userID, chatID string) error {
-	if err := s.messageRepo.MarkAllMessagesAsReadInChat(ctx, userID, chatID); err != nil {
-		return fmt.Errorf("failed to mark all messages as read: %w", err)
+	isMember, err := s.chatService.IsUserInDialog(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user membership: %w", err)
+	}
+	if !isMember {
+		return ErrAccessDenied
 	}
 
-	user1, user2, err := getChatUsers(chatID)
-    if err != nil {
-        log.Printf("MarkAllAsRead error")
-        return err
-    }
-
-	var otherUserID string
-	if user1 == userID {
-		otherUserID = user2
-	} else {
-		otherUserID = user1
+	unreadCount, err := s.messageRepo.GetUnreadCount(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check unread count: %w", err)
 	}
 
-	s.messageNotifier.NotifyMessageReadAll(otherUserID, userID, chatID)
+	if unreadCount == 0 {
+		log.Printf("No unread messages for user %s in chat %s", userID, chatID)
+		return nil
+	}
+
+	lastMessage, err := s.messageRepo.GetLastMessageFromOthersUser(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get last message: %w", err)
+	}
+
+	if lastMessage == nil {
+		log.Printf("No messages from other users in chat %s", chatID)
+		return nil
+	}
+
+	if err := s.messageRepo.MarkMessageAsRead(ctx, lastMessage.ID, userID, time.Now()); err != nil {
+		return fmt.Errorf("failed to mark message as read: %w", err)
+	}
+
+	s.messageNotifier.NotifyMessageReadAll(userID, chatID)
 	s.messageNotifier.NotifyUnreadCountUpdate(userID, chatID, 0)
 
 	log.Printf("User %s marked all messages as read in chat %s", userID, chatID)
-
 	return nil
 }
 
 func (s *MessageService) MarkAsRead(ctx context.Context, userID, chatID, lastReadMessageID string) error {
-	if err := s.messageRepo.MarkMessagesAsRead(ctx, userID, chatID, lastReadMessageID); err != nil {
+    isMember, err := s.chatService.IsUserInDialog(ctx, chatID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to check user membership: %w", err)
+	}
+	if !isMember {
+		return ErrAccessDenied
+	}
+    
+	if err := s.messageRepo.MarkMessageAsRead(ctx, lastReadMessageID, userID, time.Now()); err != nil {
 		return fmt.Errorf("failed to mark messages as read: %w", err)
 	}
 
-	user1, user2, err := getChatUsers(chatID)
-    if err != nil {
-        log.Printf("MarkAsRead error")
-        return err
-    }
-
-	var otherUserID string
-	if user1 == userID {
-		otherUserID = user2
-	} else {
-		otherUserID = user1
-	}
-
-	s.messageNotifier.NotifyMessageRead(otherUserID, userID, chatID, lastReadMessageID)
+	s.messageNotifier.NotifyMessageRead(userID, chatID, lastReadMessageID)
 
 	unreadCount, _ := s.messageRepo.GetUnreadCount(ctx, chatID, userID)
 	s.messageNotifier.NotifyUnreadCountUpdate(userID, chatID, unreadCount)
@@ -377,56 +356,68 @@ func (s *MessageService) MarkAsRead(ctx context.Context, userID, chatID, lastRea
 }
 
 func (s *MessageService) updateChatListForParticipants(chatID string, excludeUserID string) {
-    user1, user2, err := getChatUsers(chatID)
+	ctx := context.Background()
+	
+	if s.chatService.IsPrivateChat(chatID) {
+		s.updatePrivateChatList(ctx, chatID, excludeUserID)
+	} else {
+		s.updateGroupChatList(ctx, chatID, excludeUserID)
+	}
+}
+
+func (s *MessageService) updatePrivateChatList(ctx context.Context, chatID string, excludeUserID string) {
+	user1, user2, err := s.chatService.ExtractUsersFromChatID(chatID)
+	if err != nil {
+		log.Printf("Error extracting users: %v", err)
+		return
+	}
+	
+	participants := []string{user1, user2}
+	
+	for _, participantID := range participants {
+		if participantID == excludeUserID {
+			continue
+		}
+		
+		chat, err := s.chatService.GetChatByID(ctx, chatID, participantID)
+		if err != nil {
+            log.Printf("get chat %s for user %s: %v", chatID, participantID, err)
+            continue
+        }
+
+        if chat == nil {
+            s.chatNotifier.NotifyChatDeleted(chatID, participantID)
+            continue
+        }
+
+        s.chatNotifier.NotifyChatListUpdate(chatID, chat, participantID)
+	}
+}
+
+func (s *MessageService) updateGroupChatList(ctx context.Context, chatID string, senderID string) {
+	base, err := s.chatService.GetGroupChatBase(ctx, chatID)
     if err != nil {
-        log.Printf("updateChatListError")
+        log.Printf("get group chat base %s: %v", chatID, err)
+        return
+    }
+    if base == nil {
+        s.chatNotifier.NotifyChatDeleted(chatID, senderID)
         return
     }
 
-    participants := []string{user1, user2}
+    unread, err := s.messageRepo.GetUnreadCountsForChat(ctx, chatID)
+    if err != nil {
+        log.Printf("get unread counts %s: %v", chatID, err)
+        return
+    }
 
-    for _, participantID := range participants {
-        if participantID == excludeUserID {
-            log.Printf("🟡 Skipping WebSocket notification for excluded user: %s", participantID)
+    for userID, count := range unread {
+        if userID == senderID {
             continue
         }
-
-        log.Printf("🟢 Sending WebSocket update to user: %s", participantID)
-
-        chats, err := s.chatRepo.GetUserChats(context.Background(), participantID)
-        if err != nil {
-            log.Printf("Error getting user chats for notification: %v", err)
-            continue
-        }
-
-        for i, chat := range chats {
-            if chat.LastMessage == nil || chat.LastMessage.MessageText == "" {
-                continue
-            }
-
-            userText, err := s.decryptForUser(chat.LastMessage.MessageText)
-            if err != nil {
-                chats[i].LastMessage.MessageText = "[encrypted]"
-                continue
-            }
-            chats[i].LastMessage.MessageText = userText
-        }
-
-        var updatedChat *models.ChatListItem
-        for _, chat := range chats {
-            if chat.ID == chatID {
-                updatedChat = chat
-                break
-            }
-        }
-
-        if updatedChat != nil {
-            log.Printf("Chat update: %s from userId: %s", chatID, excludeUserID)
-            s.chatNotifier.NotifyChatListUpdate(chatID, updatedChat, excludeUserID)
-        } else {
-            log.Printf("❌ Chat not found for user %s", participantID)
-            s.chatNotifier.NotifyChatDeleted(chatID, participantID)
-        }
+        item := cloneChatListItem(base)
+        item.UnreadCount = count
+        s.chatNotifier.NotifyChatListUpdate(chatID, item, userID)
     }
 }
 
@@ -444,7 +435,7 @@ func (s *MessageService) decryptMessageDetail(msg *models.MessageDetail) *models
 	}
 
 	if msg.MessageText != "" {
-		userText, err := s.decryptForUser(msg.MessageText)
+		userText, err := s.chatService.DecryptForUser(msg.MessageText)
 		if err == nil {
 			msg.MessageText = userText
 		} else {
@@ -453,7 +444,7 @@ func (s *MessageService) decryptMessageDetail(msg *models.MessageDetail) *models
 	}
 
 	if msg.ReplyToMessage != nil && msg.ReplyToMessage.MessageText != "" {
-		userText, err := s.decryptForUser(msg.ReplyToMessage.MessageText)
+		userText, err := s.chatService.DecryptForUser(msg.ReplyToMessage.MessageText)
 		if err == nil {
 			msg.ReplyToMessage.MessageText = userText
 		} else {
@@ -464,31 +455,216 @@ func (s *MessageService) decryptMessageDetail(msg *models.MessageDetail) *models
 	return msg
 }
 
-func (s *MessageService) decryptForUser(encryptedText string) (string, error) {
-	if encryptedText == "" {
-		return "", nil
+func (s *MessageService) getInitialMessages(ctx context.Context, userID, chatID string, cursor *time.Time, limit int) ([]*models.MessageDetail, bool, bool, error) {
+	var anchorTime time.Time
+
+	if cursor != nil {
+		anchorTime = *cursor
+		log.Printf("DEBUG getInitialMessages: using provided cursor time: %v", anchorTime)
+	} else {
+		lastReadTime, err := s.messageRepo.GetLastReadTime(ctx, chatID, userID)
+		if err != nil {
+			return nil, false, false, fmt.Errorf("failed to get last read time: %w", err)
+		}
+
+		baseTime := time.Time{}
+		if lastReadTime != nil {
+			baseTime = *lastReadTime
+		}
+
+		firstUnreadTime, err := s.messageRepo.GetFirstUnreadTime(ctx, chatID, userID, baseTime)
+		if err != nil {
+			return nil, false, false, fmt.Errorf("failed to get first unread: %w", err)
+		}
+
+		if firstUnreadTime != nil {
+			anchorTime = *firstUnreadTime
+		} else {
+			lastUserMessageTime, err := s.messageRepo.GetLastUserMessageTime(ctx, chatID, userID)
+			if err != nil {
+				return nil, false, false, fmt.Errorf("failed to get last user message time: %w", err)
+			}
+
+			if lastUserMessageTime != nil && lastUserMessageTime.After(baseTime) {
+				anchorTime = *lastUserMessageTime
+			} else if lastReadTime != nil {
+				anchorTime = *lastReadTime
+			} else {
+				lastMessageTime, err := s.messageRepo.GetLastMessageTime(ctx, chatID)
+				if err != nil {
+					return nil, false, false, fmt.Errorf("failed to get last message time: %w", err)
+				}
+				if lastMessageTime != nil {
+					anchorTime = *lastMessageTime
+				} else {
+					return []*models.MessageDetail{}, false, false, nil
+				}
+			}
+		}
 	}
 
-	userText, err := s.cryptoService.DecryptMessage(encryptedText)
+	beforeLimit := limit / 2
+	afterLimit := limit - beforeLimit
+
+	olderMessages, err := s.messageRepo.GetMessagesByTimeRange(ctx, chatID, userID, anchorTime, beforeLimit, "older")
 	if err != nil {
-		return "", err
+		return nil, false, false, err
 	}
 
-	return string(userText), nil
+	newerMessages, err := s.messageRepo.GetMessagesByTimeRange(ctx, chatID, userID, anchorTime, afterLimit, "newer")
+	if err != nil {
+		return nil, false, false, err
+	}
+
+	allMessages := append(olderMessages, newerMessages...)
+	
+	sort.Slice(allMessages, func(i, j int) bool {
+		return allMessages[i].CreatedAt.Before(allMessages[j].CreatedAt)
+	})
+
+	hasMoreOlder := false
+	if len(olderMessages) > 0 {
+		oldestTime := olderMessages[0].CreatedAt
+		hasMoreOlder, _ = s.messageRepo.HasOlderMessages(ctx, chatID, oldestTime)
+	}
+
+	hasMoreNewer := false
+	if len(newerMessages) > 0 {
+		newestTime := newerMessages[len(newerMessages)-1].CreatedAt
+		hasMoreNewer, _ = s.messageRepo.HasNewerMessages(ctx, chatID, newestTime)
+	} else if len(olderMessages) > 0 && !hasMoreOlder {
+		hasMoreNewer, _ = s.messageRepo.HasNewerMessages(ctx, chatID, anchorTime)
+	}
+
+    if len(allMessages) == 0 {
+		allMessages = make([]*models.MessageDetail, 0)
+	}
+
+	return allMessages, hasMoreOlder, hasMoreNewer, nil
 }
 
-func getChatType(chatID string) string {
-    if models.IsPrivateChat(chatID) {
-        return "private"
-    }
-    return "group"
+func (s *MessageService) getOlderMessages(ctx context.Context, userID, chatID string, cursor time.Time, limit int) ([]*models.MessageDetail, bool, bool, error) {
+	messages, err := s.messageRepo.GetMessagesByTimeRange(ctx, chatID, userID, cursor, limit, "older")
+	if err != nil {
+		return nil, false, false, fmt.Errorf("failed to get older messages: %w", err)
+	}
+
+	hasMoreOlder := false
+	if len(messages) > 0 {
+		oldestTime := messages[0].CreatedAt
+		hasMoreOlder, _ = s.messageRepo.HasOlderMessages(ctx, chatID, oldestTime)
+	}
+
+	if messages == nil {
+		messages = make([]*models.MessageDetail, 0)
+	}
+
+	return messages, hasMoreOlder, true, nil
 }
 
-func getChatUsers(chatID string) (string, string, error) {
-    user1, user2, err := models.ExtractUsersFromChatID(chatID)
-    if err != nil {
-        log.Printf("Error extracting users from chat ID: %v", err)
-        return "", "", err
+func (s *MessageService) getNewerMessages(ctx context.Context, userID, chatID string, cursor time.Time, limit int) ([]*models.MessageDetail, bool, bool, error) {
+	messages, err := s.messageRepo.GetMessagesByTimeRange(ctx, chatID, userID, cursor, limit, "newer")
+	if err != nil {
+		return nil, false, false, fmt.Errorf("failed to get newer messages: %w", err)
+	}
+
+	hasMoreNewer := false
+	if len(messages) > 0 {
+		newestTime := messages[len(messages)-1].CreatedAt
+		hasMoreNewer, _ = s.messageRepo.HasNewerMessages(ctx, chatID, newestTime)
+	}
+
+	if messages == nil {
+		messages = make([]*models.MessageDetail, 0)
+	}
+
+	return messages, true, hasMoreNewer, nil
+}
+
+func (s *MessageService) resolveChatAndReceiver(ctx context.Context, senderID string, req *models.CreateMessageRequest) (string, string, error) {
+	var chatID string
+	var receiverID string
+
+	if req.ChatID != "" {
+		chatID = req.ChatID
+
+		if s.chatService.IsPrivateChat(chatID) {
+			otherUserID, err := s.chatService.GetOtherUserID(chatID, senderID)
+			if err != nil {
+				return "", "", ErrAccessDenied
+			}
+			receiverID = otherUserID
+
+			approved, err := s.userRepo.CheckUsersApproved(ctx, senderID, receiverID)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to verify users: %w", err)
+			}
+			if !approved {
+				return "", "", fmt.Errorf("one or both users are not approved")
+			}
+		} else {
+			isMember, err := s.chatService.IsUserInDialog(ctx, chatID, senderID)
+			if err != nil {
+				return "", "", fmt.Errorf("failed to check group membership: %w", err)
+			}
+			if !isMember {
+				return "", "", ErrNotGroupMember
+			}
+		}
+	} else if req.ReceiverID != "" {
+		if senderID == req.ReceiverID {
+			return "", "", fmt.Errorf("cannot send message to yourself")
+		}
+		receiverID = req.ReceiverID
+		chatID = s.chatService.GeneratePrivateChatID(senderID, receiverID)
+
+		approved, err := s.userRepo.CheckUsersApproved(ctx, senderID, receiverID)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to verify users: %w", err)
+		}
+		if !approved {
+			return "", "", fmt.Errorf("one or both users are not approved")
+		}
+	} else {
+		return "", "", fmt.Errorf("either chat_id or receiver_id must be provided")
+	}
+
+	return chatID, receiverID, nil
+}
+
+func (s *MessageService) validateReply(ctx context.Context, chatID, senderID string, replyToMessageID *string) error {
+	if replyToMessageID == nil || *replyToMessageID == "" {
+		return nil
+	}
+
+	replyMsg, err := s.messageRepo.GetMessageDetailByID(ctx, *replyToMessageID, senderID)
+	if err != nil {
+		if errors.Is(err, models.ErrMessageNotFound) {
+			return fmt.Errorf("reply message not found")
+		}
+		return fmt.Errorf("failed to get reply message: %w", err)
+	}
+
+	if replyMsg.IsDeleted {
+		return fmt.Errorf("cannot reply to a deleted message")
+	}
+
+	if replyMsg.ChatID != chatID {
+		return fmt.Errorf("cannot reply to a message from another chat")
+	}
+
+	return nil
+}
+
+func cloneChatListItem(base *models.ChatListItem) *models.ChatListItem {
+    if base == nil {
+        return nil
     }
-    return user1, user2, nil
+    item := *base  
+
+    if base.OtherUser != nil {
+        ou := *base.OtherUser
+        item.OtherUser = &ou
+    }
+    return &item
 }

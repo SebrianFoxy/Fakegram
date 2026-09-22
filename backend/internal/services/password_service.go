@@ -82,12 +82,57 @@ func (s *PasswordService) NeedsUpgrade(hash string) bool {
 func (s *PasswordService) verifyArgon2(password, encoded string) bool {
 	parts := strings.Split(encoded, "$")
 	if len(parts) != 6 {
-		log.Printf("Invalid format")
+		log.Printf("Invalid format: expected 6 parts, got %d", len(parts))
 		return false
 	}
 
-	var mem, time uint32
+	if parts[2] != "v=19" {
+		log.Printf("Unsupported argon2 version: %s", parts[2])
+		return false
+	}
+
+	params := strings.Split(parts[3], ",")
+	
+	var memory uint32
+	var time uint32
 	var threads uint8
+
+	for _, param := range params {
+		kv := strings.Split(param, "=")
+		if len(kv) != 2 {
+			log.Printf("Invalid parameter format: %s", param)
+			continue
+		}
+		
+		switch kv[0] {
+		case "m":
+			val, err := strconv.ParseUint(kv[1], 10, 32)
+			if err != nil {
+				log.Printf("Failed to parse memory: %v", err)
+				return false
+			}
+			memory = uint32(val)
+		case "t":
+			val, err := strconv.ParseUint(kv[1], 10, 32)
+			if err != nil {
+				log.Printf("Failed to parse time: %v", err)
+				return false
+			}
+			time = uint32(val)
+		case "p":
+			val, err := strconv.ParseUint(kv[1], 10, 8)
+			if err != nil {
+				log.Printf("Failed to parse threads: %v", err)
+				return false
+			}
+			threads = uint8(val)
+		}
+	}
+
+	if memory == 0 || time == 0 || threads == 0 {
+		log.Printf("Missing argon2 parameters: m=%d, t=%d, p=%d", memory, time, threads)
+		return false
+	}
 
 	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
@@ -97,10 +142,11 @@ func (s *PasswordService) verifyArgon2(password, encoded string) bool {
 
 	expectedHash, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
+		log.Printf("Hash decode error: %v", err)
 		return false
 	}
 
-	newHash := argon2.IDKey([]byte(password), salt, time, mem, threads, uint32(len(expectedHash)))
+	newHash := argon2.IDKey([]byte(password), salt, time, memory, threads, uint32(len(expectedHash)))
 	
 	result := subtle.ConstantTimeCompare(expectedHash, newHash) == 1
 

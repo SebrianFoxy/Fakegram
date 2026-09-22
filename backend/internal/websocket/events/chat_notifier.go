@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fakegram-api/internal/models"
 	"fakegram-api/internal/websocket/types"
 	"fakegram-api/internal/websocket/utils"
 	"log"
@@ -33,8 +34,9 @@ func (n *ChatWsNotifier) SubscribeToChat(userID, chatID string) {
     log.Printf("✅ User %s subscribed to chat %s", userID, chatID)
 }
 
-func (n *ChatWsNotifier) NotifyChatListUpdate(chatID string, chat interface{}, excludeUserID string) {
-    event := types.WSEvent{
+func (n *ChatWsNotifier) NotifyChatListUpdate(chatID string, chat *models.ChatListItem, userID string) {
+	log.Printf("User %s notify about chat %s", userID, chatID)
+	event := types.WSEvent{
         Event: types.EventChatListUpdate,
         Data: map[string]interface{}{
             "chat":      chat,
@@ -42,8 +44,7 @@ func (n *ChatWsNotifier) NotifyChatListUpdate(chatID string, chat interface{}, e
         },
     }
 
-    
-    n.broadcastToChat(chatID, event, excludeUserID)
+    n.sendEvent(userID, event)
 }
 
 func (n *ChatWsNotifier) NotifyChatDeleted(chatID string, userID string) {

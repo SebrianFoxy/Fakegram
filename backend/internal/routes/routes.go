@@ -68,14 +68,9 @@ func (r *Routes) setupMessageRoutes(api *echo.Group) {
 	messages.Use(r.jwtMiddleware)
 	
 	messages.POST("/send", r.messageHandler.CreateMessage)
-	messages.GET("/private-chat/:user_id", r.messageHandler.GetMessagesByChat)
+	messages.GET("/chat/:chat_id", r.messageHandler.GetMessagesByChat)
 	messages.DELETE("/:message_id", r.messageHandler.DeleteMessage)
 	messages.PUT("/:message_id", r.messageHandler.EditMessage)
-}
-
-func (r *Routes) setupWebSocketRoutes(e *echo.Group) {
-	e.GET("/ws", r.wsHandler.HandleWebSocket, r.jwtMiddleware)
-	e.GET("/ws-web", r.wsHandler.HandleWebSocket)
 }
 
 func (r *Routes) setupChatRoutes(api *echo.Group) {
@@ -84,4 +79,11 @@ func (r *Routes) setupChatRoutes(api *echo.Group) {
 
 	chats.GET("", r.chatHandler.GetUserChats)
 	chats.GET("/search", r.chatHandler.SearchChats)
+	chats.GET("/:chat_id", r.chatHandler.GetUserChatByID)
+	chats.POST("/group", r.chatHandler.CreateGroupChat)
 }	
+
+func (r *Routes) setupWebSocketRoutes(e *echo.Group) {
+	e.GET("/ws", r.wsHandler.HandleWebSocket, r.jwtMiddleware)
+	e.GET("/ws-web", r.wsHandler.HandleWebSocket)
+}

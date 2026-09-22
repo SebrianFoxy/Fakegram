@@ -1,4 +1,63 @@
 definitions:
+  models.ChatListItem:
+    properties:
+      avatar_url:
+        type: string
+      chat_type:
+        $ref: '#/definitions/models.ChatType'
+      created_at:
+        type: string
+      created_by:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      last_message:
+        $ref: '#/definitions/models.Message'
+      members:
+        items:
+          $ref: '#/definitions/models.User'
+        type: array
+      other_user:
+        $ref: '#/definitions/models.User'
+      title:
+        type: string
+      unread_count:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.ChatType:
+    enum:
+    - private
+    - group
+    type: string
+    x-enum-varnames:
+    - ChatTypePrivate
+    - ChatTypeGroup
+  models.CreateGroupChatRequest:
+    properties:
+      avatar_url:
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      member_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      title:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - member_ids
+    - title
+    type: object
   models.CreateMessageRequest:
     properties:
       chat_id:
@@ -51,6 +110,31 @@ definitions:
       password:
         type: string
     type: object
+  models.Message:
+    properties:
+      chat_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      is_deleted:
+        type: boolean
+      is_edited:
+        type: boolean
+      message_text:
+        type: string
+      message_type:
+        $ref: '#/definitions/models.MessageType'
+      reply_to_message_id:
+        type: string
+      sender_id:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - sender_id
+    type: object
   models.MessageCursors:
     properties:
       newer:
@@ -78,6 +162,10 @@ definitions:
         $ref: '#/definitions/models.MessageType'
       read_at:
         type: string
+      read_by:
+        items:
+          $ref: '#/definitions/models.MessageReadInfo'
+        type: array
       reply_to_message:
         $ref: '#/definitions/models.MessageDetail'
       reply_to_message_id:
@@ -86,10 +174,25 @@ definitions:
         $ref: '#/definitions/models.UserDetail'
       sender_id:
         type: string
-      update_at:
+      updated_at:
         type: string
     required:
     - sender_id
+    type: object
+  models.MessageReadInfo:
+    properties:
+      avatar_url:
+        type: string
+      name:
+        type: string
+      nickname:
+        type: string
+      read_at:
+        type: string
+      surname:
+        type: string
+      user_id:
+        type: string
     type: object
   models.MessageType:
     enum:
@@ -147,6 +250,41 @@ definitions:
         type: string
     required:
     - message_text
+    type: object
+  models.User:
+    properties:
+      approved:
+        type: boolean
+      avatar_url:
+        type: string
+      bio:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_online:
+        type: boolean
+      last_seen:
+        type: string
+      name:
+        type: string
+      nickname:
+        type: string
+      password:
+        type: string
+      surname:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - email
+    - name
+    - nickname
+    - password
+    - surname
     type: object
   models.UserDetail:
     properties:
@@ -347,6 +485,103 @@ paths:
       summary: Получить чаты пользователя
       tags:
       - chats
+  /api/v1/chats/{chat_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о конкретном чате (приватном или групповом)
+        пользователя
+      parameters:
+      - description: ID чата
+        in: path
+        name: chat_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о чате
+          schema:
+            $ref: '#/definitions/models.ChatListItem'
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Доступ запрещен
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Чат не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить чат по ID
+      tags:
+      - chats
+  /api/v1/chats/group:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый групповой чат с указанными участниками
+      parameters:
+      - description: Данные для создания группы
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateGroupChatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Групповой чат успешно создан
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Неверные параметры запроса
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Создать групповой чат
+      tags:
+      - chats
   /api/v1/chats/search:
     get:
       consumes:
@@ -511,17 +746,17 @@ paths:
       summary: Редактировать сообщение
       tags:
       - messages
-  /api/v1/messages/private-chat/{user_id}:
+  /api/v1/messages/chat/{chat_id}:
     get:
       consumes:
       - application/json
       description: |-
-        Возвращает сообщения из приватного чата с поддержкой двунаправленной пагинации.
+        Возвращает сообщения из чата с поддержкой двунаправленной пагинации.
         При первой загрузке (direction=around) автоматически позиционирует на первом непрочитанном сообщении.
       parameters:
-      - description: ID второго пользователя
+      - description: ID чата (private_user1_user2 или group_UUID)
         in: path
-        name: user_id
+        name: chat_id
         required: true
         type: string
       - default: around
