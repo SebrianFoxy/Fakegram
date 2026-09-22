@@ -23,9 +23,9 @@ mixin _$ChatUserEntity {
   String? get bio;
   String? get avatarUrl;
   bool get isOnline;
-  DateTime get lastSeen;
-  DateTime get createdAt;
-  DateTime get updatedAt;
+  DateTime? get lastSeen;
+  DateTime? get createdAt;
+  DateTime? get updatedAt;
 
   /// Create a copy of ChatUserEntity
   /// with the given fields replaced by the non-null parameter values.
@@ -99,9 +99,9 @@ abstract mixin class $ChatUserEntityCopyWith<$Res> {
       String? bio,
       String? avatarUrl,
       bool isOnline,
-      DateTime lastSeen,
-      DateTime createdAt,
-      DateTime updatedAt});
+      DateTime? lastSeen,
+      DateTime? createdAt,
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -126,9 +126,9 @@ class _$ChatUserEntityCopyWithImpl<$Res>
     Object? bio = freezed,
     Object? avatarUrl = freezed,
     Object? isOnline = null,
-    Object? lastSeen = null,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? lastSeen = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -167,18 +167,18 @@ class _$ChatUserEntityCopyWithImpl<$Res>
           ? _self.isOnline
           : isOnline // ignore: cast_nullable_to_non_nullable
               as bool,
-      lastSeen: null == lastSeen
+      lastSeen: freezed == lastSeen
           ? _self.lastSeen
           : lastSeen // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      createdAt: null == createdAt
+              as DateTime?,
+      createdAt: freezed == createdAt
           ? _self.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: null == updatedAt
+              as DateTime?,
+      updatedAt: freezed == updatedAt
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
     ));
   }
 }
@@ -286,9 +286,9 @@ extension ChatUserEntityPatterns on ChatUserEntity {
             String? bio,
             String? avatarUrl,
             bool isOnline,
-            DateTime lastSeen,
-            DateTime createdAt,
-            DateTime updatedAt)?
+            DateTime? lastSeen,
+            DateTime? createdAt,
+            DateTime? updatedAt)?
         $default, {
     required TResult orElse(),
   }) {
@@ -338,9 +338,9 @@ extension ChatUserEntityPatterns on ChatUserEntity {
             String? bio,
             String? avatarUrl,
             bool isOnline,
-            DateTime lastSeen,
-            DateTime createdAt,
-            DateTime updatedAt)
+            DateTime? lastSeen,
+            DateTime? createdAt,
+            DateTime? updatedAt)
         $default,
   ) {
     final _that = this;
@@ -388,9 +388,9 @@ extension ChatUserEntityPatterns on ChatUserEntity {
             String? bio,
             String? avatarUrl,
             bool isOnline,
-            DateTime lastSeen,
-            DateTime createdAt,
-            DateTime updatedAt)?
+            DateTime? lastSeen,
+            DateTime? createdAt,
+            DateTime? updatedAt)?
         $default,
   ) {
     final _that = this;
@@ -420,43 +420,49 @@ extension ChatUserEntityPatterns on ChatUserEntity {
 class _ChatUserEntity extends ChatUserEntity {
   const _ChatUserEntity(
       {required this.id,
-      required this.name,
-      required this.surname,
-      required this.nickname,
-      required this.email,
-      required this.approved,
-      required this.bio,
-      required this.avatarUrl,
-      required this.isOnline,
-      required this.lastSeen,
-      required this.createdAt,
-      required this.updatedAt})
+      this.name = '',
+      this.surname = '',
+      this.nickname = '',
+      this.email = '',
+      this.approved = false,
+      this.bio,
+      this.avatarUrl,
+      this.isOnline = false,
+      this.lastSeen,
+      this.createdAt,
+      this.updatedAt})
       : super._();
 
   @override
   final String id;
   @override
+  @JsonKey()
   final String name;
   @override
+  @JsonKey()
   final String surname;
   @override
+  @JsonKey()
   final String nickname;
   @override
+  @JsonKey()
   final String email;
   @override
+  @JsonKey()
   final bool approved;
   @override
   final String? bio;
   @override
   final String? avatarUrl;
   @override
+  @JsonKey()
   final bool isOnline;
   @override
-  final DateTime lastSeen;
+  final DateTime? lastSeen;
   @override
-  final DateTime createdAt;
+  final DateTime? createdAt;
   @override
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
 
   /// Create a copy of ChatUserEntity
   /// with the given fields replaced by the non-null parameter values.
@@ -532,9 +538,9 @@ abstract mixin class _$ChatUserEntityCopyWith<$Res>
       String? bio,
       String? avatarUrl,
       bool isOnline,
-      DateTime lastSeen,
-      DateTime createdAt,
-      DateTime updatedAt});
+      DateTime? lastSeen,
+      DateTime? createdAt,
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -559,9 +565,9 @@ class __$ChatUserEntityCopyWithImpl<$Res>
     Object? bio = freezed,
     Object? avatarUrl = freezed,
     Object? isOnline = null,
-    Object? lastSeen = null,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? lastSeen = freezed,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
   }) {
     return _then(_ChatUserEntity(
       id: null == id
@@ -600,18 +606,18 @@ class __$ChatUserEntityCopyWithImpl<$Res>
           ? _self.isOnline
           : isOnline // ignore: cast_nullable_to_non_nullable
               as bool,
-      lastSeen: null == lastSeen
+      lastSeen: freezed == lastSeen
           ? _self.lastSeen
           : lastSeen // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      createdAt: null == createdAt
+              as DateTime?,
+      createdAt: freezed == createdAt
           ? _self.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: null == updatedAt
+              as DateTime?,
+      updatedAt: freezed == updatedAt
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
     ));
   }
 }

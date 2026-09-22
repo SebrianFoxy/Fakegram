@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/websocket_event_entity.dart';
 import '../../domain/repository/websocket_repository.dart';
@@ -10,7 +11,6 @@ class ConnectionManager {
   int _reconnectAttempts = 0;
 
   static const _maxReconnectAttempts = 5;
-  static const _reconnectDelay = Duration(seconds: 3);
 
   ConnectionManager(this._repository);
 
@@ -22,29 +22,58 @@ class ConnectionManager {
   Future<void> connect() async {
     _isManuallyDisconnecting = false;
     _cancelReconnectTimer();
-    _reconnectAttempts = 0;
-    await _repository.connect();
+    try {
+      await _repository.connect();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ConnectionManager: connect failed: $e');
+      }
+    }
   }
 
   Future<void> disconnect() async {
     _isManuallyDisconnecting = true;
     _cancelReconnectTimer();
     _reconnectAttempts = 0;
-    await _repository.disconnect();
+    try {
+      await _repository.disconnect();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('ConnectionManager: disconnect failed: $e');
+      }
+    }
+  }
+
+  void resetReconnectAttempts() {
+    _reconnectAttempts = 0;
   }
 
   void scheduleReconnect(Future<void> Function() onAttempt) {
+    if (_isManuallyDisconnecting) return;
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       _logMaxAttemptsReached();
       return;
     }
 
     _cancelReconnectTimer();
-    _reconnectTimer = Timer(_reconnectDelay, () async {
+    final delay = _delayForAttempt(_reconnectAttempts);
+    _reconnectTimer = Timer(delay, () async {
       _reconnectTimer = null;
+      if (_isManuallyDisconnecting) return;
       _reconnectAttempts++;
-      await onAttempt();
+      try {
+        await onAttempt();
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Reconnect attempt failed: $e');
+        }
+      }
     });
+  }
+
+  Duration _delayForAttempt(int attempt) {
+    final seconds = math.min(30, math.pow(2, attempt).toInt());
+    return Duration(seconds: seconds);
   }
 
   void _cancelReconnectTimer() {
@@ -54,7 +83,7 @@ class ConnectionManager {
 
   void _logMaxAttemptsReached() {
     if (kDebugMode) {
-      print('⚠️ Max reconnection attempts reached');
+      debugPrint('⚠️ Max reconnection attempts reached');
     }
   }
 

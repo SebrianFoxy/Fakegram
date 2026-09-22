@@ -12,9 +12,9 @@ part 'message_datasource.g.dart';
 abstract class MessageRemoteDatasource {
   factory MessageRemoteDatasource(Dio dio, {String baseUrl}) = _MessageRemoteDatasource;
 
-  @GET('/messages/private-chat/{user_id}')
+  @GET('/messages/chat/{chat_id}')
   Future<MessageResponseDTO> getMessages(
-    @Path('user_id') String userId,
+    @Path('chat_id') String chatId,
     @Query('direction') String direction,
     @Query('cursor') String? cursor,
     @Query('limit') int limit,
@@ -26,7 +26,7 @@ abstract class MessageRemoteDatasource {
   Future<SendMessageResponseDTO> sendMessage(
     @Header("accept") String accept,
     @Header("Authorization") String authorization,
-    @Body() Map<String, dynamic> request,
+    @Body() MessageRequestDTO request,
   );
   
   @DELETE('/messages/{message_id}')

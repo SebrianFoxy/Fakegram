@@ -21,7 +21,7 @@ class _MessageRemoteDatasource implements MessageRemoteDatasource {
 
   @override
   Future<MessageResponseDTO> getMessages(
-    String userId,
+    String chatId,
     String direction,
     String? cursor,
     int limit,
@@ -45,7 +45,7 @@ class _MessageRemoteDatasource implements MessageRemoteDatasource {
       Options(method: 'GET', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
-            '/messages/private-chat/${userId}',
+            '/messages/chat/${chatId}',
             queryParameters: queryParameters,
             data: _data,
           )
@@ -66,7 +66,7 @@ class _MessageRemoteDatasource implements MessageRemoteDatasource {
   Future<SendMessageResponseDTO> sendMessage(
     String accept,
     String authorization,
-    Map<String, dynamic> request,
+    MessageRequestDTO request,
   ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -75,8 +75,7 @@ class _MessageRemoteDatasource implements MessageRemoteDatasource {
       r'Authorization': authorization,
     };
     _headers.removeWhere((k, v) => v == null);
-    final _data = <String, dynamic>{};
-    _data.addAll(request);
+    final _data = request;
     final _options = _setStreamType<SendMessageResponseDTO>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(

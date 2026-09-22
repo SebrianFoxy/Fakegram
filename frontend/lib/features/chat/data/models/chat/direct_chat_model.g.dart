@@ -10,14 +10,16 @@ _DirectChatModel _$DirectChatModelFromJson(Map<String, dynamic> json) =>
     _DirectChatModel(
       id: json['id'] as String,
       chatType: json['chat_type'] as String,
-      title: json['title'] as String,
+      title: json['title'] as String? ?? '',
+      avatarUrl: json['avatar_url'] as String?,
       lastMessage: json['last_message'] == null
           ? null
           : LastMessageModel.fromJson(
               json['last_message'] as Map<String, dynamic>),
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
-      otherUser:
-          ChatUserModel.fromJson(json['other_user'] as Map<String, dynamic>),
+      otherUser: json['other_user'] == null
+          ? null
+          : ChatUserModel.fromJson(json['other_user'] as Map<String, dynamic>),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
 
@@ -26,6 +28,7 @@ Map<String, dynamic> _$DirectChatModelToJson(_DirectChatModel instance) =>
       'id': instance.id,
       'chat_type': instance.chatType,
       'title': instance.title,
+      'avatar_url': instance.avatarUrl,
       'last_message': instance.lastMessage,
       'unread_count': instance.unreadCount,
       'other_user': instance.otherUser,

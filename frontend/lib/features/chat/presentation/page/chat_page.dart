@@ -11,6 +11,7 @@ class ChatPage extends ConsumerStatefulWidget {
 class _ChatPageState extends ConsumerState<ChatPage> {
   int _currentIndex = 0;
   bool _isMobileLayout = false;
+  bool _showCreateGroupForm = false;
 
   @override
   void initState() {
@@ -45,18 +46,58 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget _buildDesktopLayout() {
     return Row(
       children: [
-        const ChatList(),
+        ChatList(
+          onCreateGroupChat: () => setState(() => _showCreateGroupForm = true),
+        ),
         Expanded(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final selectedChat = ref.watch(selectedChatProvider);
-              if (selectedChat == null) {
-                return _buildEmptyState(context);
-              }
-              return MessageArea(
-                chat: selectedChat,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            transitionBuilder: (child, animation) {
+              final isForm = child.key == const ValueKey('create_group_form');
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: Offset(isForm ? 0.05 : -0.05, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
               );
             },
+            child: _showCreateGroupForm
+                ? CreateGroupChatForm(
+              key: const ValueKey('create_group_form'),
+              onClose: () =>
+                  setState(() => _showCreateGroupForm = false),
+              onCreate: (data) async {
+                final success = await ref
+                    .read(chatProvider.notifier)
+                    .createGroupChat(
+                  title : data.title,
+                  memberIds: data.memberIds,
+                );
+
+                if (success && mounted) {
+                  setState(() {
+                    _showCreateGroupForm = false;
+                  });
+                }
+              },
+            ) : Consumer(
+              key: const ValueKey('message_area'),
+              builder: (context, ref, _) {
+                final selectedChat = ref.watch(selectedChatProvider);
+                if (selectedChat == null) {
+                  return _buildEmptyState(context);
+                }
+                return MessageArea(
+                  chat: selectedChat,
+                );
+              },
+            ),
           ),
         ),
       ],

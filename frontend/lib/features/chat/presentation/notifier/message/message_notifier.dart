@@ -91,7 +91,7 @@ class MessageNotifier extends _$MessageNotifier {
     _currentChatId = selectedChat.id;
     _currentUserId = userId;
     _resetPagination();
-    _loadInitialMessages(userId: selectedChat.otherUser.id);
+    _loadInitialMessages(chatId: _getChatID());
   }
 
   Future<void> editMessage({
@@ -138,14 +138,14 @@ class MessageNotifier extends _$MessageNotifier {
 
   Future<void> loadOlderMessages() {
     return _loadMessages(
-      userId: _getOtherUserId(),
+      chatId: _getChatID(),
       direction: LoadDirection.older,
     );
   }
 
   Future<void> loadNewerMessages() {
     return _loadMessages(
-      userId: _getOtherUserId(),
+      chatId: _getChatID(),
       direction: LoadDirection.newer,
     );
   }
@@ -161,7 +161,7 @@ class MessageNotifier extends _$MessageNotifier {
     state = const MessageState.loading();
 
     return _loadMessages(
-      userId: _getOtherUserId(),
+      chatId: _getChatID(),
       direction: LoadDirection.initial,
       cursor: messageDate,
       jumpToMessageId: messageId,
@@ -209,6 +209,11 @@ class MessageNotifier extends _$MessageNotifier {
     if (!_canDeleteMessage(messageId)) return;
 
     try {
+      if (state is! MessageStateSuccess) {
+        debugPrint('❌ Cannot delete message: state is not MessageStateSuccess (current: ${state.runtimeType})');
+        return;
+      }
+
       final currentState = state as MessageStateSuccess;
 
       final deletedMessage = _findMessageById(currentState.messages, messageId);
@@ -353,7 +358,7 @@ class MessageNotifier extends _$MessageNotifier {
   }
 
   Future<void> _loadMessages({
-    required String userId,
+    required String chatId,
     required LoadDirection direction,
     String? cursor,
     String? jumpToMessageId,
@@ -363,7 +368,7 @@ class MessageNotifier extends _$MessageNotifier {
     _updateLoadingState(direction, true);
 
     try {
-      final entity = await _fetchMessages(userId, direction, cursor);
+      final entity = await _fetchMessages(chatId, direction, cursor);
       final messages = _processNewMessages(entity.messages, direction);
 
       _lastPaginationEntity = entity;
@@ -378,9 +383,9 @@ class MessageNotifier extends _$MessageNotifier {
     }
   }
 
-  Future<void> _loadInitialMessages({required String userId}) {
+  Future<void> _loadInitialMessages({required String chatId}) {
     return _loadMessages(
-      userId: userId,
+      chatId: chatId,
       direction: LoadDirection.initial,
     );
   }
@@ -409,23 +414,23 @@ class MessageNotifier extends _$MessageNotifier {
   }
 
   Future<PaginationMessagesEntity> _fetchMessages(
-      String userId,
+      String chatId,
       LoadDirection direction,
       String? cursor,
       ) {
     return switch (direction) {
       LoadDirection.initial => _messageRepository.getInitialMessages(
-        userId: userId,
+        chatId: chatId,
         cursor: cursor,
         limit: _messagesPerPage,
       ),
       LoadDirection.older => _messageRepository.getOlderMessages(
-        userId: userId,
+        chatId: chatId,
         cursor: cursor ?? _lastPaginationEntity?.olderCursor ?? _getDefaultCursor(),
         limit: _messagesPerPage,
       ),
       LoadDirection.newer => _messageRepository.getNewerMessages(
-        userId: userId,
+        chatId: chatId,
         cursor: cursor ?? _lastPaginationEntity?.newerCursor ?? _getDefaultCursor(),
         limit: _messagesPerPage,
       ),
@@ -539,12 +544,12 @@ class MessageNotifier extends _$MessageNotifier {
     }
   }
 
-  String _getOtherUserId() {
+  String _getChatID() {
     final chat = ref.read(selectedChatProvider);
     if (chat == null) {
       throw StateError('No chat selected');
     }
-    return chat.otherUser.id;
+    return chat.id;
   }
 
   bool _canSendMessage(String messageText) {
@@ -856,7 +861,7 @@ class MessageNotifier extends _$MessageNotifier {
     try {
       final selectedChat = ref.read(selectedChatProvider);
       if (selectedChat != null) {
-        await _loadInitialMessages(userId: selectedChat.otherUser.id);
+        await _loadInitialMessages(chatId: _getChatID());
       }
     } catch (loadError) {
       debugPrint('Failed to restore messages: $loadError');

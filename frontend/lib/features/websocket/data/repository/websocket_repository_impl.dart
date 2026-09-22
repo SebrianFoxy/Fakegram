@@ -22,6 +22,7 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
   bool _connectionStatus = false;
   bool _isConnecting = false;
   bool _shouldAutoReconnect = true;
+
   bool _isUnauthorizedError(String error) {
     return error.contains('401') ||
         error.contains('Unauthorized') ||
@@ -82,15 +83,11 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
           print('WebSocketRepository: Token expired error detected');
         }
         _handleTokenExpired();
-      }
-      else if (_isUnauthorizedError(error)) {
+      } else if (_isUnauthorizedError(error)) {
         if (kDebugMode) {
           print('WebSocketRepository: 401 Unauthorized error detected');
         }
         _handleUnauthorizedError();
-      } else {
-        _handleConnectionLost();
-        _scheduleReconnect();
       }
     };
   }
@@ -100,7 +97,6 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       print('WebSocketRepository: Handling token expired');
     }
 
-    // Отключаем авто-переподключение на время обновления токена
     _shouldAutoReconnect = false;
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
@@ -122,7 +118,6 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
 
       _shouldAutoReconnect = true;
       await connect();
-
     } catch (e) {
       if (kDebugMode) {
         print('WebSocketRepository: Error during token refresh: $e');
@@ -155,7 +150,7 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       }
 
       await disconnect();
-      Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 1));
 
       _shouldAutoReconnect = true;
       await connect();
@@ -197,8 +192,8 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
     try {
       final token = await _tokenService.getAccessToken();
       if (token == null) {
-        disconnect();
-        throw Exception('No access token available');
+        await disconnect();
+        return;
       }
 
       String url;
@@ -220,14 +215,12 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       if (kDebugMode) {
         print('WebSocketRepository: Connection confirmed');
       }
-
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       if (kDebugMode) {
         print('WebSocketRepository: Connection timeout');
       }
       _handleConnectionLost();
       _scheduleReconnect();
-      rethrow;
     } catch (error) {
       if (kDebugMode) {
         print('WebSocketRepository: Connection failed: $error');
@@ -239,8 +232,6 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
         _handleConnectionLost();
         _scheduleReconnect();
       }
-
-      rethrow;
     } finally {
       _isConnecting = false;
     }
@@ -255,14 +246,17 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       print('WebSocketRepository: Scheduling reconnect in 3 seconds');
     }
 
-    _reconnectTimer = Timer(const Duration(seconds: 3), () {
+    _reconnectTimer = Timer(const Duration(seconds: 3), () async {
       _reconnectTimer = null;
-      if (_shouldAutoReconnect && !_connectionStatus && !_isConnecting) {
-        connect().catchError((e) {
-          if (kDebugMode) {
-            print('WebSocketRepository: Auto-reconnect failed: $e');
-          }
-        });
+      if (!_shouldAutoReconnect || _connectionStatus || _isConnecting) {
+        return;
+      }
+      try {
+        await connect();
+      } catch (e) {
+        if (kDebugMode) {
+          print('WebSocketRepository: Auto-reconnect failed: $e');
+        }
       }
     });
   }

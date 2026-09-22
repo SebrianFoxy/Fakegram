@@ -23,6 +23,7 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   late final EventRouter _eventRouter;
   StreamSubscription<WebSocketEventEntity>? _eventSubscription;
   StreamSubscription<bool>? _connectionSubscription;
+  bool _disposed = false;
 
   @override
   WebSocketState build() {
@@ -53,24 +54,30 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   }
 
   void _onConnectionStateChanged(bool isConnected) {
-    if (isConnected && state is! _Connected) {
-      state = const WebSocketState.connected();
-      _subscribeToEvents(ref);
-    } else if (!isConnected && state is _Connected) {
+    if (_disposed) return;
+
+    if (isConnected) {
+      _connectionManager.resetReconnectAttempts();
+      if (state is! _Connected) {
+        state = const WebSocketState.connected();
+        _subscribeToEvents();
+      }
+    } else if (state is _Connected) {
       _handleConnectionLost();
     }
   }
 
   void _checkInitialConnection() {
     Future.microtask(() async {
+      if (_disposed) return;
       if (await _connectionManager.isConnected && state is! _Connected) {
         state = const WebSocketState.connected();
-        _subscribeToEvents(ref);
+        _subscribeToEvents();
       }
     });
   }
 
-  void _subscribeToEvents(Ref ref) {
+  void _subscribeToEvents() {
     _eventSubscription?.cancel();
     _eventSubscription = _connectionManager.eventStream.listen(
           (event) => _eventRouter.handleEvent(event, ref),
@@ -91,14 +98,16 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   }
 
   void _handleConnectionLost() {
-    if (_connectionManager.isManuallyDisconnecting) return;
+    if (_disposed || _connectionManager.isManuallyDisconnecting) return;
 
     state = const WebSocketState.disconnected();
     _scheduleReconnect();
   }
 
   void _scheduleReconnect() {
+    if (_disposed) return;
     _connectionManager.scheduleReconnect(() async {
+      if (_disposed) return;
       if (!_connectionManager.isManuallyDisconnecting && state is! _Connected) {
         await _attemptReconnect();
       }
@@ -106,6 +115,7 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   }
 
   Future<void> _attemptReconnect() async {
+    if (_disposed) return;
     try {
       await _connectionManager.connect();
     } catch (error) {
@@ -115,7 +125,7 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   }
 
   Future<void> connect() async {
-    if (!_canConnect) return;
+    if (_disposed || !_canConnect) return;
 
     state = const WebSocketState.connecting();
 
@@ -127,15 +137,19 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   }
 
   Future<void> disconnect() async {
-    if (!_canDisconnect) return;
+    if (_disposed || !_canDisconnect) return;
 
     state = const WebSocketState.disconnecting();
 
     try {
       await _connectionManager.disconnect();
-      state = const WebSocketState.disconnected();
+      if (!_disposed) {
+        state = const WebSocketState.disconnected();
+      }
     } catch (error) {
-      state = WebSocketState.error(error: error.toString());
+      if (!_disposed) {
+        state = WebSocketState.error(error: error.toString());
+      }
     } finally {
       _eventSubscription?.cancel();
       _eventSubscription = null;
@@ -171,25 +185,36 @@ class WebSocketNotifier extends _$WebSocketNotifier {
   void _handleConnectionError(Object error) {
     _logError('WebSocket connection error', error);
     final exception = ErrorHandler.handleError(error);
-    state = WebSocketState.error(error: exception.message);
+    if (!_disposed) {
+      state = WebSocketState.error(error: exception.message);
+    }
     _scheduleReconnect();
   }
 
   void _logError(String message, Object error) {
     if (kDebugMode) {
-      print('$message: $error');
+      debugPrint('$message: $error');
     }
   }
 
   void _dispose() {
+    _disposed = true;
     _connectionManager.dispose();
     _eventSubscription?.cancel();
+    _eventSubscription = null;
     _connectionSubscription?.cancel();
+    _connectionSubscription = null;
     _eventRouter.dispose();
   }
 
-  bool get _canConnect => state is! _Connecting && state is! _Connected;
-  bool get _canDisconnect => state is! _Disconnected && state is! _Disconnecting;
+  bool get _canConnect =>
+      state is! _Connecting &&
+          state is! _Connected &&
+          state is! _Disconnecting;
+
+  bool get _canDisconnect =>
+      state is! _Disconnected &&
+          state is! _Disconnecting;
 
   bool get isConnected => state is _Connected;
   bool get isConnecting => state is _Connecting;
@@ -205,7 +230,8 @@ WebSocketRepository webSocketRepository(Ref ref) {
 
 @riverpod
 bool isWebSocketConnected(Ref ref) {
-  return ref.watch(webSocketProvider) is _Connected;
+  final state = ref.watch(webSocketProvider);
+  return state is _Connected;
 }
 
 @riverpod
@@ -216,13 +242,15 @@ Future<void> autoConnectWebSocket(Ref ref) async {
 
     await Future.delayed(const Duration(seconds: 2));
 
-    final state = ref.read(webSocketProvider);
-    if (state is! _Connected && state is! _Connecting) {
-      await ref.read(webSocketProvider.notifier).connect();
+    if (!ref.mounted) return;
+
+    final notifier = ref.read(webSocketProvider.notifier);
+    if (!notifier.isConnected && !notifier.isConnecting) {
+      await notifier.connect();
     }
   } catch (e) {
     if (kDebugMode) {
-      print('⚠️ autoConnectWebSocket error: $e');
+      debugPrint('⚠️ autoConnectWebSocket error: $e');
     }
   }
 }

@@ -26,6 +26,7 @@ mixin _$MessageEntity {
   bool get isRead;
   DateTime get createdAt;
   DateTime? get readAt;
+  List<MessageReadInfoEntity>? get readBy;
   String get senderName;
   String get senderSurname;
   String get senderNickname;
@@ -65,6 +66,7 @@ mixin _$MessageEntity {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
+            const DeepCollectionEquality().equals(other.readBy, readBy) &&
             (identical(other.senderName, senderName) ||
                 other.senderName == senderName) &&
             (identical(other.senderSurname, senderSurname) ||
@@ -91,6 +93,7 @@ mixin _$MessageEntity {
       isRead,
       createdAt,
       readAt,
+      const DeepCollectionEquality().hash(readBy),
       senderName,
       senderSurname,
       senderNickname,
@@ -99,7 +102,7 @@ mixin _$MessageEntity {
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, replyToMessage: $replyToMessage, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
+    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, replyToMessage: $replyToMessage, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, readBy: $readBy, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
   }
 }
 
@@ -122,6 +125,7 @@ abstract mixin class $MessageEntityCopyWith<$Res> {
       bool isRead,
       DateTime createdAt,
       DateTime? readAt,
+      List<MessageReadInfoEntity>? readBy,
       String senderName,
       String senderSurname,
       String senderNickname,
@@ -156,6 +160,7 @@ class _$MessageEntityCopyWithImpl<$Res>
     Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
+    Object? readBy = freezed,
     Object? senderName = null,
     Object? senderSurname = null,
     Object? senderNickname = null,
@@ -211,6 +216,10 @@ class _$MessageEntityCopyWithImpl<$Res>
           ? _self.readAt
           : readAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      readBy: freezed == readBy
+          ? _self.readBy
+          : readBy // ignore: cast_nullable_to_non_nullable
+              as List<MessageReadInfoEntity>?,
       senderName: null == senderName
           ? _self.senderName
           : senderName // ignore: cast_nullable_to_non_nullable
@@ -355,6 +364,7 @@ extension MessageEntityPatterns on MessageEntity {
             bool isRead,
             DateTime createdAt,
             DateTime? readAt,
+            List<MessageReadInfoEntity>? readBy,
             String senderName,
             String senderSurname,
             String senderNickname,
@@ -379,6 +389,7 @@ extension MessageEntityPatterns on MessageEntity {
             _that.isRead,
             _that.createdAt,
             _that.readAt,
+            _that.readBy,
             _that.senderName,
             _that.senderSurname,
             _that.senderNickname,
@@ -417,6 +428,7 @@ extension MessageEntityPatterns on MessageEntity {
             bool isRead,
             DateTime createdAt,
             DateTime? readAt,
+            List<MessageReadInfoEntity>? readBy,
             String senderName,
             String senderSurname,
             String senderNickname,
@@ -440,6 +452,7 @@ extension MessageEntityPatterns on MessageEntity {
             _that.isRead,
             _that.createdAt,
             _that.readAt,
+            _that.readBy,
             _that.senderName,
             _that.senderSurname,
             _that.senderNickname,
@@ -477,6 +490,7 @@ extension MessageEntityPatterns on MessageEntity {
             bool isRead,
             DateTime createdAt,
             DateTime? readAt,
+            List<MessageReadInfoEntity>? readBy,
             String senderName,
             String senderSurname,
             String senderNickname,
@@ -500,6 +514,7 @@ extension MessageEntityPatterns on MessageEntity {
             _that.isRead,
             _that.createdAt,
             _that.readAt,
+            _that.readBy,
             _that.senderName,
             _that.senderSurname,
             _that.senderNickname,
@@ -527,12 +542,14 @@ class _MessageEntity extends MessageEntity {
       required this.isRead,
       required this.createdAt,
       required this.readAt,
+      final List<MessageReadInfoEntity>? readBy,
       required this.senderName,
       required this.senderSurname,
       required this.senderNickname,
       required this.senderAvatarUrl,
       this.status = MessageStatus.none})
-      : super._();
+      : _readBy = readBy,
+        super._();
 
   @override
   final String id;
@@ -558,6 +575,16 @@ class _MessageEntity extends MessageEntity {
   final DateTime createdAt;
   @override
   final DateTime? readAt;
+  final List<MessageReadInfoEntity>? _readBy;
+  @override
+  List<MessageReadInfoEntity>? get readBy {
+    final value = _readBy;
+    if (value == null) return null;
+    if (_readBy is EqualUnmodifiableListView) return _readBy;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
   @override
   final String senderName;
   @override
@@ -603,6 +630,7 @@ class _MessageEntity extends MessageEntity {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.readAt, readAt) || other.readAt == readAt) &&
+            const DeepCollectionEquality().equals(other._readBy, _readBy) &&
             (identical(other.senderName, senderName) ||
                 other.senderName == senderName) &&
             (identical(other.senderSurname, senderSurname) ||
@@ -629,6 +657,7 @@ class _MessageEntity extends MessageEntity {
       isRead,
       createdAt,
       readAt,
+      const DeepCollectionEquality().hash(_readBy),
       senderName,
       senderSurname,
       senderNickname,
@@ -637,7 +666,7 @@ class _MessageEntity extends MessageEntity {
 
   @override
   String toString() {
-    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, replyToMessage: $replyToMessage, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
+    return 'MessageEntity(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, replyToMessageId: $replyToMessageId, replyToMessage: $replyToMessage, isEdited: $isEdited, isDeleted: $isDeleted, isRead: $isRead, createdAt: $createdAt, readAt: $readAt, readBy: $readBy, senderName: $senderName, senderSurname: $senderSurname, senderNickname: $senderNickname, senderAvatarUrl: $senderAvatarUrl, status: $status)';
   }
 }
 
@@ -662,6 +691,7 @@ abstract mixin class _$MessageEntityCopyWith<$Res>
       bool isRead,
       DateTime createdAt,
       DateTime? readAt,
+      List<MessageReadInfoEntity>? readBy,
       String senderName,
       String senderSurname,
       String senderNickname,
@@ -697,6 +727,7 @@ class __$MessageEntityCopyWithImpl<$Res>
     Object? isRead = null,
     Object? createdAt = null,
     Object? readAt = freezed,
+    Object? readBy = freezed,
     Object? senderName = null,
     Object? senderSurname = null,
     Object? senderNickname = null,
@@ -752,6 +783,10 @@ class __$MessageEntityCopyWithImpl<$Res>
           ? _self.readAt
           : readAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
+      readBy: freezed == readBy
+          ? _self._readBy
+          : readBy // ignore: cast_nullable_to_non_nullable
+              as List<MessageReadInfoEntity>?,
       senderName: null == senderName
           ? _self.senderName
           : senderName // ignore: cast_nullable_to_non_nullable

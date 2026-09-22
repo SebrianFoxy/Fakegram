@@ -29,6 +29,8 @@ mixin _$LastMessageModel {
   bool get isDeleted;
   @JsonKey(name: 'created_at')
   DateTime get createdAt;
+  @JsonKey(name: 'updated_at')
+  DateTime get updatedAt;
 
   /// Create a copy of LastMessageModel
   /// with the given fields replaced by the non-null parameter values.
@@ -59,17 +61,19 @@ mixin _$LastMessageModel {
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, chatId, senderId,
-      messageText, messageType, isEdited, isDeleted, createdAt);
+      messageText, messageType, isEdited, isDeleted, createdAt, updatedAt);
 
   @override
   String toString() {
-    return 'LastMessageModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt)';
+    return 'LastMessageModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }
 
@@ -87,7 +91,8 @@ abstract mixin class $LastMessageModelCopyWith<$Res> {
       @JsonKey(name: 'message_type') String messageType,
       @JsonKey(name: 'is_edited') bool isEdited,
       @JsonKey(name: 'is_deleted') bool isDeleted,
-      @JsonKey(name: 'created_at') DateTime createdAt});
+      @JsonKey(name: 'created_at') DateTime createdAt,
+      @JsonKey(name: 'updated_at') DateTime updatedAt});
 }
 
 /// @nodoc
@@ -111,6 +116,7 @@ class _$LastMessageModelCopyWithImpl<$Res>
     Object? isEdited = null,
     Object? isDeleted = null,
     Object? createdAt = null,
+    Object? updatedAt = null,
   }) {
     return _then(_self.copyWith(
       id: null == id
@@ -144,6 +150,10 @@ class _$LastMessageModelCopyWithImpl<$Res>
       createdAt: null == createdAt
           ? _self.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      updatedAt: null == updatedAt
+          ? _self.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
     ));
   }
@@ -250,7 +260,8 @@ extension LastMessageModelPatterns on LastMessageModel {
             @JsonKey(name: 'message_type') String messageType,
             @JsonKey(name: 'is_edited') bool isEdited,
             @JsonKey(name: 'is_deleted') bool isDeleted,
-            @JsonKey(name: 'created_at') DateTime createdAt)?
+            @JsonKey(name: 'created_at') DateTime createdAt,
+            @JsonKey(name: 'updated_at') DateTime updatedAt)?
         $default, {
     required TResult orElse(),
   }) {
@@ -265,7 +276,8 @@ extension LastMessageModelPatterns on LastMessageModel {
             _that.messageType,
             _that.isEdited,
             _that.isDeleted,
-            _that.createdAt);
+            _that.createdAt,
+            _that.updatedAt);
       case _:
         return orElse();
     }
@@ -294,7 +306,8 @@ extension LastMessageModelPatterns on LastMessageModel {
             @JsonKey(name: 'message_type') String messageType,
             @JsonKey(name: 'is_edited') bool isEdited,
             @JsonKey(name: 'is_deleted') bool isDeleted,
-            @JsonKey(name: 'created_at') DateTime createdAt)
+            @JsonKey(name: 'created_at') DateTime createdAt,
+            @JsonKey(name: 'updated_at') DateTime updatedAt)
         $default,
   ) {
     final _that = this;
@@ -308,7 +321,8 @@ extension LastMessageModelPatterns on LastMessageModel {
             _that.messageType,
             _that.isEdited,
             _that.isDeleted,
-            _that.createdAt);
+            _that.createdAt,
+            _that.updatedAt);
       case _:
         throw StateError('Unexpected subclass');
     }
@@ -336,7 +350,8 @@ extension LastMessageModelPatterns on LastMessageModel {
             @JsonKey(name: 'message_type') String messageType,
             @JsonKey(name: 'is_edited') bool isEdited,
             @JsonKey(name: 'is_deleted') bool isDeleted,
-            @JsonKey(name: 'created_at') DateTime createdAt)?
+            @JsonKey(name: 'created_at') DateTime createdAt,
+            @JsonKey(name: 'updated_at') DateTime updatedAt)?
         $default,
   ) {
     final _that = this;
@@ -350,7 +365,8 @@ extension LastMessageModelPatterns on LastMessageModel {
             _that.messageType,
             _that.isEdited,
             _that.isDeleted,
-            _that.createdAt);
+            _that.createdAt,
+            _that.updatedAt);
       case _:
         return null;
     }
@@ -368,7 +384,8 @@ class _LastMessageModel extends LastMessageModel {
       @JsonKey(name: 'message_type') required this.messageType,
       @JsonKey(name: 'is_edited') required this.isEdited,
       @JsonKey(name: 'is_deleted') required this.isDeleted,
-      @JsonKey(name: 'created_at') required this.createdAt})
+      @JsonKey(name: 'created_at') required this.createdAt,
+      @JsonKey(name: 'updated_at') required this.updatedAt})
       : super._();
   factory _LastMessageModel.fromJson(Map<String, dynamic> json) =>
       _$LastMessageModelFromJson(json);
@@ -396,6 +413,9 @@ class _LastMessageModel extends LastMessageModel {
   @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
+  @override
+  @JsonKey(name: 'updated_at')
+  final DateTime updatedAt;
 
   /// Create a copy of LastMessageModel
   /// with the given fields replaced by the non-null parameter values.
@@ -430,17 +450,19 @@ class _LastMessageModel extends LastMessageModel {
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.updatedAt, updatedAt) ||
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, chatId, senderId,
-      messageText, messageType, isEdited, isDeleted, createdAt);
+      messageText, messageType, isEdited, isDeleted, createdAt, updatedAt);
 
   @override
   String toString() {
-    return 'LastMessageModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt)';
+    return 'LastMessageModel(id: $id, chatId: $chatId, senderId: $senderId, messageText: $messageText, messageType: $messageType, isEdited: $isEdited, isDeleted: $isDeleted, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }
 
@@ -460,7 +482,8 @@ abstract mixin class _$LastMessageModelCopyWith<$Res>
       @JsonKey(name: 'message_type') String messageType,
       @JsonKey(name: 'is_edited') bool isEdited,
       @JsonKey(name: 'is_deleted') bool isDeleted,
-      @JsonKey(name: 'created_at') DateTime createdAt});
+      @JsonKey(name: 'created_at') DateTime createdAt,
+      @JsonKey(name: 'updated_at') DateTime updatedAt});
 }
 
 /// @nodoc
@@ -484,6 +507,7 @@ class __$LastMessageModelCopyWithImpl<$Res>
     Object? isEdited = null,
     Object? isDeleted = null,
     Object? createdAt = null,
+    Object? updatedAt = null,
   }) {
     return _then(_LastMessageModel(
       id: null == id
@@ -517,6 +541,10 @@ class __$LastMessageModelCopyWithImpl<$Res>
       createdAt: null == createdAt
           ? _self.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
+              as DateTime,
+      updatedAt: null == updatedAt
+          ? _self.updatedAt
+          : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
     ));
   }

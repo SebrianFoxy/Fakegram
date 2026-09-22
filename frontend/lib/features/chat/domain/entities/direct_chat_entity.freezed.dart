@@ -17,9 +17,10 @@ mixin _$DirectChatEntity {
   String get id;
   String get chatType;
   String get title;
+  String? get avatarUrl;
   LastMessageEntity? get lastMessage;
   int get unreadCount;
-  ChatUserEntity get otherUser;
+  ChatUserEntity? get otherUser;
   DateTime get updatedAt;
 
   /// Create a copy of DirectChatEntity
@@ -39,6 +40,8 @@ mixin _$DirectChatEntity {
             (identical(other.chatType, chatType) ||
                 other.chatType == chatType) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.lastMessage, lastMessage) ||
                 other.lastMessage == lastMessage) &&
             (identical(other.unreadCount, unreadCount) ||
@@ -50,12 +53,12 @@ mixin _$DirectChatEntity {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id, chatType, title, lastMessage,
-      unreadCount, otherUser, updatedAt);
+  int get hashCode => Object.hash(runtimeType, id, chatType, title, avatarUrl,
+      lastMessage, unreadCount, otherUser, updatedAt);
 
   @override
   String toString() {
-    return 'DirectChatEntity(id: $id, chatType: $chatType, title: $title, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
+    return 'DirectChatEntity(id: $id, chatType: $chatType, title: $title, avatarUrl: $avatarUrl, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
   }
 }
 
@@ -69,13 +72,14 @@ abstract mixin class $DirectChatEntityCopyWith<$Res> {
       {String id,
       String chatType,
       String title,
+      String? avatarUrl,
       LastMessageEntity? lastMessage,
       int unreadCount,
-      ChatUserEntity otherUser,
+      ChatUserEntity? otherUser,
       DateTime updatedAt});
 
   $LastMessageEntityCopyWith<$Res>? get lastMessage;
-  $ChatUserEntityCopyWith<$Res> get otherUser;
+  $ChatUserEntityCopyWith<$Res>? get otherUser;
 }
 
 /// @nodoc
@@ -94,9 +98,10 @@ class _$DirectChatEntityCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
+    Object? avatarUrl = freezed,
     Object? lastMessage = freezed,
     Object? unreadCount = null,
-    Object? otherUser = null,
+    Object? otherUser = freezed,
     Object? updatedAt = null,
   }) {
     return _then(_self.copyWith(
@@ -112,6 +117,10 @@ class _$DirectChatEntityCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
+      avatarUrl: freezed == avatarUrl
+          ? _self.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
@@ -120,10 +129,10 @@ class _$DirectChatEntityCopyWithImpl<$Res>
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
               as int,
-      otherUser: null == otherUser
+      otherUser: freezed == otherUser
           ? _self.otherUser
           : otherUser // ignore: cast_nullable_to_non_nullable
-              as ChatUserEntity,
+              as ChatUserEntity?,
       updatedAt: null == updatedAt
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -149,8 +158,12 @@ class _$DirectChatEntityCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $ChatUserEntityCopyWith<$Res> get otherUser {
-    return $ChatUserEntityCopyWith<$Res>(_self.otherUser, (value) {
+  $ChatUserEntityCopyWith<$Res>? get otherUser {
+    if (_self.otherUser == null) {
+      return null;
+    }
+
+    return $ChatUserEntityCopyWith<$Res>(_self.otherUser!, (value) {
       return _then(_self.copyWith(otherUser: value));
     });
   }
@@ -253,9 +266,10 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             String id,
             String chatType,
             String title,
+            String? avatarUrl,
             LastMessageEntity? lastMessage,
             int unreadCount,
-            ChatUserEntity otherUser,
+            ChatUserEntity? otherUser,
             DateTime updatedAt)?
         $default, {
     required TResult orElse(),
@@ -267,6 +281,7 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             _that.id,
             _that.chatType,
             _that.title,
+            _that.avatarUrl,
             _that.lastMessage,
             _that.unreadCount,
             _that.otherUser,
@@ -295,9 +310,10 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             String id,
             String chatType,
             String title,
+            String? avatarUrl,
             LastMessageEntity? lastMessage,
             int unreadCount,
-            ChatUserEntity otherUser,
+            ChatUserEntity? otherUser,
             DateTime updatedAt)
         $default,
   ) {
@@ -308,6 +324,7 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             _that.id,
             _that.chatType,
             _that.title,
+            _that.avatarUrl,
             _that.lastMessage,
             _that.unreadCount,
             _that.otherUser,
@@ -335,9 +352,10 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             String id,
             String chatType,
             String title,
+            String? avatarUrl,
             LastMessageEntity? lastMessage,
             int unreadCount,
-            ChatUserEntity otherUser,
+            ChatUserEntity? otherUser,
             DateTime updatedAt)?
         $default,
   ) {
@@ -348,6 +366,7 @@ extension DirectChatEntityPatterns on DirectChatEntity {
             _that.id,
             _that.chatType,
             _that.title,
+            _that.avatarUrl,
             _that.lastMessage,
             _that.unreadCount,
             _that.otherUser,
@@ -365,9 +384,10 @@ class _DirectChatEntity extends DirectChatEntity {
       {required this.id,
       required this.chatType,
       required this.title,
+      this.avatarUrl = '',
       this.lastMessage,
       this.unreadCount = 0,
-      required this.otherUser,
+      this.otherUser,
       required this.updatedAt})
       : super._();
 
@@ -378,12 +398,15 @@ class _DirectChatEntity extends DirectChatEntity {
   @override
   final String title;
   @override
+  @JsonKey()
+  final String? avatarUrl;
+  @override
   final LastMessageEntity? lastMessage;
   @override
   @JsonKey()
   final int unreadCount;
   @override
-  final ChatUserEntity otherUser;
+  final ChatUserEntity? otherUser;
   @override
   final DateTime updatedAt;
 
@@ -404,6 +427,8 @@ class _DirectChatEntity extends DirectChatEntity {
             (identical(other.chatType, chatType) ||
                 other.chatType == chatType) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.lastMessage, lastMessage) ||
                 other.lastMessage == lastMessage) &&
             (identical(other.unreadCount, unreadCount) ||
@@ -415,12 +440,12 @@ class _DirectChatEntity extends DirectChatEntity {
   }
 
   @override
-  int get hashCode => Object.hash(runtimeType, id, chatType, title, lastMessage,
-      unreadCount, otherUser, updatedAt);
+  int get hashCode => Object.hash(runtimeType, id, chatType, title, avatarUrl,
+      lastMessage, unreadCount, otherUser, updatedAt);
 
   @override
   String toString() {
-    return 'DirectChatEntity(id: $id, chatType: $chatType, title: $title, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
+    return 'DirectChatEntity(id: $id, chatType: $chatType, title: $title, avatarUrl: $avatarUrl, lastMessage: $lastMessage, unreadCount: $unreadCount, otherUser: $otherUser, updatedAt: $updatedAt)';
   }
 }
 
@@ -436,15 +461,16 @@ abstract mixin class _$DirectChatEntityCopyWith<$Res>
       {String id,
       String chatType,
       String title,
+      String? avatarUrl,
       LastMessageEntity? lastMessage,
       int unreadCount,
-      ChatUserEntity otherUser,
+      ChatUserEntity? otherUser,
       DateTime updatedAt});
 
   @override
   $LastMessageEntityCopyWith<$Res>? get lastMessage;
   @override
-  $ChatUserEntityCopyWith<$Res> get otherUser;
+  $ChatUserEntityCopyWith<$Res>? get otherUser;
 }
 
 /// @nodoc
@@ -463,9 +489,10 @@ class __$DirectChatEntityCopyWithImpl<$Res>
     Object? id = null,
     Object? chatType = null,
     Object? title = null,
+    Object? avatarUrl = freezed,
     Object? lastMessage = freezed,
     Object? unreadCount = null,
-    Object? otherUser = null,
+    Object? otherUser = freezed,
     Object? updatedAt = null,
   }) {
     return _then(_DirectChatEntity(
@@ -481,6 +508,10 @@ class __$DirectChatEntityCopyWithImpl<$Res>
           ? _self.title
           : title // ignore: cast_nullable_to_non_nullable
               as String,
+      avatarUrl: freezed == avatarUrl
+          ? _self.avatarUrl
+          : avatarUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
       lastMessage: freezed == lastMessage
           ? _self.lastMessage
           : lastMessage // ignore: cast_nullable_to_non_nullable
@@ -489,10 +520,10 @@ class __$DirectChatEntityCopyWithImpl<$Res>
           ? _self.unreadCount
           : unreadCount // ignore: cast_nullable_to_non_nullable
               as int,
-      otherUser: null == otherUser
+      otherUser: freezed == otherUser
           ? _self.otherUser
           : otherUser // ignore: cast_nullable_to_non_nullable
-              as ChatUserEntity,
+              as ChatUserEntity?,
       updatedAt: null == updatedAt
           ? _self.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
@@ -518,8 +549,12 @@ class __$DirectChatEntityCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $ChatUserEntityCopyWith<$Res> get otherUser {
-    return $ChatUserEntityCopyWith<$Res>(_self.otherUser, (value) {
+  $ChatUserEntityCopyWith<$Res>? get otherUser {
+    if (_self.otherUser == null) {
+      return null;
+    }
+
+    return $ChatUserEntityCopyWith<$Res>(_self.otherUser!, (value) {
       return _then(_self.copyWith(otherUser: value));
     });
   }
